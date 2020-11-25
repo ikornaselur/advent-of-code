@@ -1,31 +1,20 @@
 from collections import Counter
-import os
 
 from advent_of_code import Problem
 
 
 class Part1(Problem):
-    def get_input(self: "Part1") -> str:
-        dir_name = os.path.dirname(__file__)
-        with open(os.path.join(dir_name, "input.txt"), "r") as f:
-            return f.readline()
-
     def get_solution(self: "Part1") -> int:
-        count = Counter(self.get_input())
+        count = Counter(self.get_input(__file__)[0])
 
         return count["("] - count[")"]
 
 
-class Part2(Part1):
-    def get_input(self: "Part1") -> str:
-        dir_name = os.path.dirname(__file__)
-        with open(os.path.join(dir_name, "input.txt"), "r") as f:
-            return f.readline()
-
-    def get_solution(self: "Part1") -> int:
+class Part2(Problem):
+    def get_solution(self: "Part2") -> int:
         floor = 0
 
-        puzzle_input = self.get_input()
+        puzzle_input = self.get_input(__file__)[0]
         for idx, char in enumerate(puzzle_input):
             if char == "(":
                 floor += 1
