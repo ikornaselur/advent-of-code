@@ -25,4 +25,19 @@ class Part1(Problem):
 
 class Part2(Problem):
     def get_solution(self: "Part2") -> int:
-        pass
+        boxes = self.get_input(__file__)
+        total = 0
+        for box in boxes:
+            dimensions = sorted(int(dim) for dim in box.split("x"))
+
+            x = dimensions[0]
+            y = dimensions[1]
+            z = dimensions[2]
+
+            # Ribbon is wrapped around the shortest distance and bow is equal
+            # to the cubic feet of volume of the present
+            length = 2 * (x + y) + (x * y * z)
+
+            total += length
+
+        return total
