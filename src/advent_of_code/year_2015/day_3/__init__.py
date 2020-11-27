@@ -1,5 +1,6 @@
-from advent_of_code import Problem
 from typing import Tuple
+
+from advent_of_code import Problem
 
 
 class Part1(Problem):
