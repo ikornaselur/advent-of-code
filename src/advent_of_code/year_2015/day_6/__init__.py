@@ -70,6 +70,27 @@ class Part1(Problem):
         return sum(len([x for x in row if x]) for row in self._lights)
 
 
-class Part2(Problem):
+class Part2(Part1):
+    def execute_instruction(self: "Part2", instruction: Instruction) -> None:
+        action, start, end = instruction
+        if action == Action.on:
+            for x in range(start[0], end[0] + 1):
+                for y in range(start[1], end[1] + 1):
+                    self._lights[x][y] += 1
+        elif action == Action.off:
+            for x in range(start[0], end[0] + 1):
+                for y in range(start[1], end[1] + 1):
+                    self._lights[x][y] = max(0, self._lights[x][y] - 1)
+        elif action == Action.toggle:
+            for x in range(start[0], end[0] + 1):
+                for y in range(start[1], end[1] + 1):
+                    self._lights[x][y] += 2
+
     def get_solution(self: "Part2") -> int:
-        pass
+        puzzle_input = self.get_input(__file__)
+
+        for line in puzzle_input:
+            instruction = self.parse_instruction(line)
+            self.execute_instruction(instruction)
+
+        return sum(sum(row) for row in self._lights)
