@@ -87,7 +87,33 @@ def discover() -> Iterator[Target]:
             yield Target(year, day)
 
 
+def run_basic() -> None:
+    targets = discover()
+    cache = Cache()
+
+    for target in targets:
+        path = target.get_path()
+        path_hash = f"{cache.hash_folder(path)}"
+
+        lst: List[Literal[1, 2]] = [1, 2]  # For mypy...
+        for part in lst:
+            part_hash = f"{path_hash}-part_{part}"
+            if not (solution := cache.get_cached(part_hash)):
+                solution = target.get_solution(part)
+                cache.update_cache(part_hash, solution)
+
+            print(f"Day {target.day} - Part {part}: {solution}")
+
+    cache.flush()
+
+
 def run() -> None:
+    basic = os.environ.get("BASIC")
+
+    if basic:
+        run_basic()
+        return
+
     targets = discover()
     cache = Cache()
     console = Console()

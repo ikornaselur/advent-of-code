@@ -13,6 +13,11 @@ class Action(Enum):
 
 Coordinate = Tuple[int, int]
 Instruction = Tuple[Action, Coordinate, Coordinate]
+PATTERN = re.compile(
+    r"(?P<action>(turn o(n|ff)|toggle)) "
+    r"(?P<start_x>\d+),(?P<start_y>\d+) "
+    r"through (?P<end_x>\d+),(?P<end_y>\d+)"
+)
 
 
 class Part1(Problem):
@@ -22,12 +27,7 @@ class Part1(Problem):
         self._lights = [[0 for _ in range(width)] for _ in range(height)]
 
     def parse_instruction(self: "Part1", instruction: str) -> Instruction:
-        pattern = re.compile(
-            r"(?P<action>(turn o(n|ff)|toggle)) "
-            r"(?P<start_x>\d+),(?P<start_y>\d+) "
-            r"through (?P<end_x>\d+),(?P<end_y>\d+)"
-        )
-        match = pattern.search(instruction)
+        match = PATTERN.search(instruction)
         if match is None:
             raise Exception("Invalid instruction")
         raw_action = match.group("action")
