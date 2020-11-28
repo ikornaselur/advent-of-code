@@ -2,9 +2,12 @@ import os
 import pickle
 from hashlib import sha1
 from importlib import import_module
-from typing import Dict, Iterator, Optional, Union
+from typing import Dict, Iterator, List, Literal, Optional, Union
 
-import click
+from rich import box
+from rich.console import Console
+from rich.live_render import LiveRender
+from rich.table import Table
 
 CACHE_FILE = "./.cache.pkl"
 
@@ -55,25 +58,23 @@ class Cache:
 class Target:
     year: int
     day: int
-    part: int
 
-    def __init__(self: "Target", year: int, day: int, part: int) -> None:
+    def __init__(self: "Target", year: int, day: int) -> None:
         self.year = year
         self.day = day
-        self.part = part
 
     def get_path(self: "Target") -> str:
         root = os.path.dirname(os.path.abspath(__file__))
         return os.path.join(root, "src/advent_of_code", f"year_{self.year}", f"day_{self.day}")
 
-    def get_solution(self: "Target") -> Solution:
+    def get_solution(self: "Target", part: Literal[1, 2]) -> Solution:
         day = import_module(f"advent_of_code.year_{self.year}.day_{self.day}")
-        Part = getattr(day, f"Part{self.part}")
+        Part = getattr(day, f"Part{part}")
 
         return Part().get_solution()
 
     def __repr__(self: "Target") -> str:
-        return f"<Target {self.year}-{self.day}. Part {self.part}>"
+        return f"<Target {self.year} day {self.day}>"
 
 
 def discover() -> Iterator[Target]:
@@ -83,30 +84,53 @@ def discover() -> Iterator[Target]:
                 # Day not done yet, assume no further days this year
                 break
 
-            # Assume both parts implemented
-            yield Target(year, day, 1)
-            yield Target(year, day, 2)
+            yield Target(year, day)
 
 
 def run() -> None:
     targets = discover()
     cache = Cache()
+    console = Console()
+
+    table = Table(
+        show_header=True,
+        box=box.HORIZONTALS,
+        header_style="bold",
+        show_edge=False,
+        show_lines=False,
+        title=":christmas_tree: [b]Year 2015 :christmas_tree:",
+        title_style="white",
+    )
+    table.add_column("")
+    table.add_column("Part 1")
+    table.add_column("Part 2")
+
+    # Set up rows for each day
+    for day in range(1, 26):
+        table.add_row(f"Day {day}", "", "")
+
+    # Set up live render
+    live_render = LiveRender(table)
+
+    # Print initial table
+    console.print(live_render)
+
     for target in targets:
         path = target.get_path()
-        path_hash = f"{cache.hash_folder(path)}-part_{target.part}"
+        path_hash = f"{cache.hash_folder(path)}"
 
-        if not (solution := cache.get_cached(path_hash)):
-            print("Not cached")
-            solution = target.get_solution()
-            cache.update_cache(path_hash, solution)
+        lst: List[Literal[1, 2]] = [1, 2]  # For mypy...
+        for part in lst:
+            part_hash = f"{path_hash}-part_{part}"
+            if not (solution := cache.get_cached(part_hash)):
+                table.columns[part]._cells[target.day - 1] = "..."
+                console.print(live_render.position_cursor(), live_render)
+                solution = target.get_solution(part)
+                cache.update_cache(part_hash, solution)
 
-        year = click.style(str(target.year), fg="red")
-        day = click.style(f"Dec {target.day}", fg="yellow")
-        part = click.style(f"Part {target.part}", fg="yellow")
+            table.columns[part]._cells[target.day - 1] = str(solution)
+            console.print(live_render.position_cursor(), live_render)
 
-        solution = click.style(str(solution), fg="green")
-
-        click.echo(f"[{year} {day} - {part}] {solution}")
     cache.flush()
 
 
