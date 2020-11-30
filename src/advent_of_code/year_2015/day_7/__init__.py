@@ -31,7 +31,7 @@ InstructionsMap = Dict[str, Instruction]
 
 
 PATTERN = re.compile(
-    r"((?P<source2>[a-z0-9]+) )?((?P<gate>[A-Z]+) )?(?P<source1>[a-zA-Z0-9]+) -> (?P<destination>[a-zA-Z]+)"
+    r"(?:(?P<source2>[a-z0-9]+) )?(?:(?P<gate>[A-Z]+) )?(?P<source1>[a-zA-Z0-9]+) -> (?P<destination>[a-zA-Z]+)"
 )
 
 

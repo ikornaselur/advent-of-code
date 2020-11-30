@@ -14,7 +14,7 @@ class Action(Enum):
 Coordinate = Tuple[int, int]
 Instruction = Tuple[Action, Coordinate, Coordinate]
 PATTERN = re.compile(
-    r"(?P<action>(turn o(n|ff)|toggle)) "
+    r"(?P<action>(?:turn o(?:n|ff)|toggle)) "
     r"(?P<start_x>\d+),(?P<start_y>\d+) "
     r"through (?P<end_x>\d+),(?P<end_y>\d+)"
 )
