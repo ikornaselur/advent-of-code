@@ -102,7 +102,64 @@ def run_basic() -> None:
                 solution = target.get_solution(part)
                 cache.update_cache(part_hash, solution)
 
-            print(f"Day {target.day} - Part {part}: {solution}")
+            print(f"{target.year} Day {target.day} - Part {part}: {solution}")
+
+    cache.flush()
+
+
+def run_complex() -> None:
+    cache = Cache()
+    console = Console()
+
+    filter_year = int(os.environ.get("YEAR", 0))
+
+    by_year: Dict[int, List[Target]] = {}
+    for target in discover():
+        if target.year not in by_year:
+            by_year[target.year] = []
+        by_year[target.year].append(target)
+
+    for year, targets in by_year.items():
+        if filter_year and filter_year != year:
+            continue
+        table = Table(
+            show_header=True,
+            box=box.HORIZONTALS,
+            header_style="bold",
+            show_edge=False,
+            show_lines=False,
+            title=f":christmas_tree: [b]Year {year} :christmas_tree:",
+            title_style="white",
+        )
+        table.add_column("")
+        table.add_column("Part 1")
+        table.add_column("Part 2")
+
+        # Set up rows for each day
+        for day in range(1, 26):
+            table.add_row(f"Day {day}", "", "")
+
+        # Set up live render
+        live_render = LiveRender(table)
+
+        # Print initial table
+        console.print(live_render)
+
+        for target in targets:
+            path = target.get_path()
+            path_hash = f"{cache.hash_folder(path)}"
+
+            lst: List[Literal[1, 2]] = [1, 2]  # For mypy...
+            for part in lst:
+                part_hash = f"{path_hash}-part_{part}"
+                if not (solution := cache.get_cached(part_hash)):
+                    table.columns[part]._cells[target.day - 1] = "..."
+                    console.print(live_render.position_cursor(), live_render)
+                    solution = target.get_solution(part)
+                    cache.update_cache(part_hash, solution)
+
+                table.columns[part]._cells[target.day - 1] = str(solution)
+                console.print(live_render.position_cursor(), live_render)
 
     cache.flush()
 
@@ -112,52 +169,8 @@ def run() -> None:
 
     if basic:
         run_basic()
-        return
-
-    targets = discover()
-    cache = Cache()
-    console = Console()
-
-    table = Table(
-        show_header=True,
-        box=box.HORIZONTALS,
-        header_style="bold",
-        show_edge=False,
-        show_lines=False,
-        title=":christmas_tree: [b]Year 2015 :christmas_tree:",
-        title_style="white",
-    )
-    table.add_column("")
-    table.add_column("Part 1")
-    table.add_column("Part 2")
-
-    # Set up rows for each day
-    for day in range(1, 26):
-        table.add_row(f"Day {day}", "", "")
-
-    # Set up live render
-    live_render = LiveRender(table)
-
-    # Print initial table
-    console.print(live_render)
-
-    for target in targets:
-        path = target.get_path()
-        path_hash = f"{cache.hash_folder(path)}"
-
-        lst: List[Literal[1, 2]] = [1, 2]  # For mypy...
-        for part in lst:
-            part_hash = f"{path_hash}-part_{part}"
-            if not (solution := cache.get_cached(part_hash)):
-                table.columns[part]._cells[target.day - 1] = "..."
-                console.print(live_render.position_cursor(), live_render)
-                solution = target.get_solution(part)
-                cache.update_cache(part_hash, solution)
-
-            table.columns[part]._cells[target.day - 1] = str(solution)
-            console.print(live_render.position_cursor(), live_render)
-
-    cache.flush()
+    else:
+        run_complex()
 
 
 if __name__ == "__main__":
