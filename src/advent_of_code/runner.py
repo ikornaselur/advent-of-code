@@ -93,7 +93,7 @@ def discover(year: Optional[int] = None) -> Iterator[Target]:
             yield Target(year, day)
 
 
-def run_basic(year: Optional[int] = None) -> None:
+def run_basic(year: Optional[int] = None, run_day: Optional[int] = None) -> None:
     targets = discover(year)
     cache = Cache()
 
@@ -104,7 +104,7 @@ def run_basic(year: Optional[int] = None) -> None:
         lst: List[Literal[1, 2]] = [1, 2]  # For mypy...
         for part in lst:
             part_hash = f"{path_hash}-part_{part}"
-            if not (solution := cache.get_cached(part_hash)):
+            if target.day == run_day or not (solution := cache.get_cached(part_hash)):
                 solution = target.get_solution(part)
                 cache.update_cache(part_hash, solution)
 
@@ -113,7 +113,7 @@ def run_basic(year: Optional[int] = None) -> None:
     cache.flush()
 
 
-def run_complex(year: Optional[int] = None) -> None:
+def run_complex(year: Optional[int] = None, run_day: Optional[int] = None) -> None:
     cache = Cache()
     console = Console()
 
@@ -158,7 +158,7 @@ def run_complex(year: Optional[int] = None) -> None:
             lst: List[Literal[1, 2]] = [1, 2]  # For mypy...
             for part in lst:
                 part_hash = f"{path_hash}-part_{part}"
-                if not (solution := cache.get_cached(part_hash)):
+                if target.day == run_day or not (solution := cache.get_cached(part_hash)):
                     table.columns[part]._cells[target.day - 1] = "..."
                     console.print(live_render.position_cursor(), live_render)
                     solution = target.get_solution(part)
@@ -180,9 +180,15 @@ def run() -> None:
         action="store_true",
         help="Print out the results with just simple prints",
     )
+    parser.add_argument(
+        "-r",
+        "--run-day",
+        type=int,
+        help="Force run a specific day, bypassing any caching",
+    )
     args = parser.parse_args()
 
     if args.simple:
-        run_basic(args.year)
+        run_basic(args.year, run_day=args.run_day)
     else:
-        run_complex(args.year)
+        run_complex(args.year, run_day=args.run_day)
