@@ -24,6 +24,9 @@ pdbpp = "^0.10.2"
 pytest = "^6.1.2"
 pytest-clarity = "^0.3.0-alpha.0"
 
+[tool.poetry.scripts]
+year = 'advent_of_code.runner:run'
+
 [tool.black]
 line-length = 100
 target-version = ['py38']

@@ -16,6 +16,3 @@ unit_test:
 
 install_git_hooks:
 	@ln -s `pwd`/.hooks/pre-push .git/hooks/pre-push
-
-run:
-	@PYTHONPATH=src poetry run python run_all.py
