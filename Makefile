@@ -1,8 +1,8 @@
 mypy:
-	@poetry run mypy src/advent_of_code/*
+	@poetry run mypy src/advent_of_code/* tests/*/*
 
 flake8:
-	@poetry run flake8 src/advent_of_code/*
+	@poetry run flake8 src/advent_of_code/* tests/*/*
 
 lint: mypy flake8
 

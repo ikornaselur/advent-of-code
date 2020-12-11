@@ -66,10 +66,10 @@ class Target:
 
     def get_path(self: "Target") -> str:
         root = os.path.dirname(os.path.abspath(__file__))
-        return os.path.join(root, f"year_{self.year}", f"day_{self.day}")
+        return os.path.join(root, f"year_{self.year}", f"day_{self.day:02}")
 
     def get_solution(self: "Target", part: Literal[1, 2]) -> Solution:
-        day = import_module(f"advent_of_code.year_{self.year}.day_{self.day}")
+        day = import_module(f"advent_of_code.year_{self.year}.day_{self.day:02}")
         Part = getattr(day, f"Part{part}")
 
         return Part().get_solution()
@@ -86,7 +86,7 @@ def discover(year: Optional[int] = None) -> Iterator[Target]:
 
     for year in year_range:
         for day in range(1, 25):
-            if not os.path.exists(f"./src/advent_of_code/year_{year}/day_{day}"):
+            if not os.path.exists(f"./src/advent_of_code/year_{year}/day_{day:02}"):
                 # Day not done yet, assume no further days this year
                 break
 

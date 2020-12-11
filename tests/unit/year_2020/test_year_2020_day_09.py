@@ -1,4 +1,7 @@
-from advent_of_code.year_2020.day_9 import get_first_invalid, get_contiguous_set
+from advent_of_code.year_2020.day_09 import (
+    get_contiguous_set,
+    get_first_invalid,
+)
 
 
 def test_get_first_invalid() -> None:

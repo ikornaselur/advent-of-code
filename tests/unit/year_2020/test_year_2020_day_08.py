@@ -1,4 +1,4 @@
-from advent_of_code.year_2020.day_8 import (
+from advent_of_code.year_2020.day_08 import (
     Instruction,
     parse_instruction,
     run_instructions,

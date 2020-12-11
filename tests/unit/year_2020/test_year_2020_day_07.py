@@ -1,4 +1,4 @@
-from advent_of_code.year_2020.day_7 import (
+from advent_of_code.year_2020.day_07 import (
     bag_levels,
     can_contain,
     parse_rule,

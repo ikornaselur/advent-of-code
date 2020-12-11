@@ -1,4 +1,4 @@
-from advent_of_code.year_2020.day_6 import count_yesses, count_all_answered_yes
+from advent_of_code.year_2020.day_06 import count_all_answered_yes, count_yesses
 
 
 def test_count_yesses() -> None:

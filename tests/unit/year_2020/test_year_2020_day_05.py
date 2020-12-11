@@ -1,4 +1,4 @@
-from advent_of_code.year_2020.day_5 import decode_seat
+from advent_of_code.year_2020.day_05 import decode_seat
 
 
 def test_decode_seat() -> None:

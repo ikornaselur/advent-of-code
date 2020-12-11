@@ -1,4 +1,4 @@
-from advent_of_code.year_2020.day_4 import validate_entry
+from advent_of_code.year_2020.day_04 import validate_entry
 
 
 def test_validate_entry_byr() -> None:

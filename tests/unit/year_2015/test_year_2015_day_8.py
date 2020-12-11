@@ -1,4 +1,4 @@
-from advent_of_code.year_2015.day_8 import total_chars, total_memory, encode
+from advent_of_code.year_2015.day_8 import encode, total_chars, total_memory
 
 
 def test_total_chars() -> None:

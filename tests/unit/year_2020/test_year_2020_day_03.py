@@ -1,4 +1,4 @@
-from advent_of_code.year_2020.day_3 import traverse_map
+from advent_of_code.year_2020.day_03 import traverse_map
 
 
 def test_traverse_map() -> None:
