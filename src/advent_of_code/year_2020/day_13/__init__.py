@@ -1,5 +1,3 @@
-import math
-from functools import reduce
 from typing import Dict, List, Tuple
 
 from advent_of_code import Problem
@@ -31,8 +29,13 @@ def two_bus_departure(bus_1: Tuple[int, int], bus_2: Tuple[int, int]) -> Tuple[i
     x_0 = x_star * p
 
     t = 0
+    old_x = []
     while (x := x_0 + (b // gcd) * t) < 0:
+        old_x.append(x)
         t -= 1
+        if len(old_x) == 2:
+            diff = old_x[1] - old_x[0]
+            t = x // diff
 
     next_x = x_0 + (b // gcd) * (t - 1)
 
@@ -52,19 +55,11 @@ def find_earliest_bus(earliest_departure: int, buses: List[int]) -> Tuple[int, i
 
 
 def find_earliest_subsequent(buses_raw: str) -> int:
-    """
-    For buses a, b and c:
-        1. Find the matching departure and cycle time for a and b
-        2. Treat the output from a and b as a single bus x
-        3. Find the matching departure and cycle time for x and c
-    """
     buses = [(int(bus), idx) for idx, bus in enumerate(buses_raw.split(",")) if bus != "x"]
 
     out = two_bus_departure(buses[0], buses[1])
-
     for bus in buses[2:]:
-        temp = (out[0], out[0] - out[1])
-        out = two_bus_departure(temp, bus)
+        out = two_bus_departure((out[0], out[0] - out[1]), bus)
 
     return out[1]
 
