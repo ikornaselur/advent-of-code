@@ -1,4 +1,4 @@
-from advent_of_code.year_2020.day_17 import Simulation3D
+from advent_of_code.year_2020.day_17 import Simulation3D, Simulation4D
 
 
 def test_initialise_world() -> None:
@@ -130,3 +130,18 @@ def test_boot_cycle() -> None:
         simulation.tick()
 
     assert sum(simulation.world.values()) == 112
+
+
+def test_boot_cycle_4d() -> None:
+    initial_slice = [
+        ".#.",
+        "..#",
+        "###",
+    ]
+
+    simulation = Simulation4D(initial_slice)
+
+    for _ in range(6):
+        simulation.tick()
+
+    assert sum(simulation.world.values()) == 848
