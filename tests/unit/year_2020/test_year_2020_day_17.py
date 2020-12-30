@@ -1,3 +1,4 @@
+import pytest
 from advent_of_code.year_2020.day_17 import Simulation3D, Simulation4D
 
 
@@ -117,6 +118,7 @@ def test_tick() -> None:
     )
 
 
+@pytest.mark.skip(reason="Slow")
 def test_boot_cycle() -> None:
     initial_slice = [
         ".#.",
@@ -132,6 +134,7 @@ def test_boot_cycle() -> None:
     assert sum(simulation.world.values()) == 112
 
 
+@pytest.mark.skip(reason="Slow")
 def test_boot_cycle_4d() -> None:
     initial_slice = [
         ".#.",

@@ -55,7 +55,7 @@ def validate_entry(entry: str) -> bool:
 class Part1(Problem):
     def get_solution(self: "Part1") -> int:
         puzzle_input = self.get_input(__file__)
-        entries = [entry.replace("\n", " ") for entry in "".join(puzzle_input).split("\n\n")]
+        entries = " ".join(puzzle_input).split("  ")
 
         valid = 0
 
@@ -70,7 +70,7 @@ class Part1(Problem):
 class Part2(Problem):
     def get_solution(self: "Part2") -> int:
         puzzle_input = self.get_input(__file__)
-        entries = [entry.replace("\n", " ") for entry in "".join(puzzle_input).split("\n\n")]
+        entries = " ".join(puzzle_input).split("  ")
 
         valid = 0
 
