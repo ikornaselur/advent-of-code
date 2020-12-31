@@ -1,7 +1,7 @@
 from advent_of_code.year_2020.day_19 import count_valid_strings, parse_rule
 
 
-def test_parse_rules() -> None:
+def test_parse_rule() -> None:
     rules = [
         "0: 1 2",
         '1: "a"',
@@ -13,6 +13,18 @@ def test_parse_rules() -> None:
     assert parse_rule(rules, 1) == "a"
     assert parse_rule(rules, 2) == "(ab|ba)"
     assert parse_rule(rules, 3) == "b"
+
+
+def test_parse_rule_with_cycle() -> None:
+    rules = [
+        "0: a",
+        "1: b",
+        "2: 0 | 1 2",
+    ]
+
+    assert parse_rule(rules, 2, max_cycle=1) == "(a|ba)"
+    assert parse_rule(rules, 2, max_cycle=2) == "(a|b(a|ba))"
+    assert parse_rule(rules, 2, max_cycle=3) == "(a|b(a|b(a|ba)))"
 
 
 def test_count_valid_strings() -> None:
