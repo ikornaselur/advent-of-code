@@ -29,11 +29,9 @@ fn part1(input: &str) -> u32 {
         let numbers = line
             .chars()
             .filter(|c| c.is_ascii_digit())
-            .collect::<Vec<char>>();
-        let first = numbers.first().unwrap();
-        let last = numbers.last().unwrap();
-        let value = format!("{}{}", first, last).parse::<u32>().unwrap();
-        acc + value
+            .map(|c| c.to_digit(10).unwrap())
+            .collect::<Vec<u32>>();
+        acc + numbers.first().unwrap() * 10 + numbers.last().unwrap()
     })
 }
 
@@ -52,11 +50,7 @@ fn part2(input: &str) -> u32 {
                 }
             }
         }
-        // Get the left most and right most number in the string
-        let first = numbers.first().unwrap();
-        let last = numbers.last().unwrap();
-        let value = format!("{}{}", first, last).parse::<u32>().unwrap();
-        acc + value
+        acc + numbers.first().unwrap() * 10 + numbers.last().unwrap()
     })
 }
 
