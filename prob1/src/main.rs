@@ -1,13 +1,11 @@
+const INPUT: &str = include_str!("../input.txt");
+
 fn main() {
-    let input = include_str!("../input.txt");
-
-    println!("# Problem 1");
-
     println!("## Part 1");
-    println!(" > {}", part1(input));
+    println!(" > {}", part1(INPUT));
 
     println!("## Part 2");
-    println!(" > {}", part2(input));
+    println!(" > {}", part2(INPUT));
 }
 
 // Create a text to digit map, converting digits "one" to "nine" to 1 to 9
@@ -58,27 +56,16 @@ fn part2(input: &str) -> u32 {
 mod tests {
     use super::*;
 
+    const PART_1_TEST_INPUT: &str = include_str!("../part_1_test.txt");
+    const PART_2_TEST_INPUT: &str = include_str!("../part_2_test.txt");
+
     #[test]
     fn test_part1() {
-        let input = "1abc2
-            pqr3stu8vwx
-            a1b2c3d4e5f
-            treb7uchet";
-
-        assert_eq!(part1(input), 142);
+        assert_eq!(part1(PART_1_TEST_INPUT), 142);
     }
 
     #[test]
     fn test_part2() {
-        let input = "two1nine
-            eightwothree
-            abcone2threexyz
-            xtwone3four
-            4nineeightseven2
-            zoneight234
-            7pqrstsixteen";
-
-        println!("input: {}", input);
-        assert_eq!(part2(input), 281);
+        assert_eq!(part2(PART_2_TEST_INPUT), 281);
     }
 }
