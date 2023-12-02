@@ -70,6 +70,25 @@ impl Game {
         }
         false
     }
+
+    fn min_power(&self) -> u32 {
+        let mut min_red = 0;
+        let mut min_green = 0;
+        let mut min_blue = 0;
+
+        for round in &self.rounds {
+            if let Some(amount) = round.red {
+                min_red = std::cmp::max(min_red, amount);
+            }
+            if let Some(amount) = round.green {
+                min_green = std::cmp::max(min_green, amount);
+            }
+            if let Some(amount) = round.blue {
+                min_blue = std::cmp::max(min_blue, amount);
+            }
+        }
+        min_red * min_green * min_blue
+    }
 }
 
 fn main() {
@@ -95,7 +114,10 @@ fn part1(input: &str) -> u32 {
 }
 
 fn part2(input: &str) -> u32 {
-    0
+    input
+        .lines()
+        .map(Game::from_line)
+        .fold(0, |acc, game| acc + game.min_power())
 }
 
 #[cfg(test)]
