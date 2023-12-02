@@ -1,5 +1,77 @@
 const INPUT: &str = include_str!("../input.txt");
 
+#[derive(Debug, PartialEq)]
+struct Game {
+    num: u32,
+    rounds: Vec<Round>,
+}
+
+#[derive(Debug, PartialEq)]
+struct Round {
+    red: Option<u32>,
+    green: Option<u32>,
+    blue: Option<u32>,
+}
+
+impl Game {
+    fn from_line(line: &str) -> Self {
+        let mut parts = line.split(": ");
+        let num = parts
+            .next()
+            .unwrap()
+            .trim_start_matches("Game ")
+            .parse::<u32>()
+            .unwrap();
+
+        let rounds_str_parts = parts.next().unwrap().split("; ");
+        let rounds = rounds_str_parts
+            .map(|round_str| {
+                let mut round = Round {
+                    red: None,
+                    green: None,
+                    blue: None,
+                };
+                let colours = round_str.split(", ");
+                for colour in colours {
+                    let mut parts = colour.split(' ');
+                    let amount = parts.next().unwrap().parse::<u32>().unwrap();
+                    let colour = parts.next().unwrap();
+                    match colour {
+                        "red" => round.red = Some(amount),
+                        "green" => round.green = Some(amount),
+                        "blue" => round.blue = Some(amount),
+                        _ => panic!("Unknown colour"),
+                    }
+                }
+                round
+            })
+            .collect();
+
+        Game { num, rounds }
+    }
+
+    fn above_max(&self, red: u32, green: u32, blue: u32) -> bool {
+        for round in &self.rounds {
+            if let Some(amount) = round.red {
+                if amount > red {
+                    return true;
+                }
+            }
+            if let Some(amount) = round.green {
+                if amount > green {
+                    return true;
+                }
+            }
+            if let Some(amount) = round.blue {
+                if amount > blue {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+}
+
 fn main() {
     println!("## Part 1");
     println!(" > {}", part1(INPUT));
@@ -13,50 +85,13 @@ fn part1(input: &str) -> u32 {
     let green = 13;
     let blue = 14;
 
-    let mut result = 0;
-
-    'outer: for line in input.lines() {
-        let mut parts = line.split(':');
-
-        let game_number = parts
-            .next()
-            .unwrap()
-            .trim_start_matches("Game ")
-            .parse::<u32>()
-            .unwrap();
-
-        let rounds = parts.next().unwrap().split(';');
-
-        for round in rounds {
-            for colour in round.split(',') {
-                let mut parts = colour.trim().split(' ');
-                let amount = parts.next().unwrap().parse::<u32>().unwrap();
-                let colour = parts.next().unwrap();
-                match colour {
-                    "red" => {
-                        if amount > red {
-                            continue 'outer;
-                        }
-                    }
-                    "green" => {
-                        if amount > green {
-                            continue 'outer;
-                        }
-                    }
-                    "blue" => {
-                        if amount > blue {
-                            continue 'outer;
-                        }
-                    }
-                    _ => panic!("Unknown colour"),
-                }
-            }
+    input.lines().map(Game::from_line).fold(0, |acc, game| {
+        if game.above_max(red, green, blue) {
+            acc
+        } else {
+            acc + game.num
         }
-
-        result += game_number;
-    }
-
-    result
+    })
 }
 
 fn part2(input: &str) -> u32 {
@@ -77,6 +112,37 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(PART_2_TEST_INPUT), 0);
+        assert_eq!(part2(PART_2_TEST_INPUT), 2286);
+    }
+
+    #[test]
+    fn test_game_from_line() {
+        let line = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green";
+
+        let game = Game::from_line(line);
+
+        assert_eq!(
+            game,
+            Game {
+                num: 1,
+                rounds: vec![
+                    Round {
+                        red: Some(4),
+                        green: None,
+                        blue: Some(3),
+                    },
+                    Round {
+                        red: Some(1),
+                        green: Some(2),
+                        blue: Some(6),
+                    },
+                    Round {
+                        red: None,
+                        green: Some(2),
+                        blue: None,
+                    },
+                ],
+            }
+        );
     }
 }
