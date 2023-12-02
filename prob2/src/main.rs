@@ -1,3 +1,5 @@
+use advent_core::error::AdventError;
+
 const INPUT: &str = include_str!("../input.txt");
 
 #[derive(Debug, PartialEq)]
@@ -14,40 +16,41 @@ struct Round {
 }
 
 impl Game {
-    fn from_line(line: &str) -> Self {
+    fn try_from_line(line: &str) -> Result<Self, AdventError> {
         let mut parts = line.split(": ");
         let num = parts
             .next()
-            .unwrap()
+            .ok_or(AdventError::ParseError)?
             .trim_start_matches("Game ")
-            .parse::<u32>()
-            .unwrap();
+            .parse::<u32>()?;
 
-        let rounds_str_parts = parts.next().unwrap().split("; ");
-        let rounds = rounds_str_parts
-            .map(|round_str| {
-                let mut round = Round {
-                    red: None,
-                    green: None,
-                    blue: None,
-                };
-                let colours = round_str.split(", ");
-                for colour in colours {
-                    let mut parts = colour.split(' ');
-                    let amount = parts.next().unwrap().parse::<u32>().unwrap();
-                    let colour = parts.next().unwrap();
-                    match colour {
-                        "red" => round.red = Some(amount),
-                        "green" => round.green = Some(amount),
-                        "blue" => round.blue = Some(amount),
-                        _ => panic!("Unknown colour"),
-                    }
+        let rounds_str_parts = parts.next().ok_or(AdventError::ParseError)?.split("; ");
+        let mut rounds = Vec::new();
+        for round_str in rounds_str_parts {
+            let mut round = Round {
+                red: None,
+                green: None,
+                blue: None,
+            };
+            let colours = round_str.split(", ");
+            for colour in colours {
+                let mut parts = colour.split(' ');
+                let amount = parts
+                    .next()
+                    .ok_or(AdventError::ParseError)?
+                    .parse::<u32>()?;
+                let colour = parts.next().ok_or(AdventError::ParseError)?;
+                match colour {
+                    "red" => round.red = Some(amount),
+                    "green" => round.green = Some(amount),
+                    "blue" => round.blue = Some(amount),
+                    _ => panic!("Unknown colour"),
                 }
-                round
-            })
-            .collect();
+            }
+            rounds.push(round);
+        }
 
-        Game { num, rounds }
+        Ok(Game { num, rounds })
     }
 
     fn above_max(&self, red: u32, green: u32, blue: u32) -> bool {
@@ -91,33 +94,39 @@ impl Game {
     }
 }
 
-fn main() {
+fn main() -> Result<(), AdventError> {
     println!("## Part 1");
-    println!(" > {}", part1(INPUT));
+    println!(" > {}", part1(INPUT)?);
 
     println!("## Part 2");
-    println!(" > {}", part2(INPUT));
+    println!(" > {}", part2(INPUT)?);
+
+    Ok(())
 }
 
-fn part1(input: &str) -> u32 {
+fn part1(input: &str) -> Result<u32, AdventError> {
     let red = 12;
     let green = 13;
     let blue = 14;
 
-    input.lines().map(Game::from_line).fold(0, |acc, game| {
-        if game.above_max(red, green, blue) {
-            acc
-        } else {
-            acc + game.num
-        }
-    })
-}
-
-fn part2(input: &str) -> u32 {
     input
         .lines()
-        .map(Game::from_line)
-        .fold(0, |acc, game| acc + game.min_power())
+        .map(Game::try_from_line)
+        .try_fold(0, |acc, game| {
+            let game = game?;
+            if game.above_max(red, green, blue) {
+                Ok(acc)
+            } else {
+                Ok(acc + game.num)
+            }
+        })
+}
+
+fn part2(input: &str) -> Result<u32, AdventError> {
+    input
+        .lines()
+        .map(Game::try_from_line)
+        .try_fold(0, |acc, game| Ok(acc + game?.min_power()))
 }
 
 #[cfg(test)]
@@ -129,19 +138,19 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(PART_1_TEST_INPUT), 8);
+        assert_eq!(part1(PART_1_TEST_INPUT).unwrap(), 8);
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(PART_2_TEST_INPUT), 2286);
+        assert_eq!(part2(PART_2_TEST_INPUT).unwrap(), 2286);
     }
 
     #[test]
     fn test_game_from_line() {
         let line = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green";
 
-        let game = Game::from_line(line);
+        let game = Game::try_from_line(line).unwrap();
 
         assert_eq!(
             game,
