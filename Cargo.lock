@@ -19,3 +19,10 @@ version = "0.1.0"
 dependencies = [
  "advent_core",
 ]
+
+[[package]]
+name = "prob3"
+version = "0.1.0"
+dependencies = [
+ "advent_core",
+]
