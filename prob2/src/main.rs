@@ -1,4 +1,5 @@
 use advent_core::error::AdventError;
+use advent_core::parse_error;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -20,11 +21,14 @@ impl Game {
         let mut parts = line.split(": ");
         let num = parts
             .next()
-            .ok_or(AdventError::ParseError)?
+            .ok_or(parse_error!("Unable to parse parts from line"))?
             .trim_start_matches("Game ")
             .parse::<u32>()?;
 
-        let rounds_str_parts = parts.next().ok_or(AdventError::ParseError)?.split("; ");
+        let rounds_str_parts = parts
+            .next()
+            .ok_or(parse_error!("Unable to parse rounds from string"))?
+            .split("; ");
         let mut rounds = Vec::new();
         for round_str in rounds_str_parts {
             let mut round = Round {
@@ -37,9 +41,9 @@ impl Game {
                 let mut parts = colour.split(' ');
                 let amount = parts
                     .next()
-                    .ok_or(AdventError::ParseError)?
+                    .ok_or(parse_error!("Unable to parse amount"))?
                     .parse::<u32>()?;
-                let colour = parts.next().ok_or(AdventError::ParseError)?;
+                let colour = parts.next().ok_or(parse_error!("Unable to parse colour"))?;
                 match colour {
                     "red" => round.red = Some(amount),
                     "green" => round.green = Some(amount),
