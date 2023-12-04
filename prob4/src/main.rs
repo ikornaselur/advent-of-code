@@ -4,8 +4,8 @@ use std::collections::HashSet;
 const INPUT: &str = include_str!("../input.txt");
 
 struct Card {
-    winning_numbers: Vec<u32>,
-    playing_numbers: Vec<u32>,
+    winning_numbers: HashSet<u32>,
+    playing_numbers: HashSet<u32>,
 }
 
 impl Card {
@@ -25,15 +25,13 @@ impl Card {
         let winning_numbers = numbers
             .next()
             .ok_or(AdventError::InvalidInput)?
-            .split(' ')
-            .filter(|n| !n.is_empty())
+            .split_whitespace()
             .map(|n| n.parse().unwrap())
             .collect();
         let playing_numbers = numbers
             .next()
             .ok_or(AdventError::InvalidInput)?
-            .split(' ')
-            .filter(|n| !n.is_empty())
+            .split_whitespace()
             .map(|n| n.parse().unwrap())
             .collect();
 
@@ -48,15 +46,21 @@ impl Card {
     /// Taking the count of overlapping numbers (how many of the playing numbers are winning) and
     /// return 2 to the power of that number - 1
     fn get_score(&self) -> u32 {
-        let playing_numbers: HashSet<_> = self.playing_numbers.iter().collect();
-        let winning_numbers: HashSet<_> = self.winning_numbers.iter().collect();
-        let overlapping_numbers = playing_numbers.intersection(&winning_numbers).count();
-
-        if overlapping_numbers == 0 {
+        let matches = self.get_match_count();
+        if matches == 0 {
             return 0;
         }
 
-        2u32.pow(overlapping_numbers as u32 - 1)
+        2u32.pow(matches as u32 - 1)
+    }
+
+    /// Get matches count
+    ///
+    /// Return the number of matching numbers between the playing and winning numbers
+    fn get_match_count(&self) -> usize {
+        self.playing_numbers
+            .intersection(&self.winning_numbers)
+            .count()
     }
 }
 
@@ -80,7 +84,26 @@ fn part1(input: &str) -> Result<u32, AdventError> {
 }
 
 fn part2(input: &str) -> Result<u32, AdventError> {
-    Ok(0)
+    let mut cards = input
+        .lines()
+        .map(Card::from_str)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let mut counts = vec![1; cards.len()];
+
+    for (idx, card) in cards.iter_mut().enumerate() {
+        let count = counts[idx];
+        let matches = card.get_match_count();
+        if matches == 0 {
+            continue;
+        }
+
+        for c in counts.iter_mut().skip(idx + 1).take(matches) {
+            *c += count;
+        }
+    }
+
+    Ok(counts.iter().sum())
 }
 
 #[cfg(test)]
@@ -97,7 +120,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(PART_2_TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(PART_2_TEST_INPUT).unwrap(), 30);
     }
 
     #[test]
@@ -105,7 +128,15 @@ mod tests {
         let input = "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53";
         let card = Card::from_str(input).unwrap();
 
-        assert_eq!(card.winning_numbers, vec![41, 48, 83, 86, 17],);
-        assert_eq!(card.playing_numbers, vec![83, 86, 6, 31, 17, 9, 48, 53],);
+        assert_eq!(
+            card.winning_numbers,
+            vec![41, 48, 83, 86, 17].into_iter().collect::<HashSet<_>>()
+        );
+        assert_eq!(
+            card.playing_numbers,
+            vec![83, 86, 6, 31, 17, 9, 48, 53]
+                .into_iter()
+                .collect::<HashSet<_>>()
+        );
     }
 }
