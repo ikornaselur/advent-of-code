@@ -51,11 +51,12 @@ struct Card(u8);
 impl Card {
     fn new(card: char) -> Self {
         match card {
-            'A' => Self(14),
+            '*' => Self(1), // A part 2 joker
             'T' => Self(10),
             'J' => Self(11),
             'Q' => Self(12),
             'K' => Self(13),
+            'A' => Self(14),
             '2'..='9' => Self(card.to_digit(10).unwrap() as u8),
             _ => panic!("Invalid card: {}", card),
         }
@@ -91,30 +92,32 @@ impl Hand {
     }
 
     fn r#type(&self) -> HandType {
-        // Get card counts
-        let counts: HashMap<u8, u8> = self.0.iter().fold(HashMap::new(), |mut map, card| {
+        let mut counts: HashMap<u8, u8> = self.0.iter().fold(HashMap::new(), |mut map, card| {
             *map.entry(card.0).or_insert(0) += 1;
             map
         });
 
+        let jokers = counts.remove(&1).unwrap_or(0);
         let sorts = counts.values().len();
 
-        if sorts == 1 {
+        if jokers == 5 || sorts == 1 {
             return HandType::FiveOfAKind;
         }
         if sorts == 2 {
-            if counts.values().any(|&v| v == 4) {
+            if counts.values().any(|&v| v == (4 - jokers)) {
                 return HandType::FourOfAKind;
             }
-            if counts.values().any(|&v| v == 3) {
+            if counts.values().any(|&v| v == (3 - jokers)) {
+                // If we have 3 of a sort, then it doesn't matter if we have a joker or not, it's a
+                // full house
                 return HandType::FullHouse;
             }
         }
         if sorts == 3 {
-            if counts.values().any(|&v| v == 3) {
+            if counts.values().any(|&v| v == (3 - jokers)) {
                 return HandType::ThreeOfAKind;
             }
-            if counts.values().any(|&v| v == 2) {
+            if counts.values().any(|&v| v == (2 - jokers)) {
                 return HandType::TwoPair;
             }
         }
@@ -184,24 +187,24 @@ fn part1(input: &str) -> Result<u32, AdventError> {
 }
 
 fn part2(input: &str) -> Result<u32, AdventError> {
-    Ok(0)
+    // Replace the J with a * for part 2
+    part1(&input.replace('J', "*"))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const PART_1_TEST_INPUT: &str = include_str!("../part_1_test.txt");
-    const PART_2_TEST_INPUT: &str = include_str!("../part_2_test.txt");
+    const TEST_INPUT: &str = include_str!("../test.txt");
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(PART_1_TEST_INPUT).unwrap(), 6440);
+        assert_eq!(part1(TEST_INPUT).unwrap(), 6440);
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(PART_2_TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 5905);
     }
 
     #[test]
@@ -258,5 +261,35 @@ mod tests {
                 Hand::new("QQQJA"),
             ]
         );
+    }
+
+    #[test]
+    fn test_hand_type_with_joker() {
+        // Five of a kind
+        assert_eq!(Hand::new("7777*").r#type(), HandType::FiveOfAKind);
+        assert_eq!(Hand::new("7*77*").r#type(), HandType::FiveOfAKind);
+        assert_eq!(Hand::new("7**7*").r#type(), HandType::FiveOfAKind);
+        assert_eq!(Hand::new("*7***").r#type(), HandType::FiveOfAKind);
+        assert_eq!(Hand::new("*****").r#type(), HandType::FiveOfAKind);
+
+        // Four of a kind
+        assert_eq!(Hand::new("3777*").r#type(), HandType::FourOfAKind);
+        assert_eq!(Hand::new("377**").r#type(), HandType::FourOfAKind);
+        assert_eq!(Hand::new("37***").r#type(), HandType::FourOfAKind);
+        assert_eq!(Hand::new("3****").r#type(), HandType::FiveOfAKind); // Better than 4 of a kind
+
+        // Full house
+        assert_eq!(Hand::new("3377*").r#type(), HandType::FullHouse);
+        assert_eq!(Hand::new("337**").r#type(), HandType::FourOfAKind); // Better than full house
+
+        // Three of a kind
+        assert_eq!(Hand::new("3327*").r#type(), HandType::ThreeOfAKind);
+
+        // Two pair
+        // Is there any way to have a joker that turns into two pairs? With something like
+        // 2234* you would make the joker be a 2 for a three of a kind rather than two pair
+
+        // One pair
+        assert_eq!(Hand::new("2345*").r#type(), HandType::OnePair);
     }
 }

@@ -1,6 +1,5 @@
 use advent_core::error::AdventError;
 
-
 const INPUT: &str = include_str!("../input.txt");
 
 #[derive(Debug, PartialEq, Eq)]
@@ -117,7 +116,11 @@ impl Almanac {
             seed_ranges.push((*range_start, *range_len));
         }
 
-        Ok(Self { seeds, seed_ranges, maps })
+        Ok(Self {
+            seeds,
+            seed_ranges,
+            maps,
+        })
     }
 
     /// Convert a number through all the mappings of the almanac
