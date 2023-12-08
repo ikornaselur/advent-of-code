@@ -6,6 +6,16 @@ const INPUT: &str = include_str!("../input.txt");
 #[derive(Debug, PartialEq, Eq, Hash)]
 struct Node(String);
 
+impl Node {
+    fn is_start(&self) -> bool {
+        self.0.ends_with('A')
+    }
+
+    fn is_end(&self) -> bool {
+        self.0.ends_with('Z')
+    }
+}
+
 enum Direction {
     R,
     L,
@@ -77,6 +87,30 @@ impl Map {
     }
 }
 
+fn calculate_lcm(numbers: &[u64]) -> u64 {
+    // Return early if the list is empty
+    if numbers.is_empty() {
+        return 0;
+    }
+
+    // Find the LCM of two numbers
+    fn lcm_of_two(a: u64, b: u64) -> u64 {
+        a * b / gcd(a, b)
+    }
+
+    // Find the greatest common divisor (GCD) of two numbers
+    fn gcd(a: u64, b: u64) -> u64 {
+        if b == 0 {
+            a
+        } else {
+            gcd(b, a % b)
+        }
+    }
+
+    // Use the LCM of two numbers iteratively for the entire list
+    numbers.iter().cloned().fold(1, lcm_of_two)
+}
+
 fn main() -> Result<(), AdventError> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
@@ -115,8 +149,47 @@ fn part1(input: &str) -> Result<usize, AdventError> {
     Ok(steps_taken)
 }
 
-fn part2(input: &str) -> Result<u32, AdventError> {
-    Ok(0)
+fn part2(input: &str) -> Result<u64, AdventError> {
+    let map = Map::from_str(input)?;
+
+    // Get all start nodes
+    let start_nodes = map
+        .nodes
+        .iter()
+        .filter(|(node, _)| node.is_start())
+        .map(|(node, _)| node)
+        .collect::<Vec<&Node>>();
+    let mut distances = Vec::new();
+
+    // Get the individual nodes distances to an end
+    for node in start_nodes {
+        let mut current_node = Node(node.0.clone());
+        let mut steps_taken = 0;
+        loop {
+            let (left, right) =
+                map.nodes
+                    .get(&current_node)
+                    .ok_or(AdventError::ParseError(format!(
+                        "No node found for {}",
+                        current_node.0
+                    )))?;
+            let steps_idx = steps_taken % map.directions.len();
+            match map.directions[steps_idx] {
+                Direction::L => current_node = Node(left.0.clone()),
+                Direction::R => current_node = Node(right.0.clone()),
+            };
+            steps_taken += 1;
+            if current_node.is_end() {
+                break;
+            }
+        }
+        distances.push(steps_taken as u64);
+    }
+
+    // Calculate the least common multiple of all the distances
+    let lcm = calculate_lcm(&distances);
+
+    Ok(lcm)
 }
 
 #[cfg(test)]
@@ -133,7 +206,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(PART_2_TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(PART_2_TEST_INPUT).unwrap(), 6);
     }
 
     #[test]
@@ -141,5 +214,19 @@ mod tests {
         let map = Map::from_str(PART_1_TEST_INPUT).unwrap();
         assert_eq!(map.directions.len(), 3);
         assert_eq!(map.nodes.len(), 3);
+    }
+
+    #[test]
+    fn test_node_is_start() {
+        assert!(Node("AAA".to_string()).is_start());
+        assert!(Node("CBA".to_string()).is_start());
+        assert!(!Node("ABC".to_string()).is_start());
+    }
+
+    #[test]
+    fn test_node_is_end() {
+        assert!(Node("ZZZ".to_string()).is_end());
+        assert!(Node("XYZ".to_string()).is_end());
+        assert!(!Node("ABC".to_string()).is_end());
     }
 }
