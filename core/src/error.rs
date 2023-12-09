@@ -2,6 +2,8 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum AdventError {
+    #[error("Error: {0}")]
+    GenericError(String),
     #[error("Unable to convert character to digit")]
     ConversionError,
     #[error("Invalid input")]
@@ -29,5 +31,12 @@ macro_rules! invalid_coordinate {
 macro_rules! parse_error {
     ($e:expr) => {
         AdventError::ParseError($e.to_string())
+    };
+}
+
+#[macro_export]
+macro_rules! generic_error {
+    ($e:expr) => {
+        AdventError::GenericError($e.to_string())
     };
 }
