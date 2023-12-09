@@ -63,6 +63,46 @@ impl Sequence {
         // Add the last value of all the layers
         Ok(stack.iter().map(|layer| layer.last().unwrap()).sum())
     }
+
+    /// Find the previous value in the sequence
+    ///
+    /// This is basically the opposite of 'next_value', by finding what number would be before the
+    /// current sequence
+    ///
+    /// For the example above, with 0 3 6 9 12 15 we'd be looking for -3 at the start
+    fn previous_value(&self) -> Result<i64, AdventError> {
+        let mut stack = vec![self.numbers.clone()];
+
+        loop {
+            let current_layer = stack
+                .last_mut()
+                .ok_or(generic_error!("Unable to get current layer"))?;
+
+            // Break the loop if all the numbers are 0
+            if current_layer.iter().all(|&n| n == 0) {
+                break;
+            }
+
+            // Add the next layer
+            let next_layer = current_layer
+                .iter()
+                .zip(current_layer.iter().skip(1))
+                .map(|(&a, &b)| b - a)
+                .collect::<Vec<_>>();
+
+            stack.push(next_layer);
+        }
+
+        let mut last = 0;
+        for layer in stack.iter().rev() {
+            let first_val = layer
+                .first()
+                .ok_or(generic_error!("Unable to get first value"))?;
+            last = first_val - last;
+        }
+
+        Ok(last)
+    }
 }
 
 fn main() -> Result<(), AdventError> {
@@ -90,24 +130,33 @@ fn part1(input: &str) -> Result<i64, AdventError> {
 }
 
 fn part2(input: &str) -> Result<i64, AdventError> {
-    Ok(0)
+    let sequences = input
+        .lines()
+        .map(|line| line.parse::<Sequence>())
+        .collect::<Result<Vec<_>, _>>()?;
+    let sum_of_previous_values = sequences
+        .iter()
+        .map(|sequence| sequence.previous_value())
+        .collect::<Result<Vec<_>, _>>()?
+        .iter()
+        .sum::<i64>();
+    Ok(sum_of_previous_values)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const PART_1_TEST_INPUT: &str = include_str!("../part_1_test.txt");
-    const PART_2_TEST_INPUT: &str = include_str!("../part_2_test.txt");
+    const TEST_INPUT: &str = include_str!("../test.txt");
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(PART_1_TEST_INPUT).unwrap(), 114);
+        assert_eq!(part1(TEST_INPUT).unwrap(), 114);
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(PART_2_TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 2);
     }
 
     #[test]
@@ -151,5 +200,41 @@ mod tests {
                 .unwrap(),
             -5
         )
+    }
+
+    #[test]
+    fn test_sequence_previous_value() {
+        assert_eq!(
+            "1 2 3 4 5"
+                .parse::<Sequence>()
+                .unwrap()
+                .previous_value()
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            "10 13 16 21 30 45"
+                .parse::<Sequence>()
+                .unwrap()
+                .previous_value()
+                .unwrap(),
+            5
+        );
+        assert_eq!(
+            "0 -1 -2 -3 -4"
+                .parse::<Sequence>()
+                .unwrap()
+                .previous_value()
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            "2 4 7 11"
+                .parse::<Sequence>()
+                .unwrap()
+                .previous_value()
+                .unwrap(),
+            1
+        );
     }
 }
