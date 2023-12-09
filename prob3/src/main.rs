@@ -1,6 +1,7 @@
 use advent_core::error::AdventError;
 use advent_core::invalid_coordinate;
 use std::collections::{HashMap, HashSet};
+use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -44,19 +45,23 @@ enum Direction {
     BelowRight,
 }
 
-impl Schematic {
-    fn from_str(input: &str) -> Self {
+impl FromStr for Schematic {
+    type Err = AdventError;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
         let rows: Vec<String> = input.lines().map(|line| line.to_string()).collect();
         let height = rows.len();
         let width = rows[0].len();
-        Self {
+        Ok(Self {
             rows,
             width,
             height,
             gear_map: HashMap::new(),
-        }
+        })
     }
+}
 
+impl Schematic {
     /// Returns a list of all the part numbers in the schematic.
     ///
     /// A number in the schematic is considered a part number only if it is adjacent to any symbol
@@ -220,13 +225,13 @@ fn main() -> Result<(), AdventError> {
 }
 
 fn part1(input: &str) -> Result<u32, AdventError> {
-    let schematic = Schematic::from_str(input);
+    let schematic: Schematic = input.parse()?;
 
     Ok(schematic.get_part_numbers()?.iter().sum())
 }
 
 fn part2(input: &str) -> Result<u32, AdventError> {
-    let mut schematic = Schematic::from_str(input);
+    let mut schematic: Schematic = input.parse()?;
 
     schematic.build_gear_map()?;
 
@@ -261,14 +266,14 @@ mod tests {
 
     #[test]
     fn test_schematic_from_str() {
-        let schematic = Schematic::from_str(".#.\n123\n$*#");
+        let schematic: Schematic = ".#.\n123\n$*#".parse().unwrap();
 
         assert_eq!(schematic.rows, vec![".#.", "123", "$*#"]);
     }
 
     #[test]
     fn test_shift_coordinate() {
-        let schematic = Schematic::from_str(".#.\n123\n$*#");
+        let schematic: Schematic = ".#.\n123\n$*#".parse().unwrap();
 
         assert_eq!(schematic.shift_coordinate(Direction::Above, 0, 1), None);
         assert_eq!(
@@ -305,7 +310,7 @@ mod tests {
 
     #[test]
     fn test_get_char() {
-        let schematic = Schematic::from_str(".#.\n123\n$*#");
+        let schematic: Schematic = ".#.\n123\n$*#".parse().unwrap();
 
         assert_eq!(schematic.get_char(0, 1).unwrap(), '#');
         assert_eq!(schematic.get_char(2, 1).unwrap(), '*');
@@ -327,7 +332,7 @@ mod tests {
 
     #[test]
     fn test_is_adjacent_to_symbol() {
-        let schematic = Schematic::from_str("...\n123\n..#");
+        let schematic: Schematic = "...\n123\n..#".parse().unwrap();
 
         assert!(!schematic.is_adjacent_to_symbol(1, 0).unwrap());
         assert!(schematic.is_adjacent_to_symbol(1, 1).unwrap());
@@ -336,13 +341,13 @@ mod tests {
 
     #[test]
     fn test_get_part_numbers() {
-        let schematic = Schematic::from_str(".#.\n123\n..#\n...\n456");
+        let schematic: Schematic = ".#.\n123\n..#\n...\n456".parse().unwrap();
         assert_eq!(schematic.get_part_numbers().unwrap(), vec![123]);
     }
 
     #[test]
     fn test_build_gear_map() {
-        let mut schematic = Schematic::from_str(".*.\n123\n..#\n...\n456");
+        let mut schematic: Schematic = ".*.\n123\n..#\n...\n456".parse().unwrap();
 
         schematic.build_gear_map().unwrap();
 

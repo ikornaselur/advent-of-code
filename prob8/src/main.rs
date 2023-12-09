@@ -1,5 +1,6 @@
 use advent_core::error::AdventError;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -26,8 +27,10 @@ struct Map {
     directions: Vec<Direction>,
 }
 
-impl Map {
-    fn from_str(input: &str) -> Result<Self, AdventError> {
+impl FromStr for Map {
+    type Err = AdventError;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
         let mut lines = input.lines();
         // First line is the directions, which is a list of R and L (no spacing)
         let directions = lines
@@ -122,7 +125,7 @@ fn main() -> Result<(), AdventError> {
 }
 
 fn part1(input: &str) -> Result<usize, AdventError> {
-    let map = Map::from_str(input)?;
+    let map: Map = input.parse()?;
 
     // We'll follow the directions until we reach the end, which is ZZZ
     let mut current_node = Node("AAA".to_string());

@@ -1,4 +1,5 @@
 use advent_core::error::AdventError;
+use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -45,7 +46,8 @@ struct Almanac {
     maps: Vec<Map>,
 }
 
-impl Almanac {
+impl FromStr for Almanac {
+    type Err = AdventError;
     /// Parse input into an Almanac
     ///
     /// The input will start with a line listing the seeds, as such:
@@ -59,7 +61,7 @@ impl Almanac {
     ///     31 6 21
     ///
     /// each map can have any number of mappings listed under the title
-    fn from_str(input: &str) -> Result<Self, AdventError> {
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
         let mut lines = input.lines();
 
         // Get the seeds first
@@ -122,7 +124,8 @@ impl Almanac {
             maps,
         })
     }
-
+}
+impl Almanac {
     /// Convert a number through all the mappings of the almanac
     fn convert_number(&self, number: u64) -> u64 {
         let mut number = number;
@@ -144,7 +147,7 @@ fn main() -> Result<(), AdventError> {
 }
 
 fn part1(input: &str) -> Result<u64, AdventError> {
-    let almanac = Almanac::from_str(input)?;
+    let almanac: Almanac = input.parse()?;
 
     let mut lowest_number = u64::MAX;
 
@@ -159,7 +162,7 @@ fn part1(input: &str) -> Result<u64, AdventError> {
 }
 
 fn part2(input: &str) -> Result<u64, AdventError> {
-    let almanac = Almanac::from_str(input)?;
+    let almanac: Almanac = input.parse()?;
 
     let mut lowest_number = u64::MAX;
 
@@ -195,7 +198,7 @@ mod tests {
     fn test_alamanac_from_str() {
         let input = "seeds: 1 12 41 678\n\nfoo-to-bar map:\n10 20 4\n31 6 21\n\nbar-to-baz map:\n1 2 3\n4 5 6";
 
-        let almanac = Almanac::from_str(input).unwrap();
+        let almanac: Almanac = input.parse().unwrap();
 
         assert_eq!(almanac.seeds, vec![1, 12, 41, 678]);
         assert_eq!(almanac.maps.len(), 2);
@@ -262,7 +265,7 @@ mod tests {
 
     #[test]
     fn test_convert_number() {
-        let almanac = Almanac::from_str(TEST_INPUT).unwrap();
+        let almanac: Almanac = TEST_INPUT.parse().unwrap();
 
         assert_eq!(almanac.convert_number(79), 82);
     }

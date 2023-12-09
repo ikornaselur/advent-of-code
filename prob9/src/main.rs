@@ -5,7 +5,7 @@ use std::str::FromStr;
 const INPUT: &str = include_str!("../input.txt");
 
 struct Sequence {
-    numbers: Vec<i64>,
+    stack: Vec<Vec<i64>>,
 }
 
 impl FromStr for Sequence {
@@ -17,7 +17,29 @@ impl FromStr for Sequence {
             .map(|s| s.parse::<i64>())
             .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(Sequence { numbers })
+        let mut stack = vec![numbers];
+
+        loop {
+            let current_layer = stack
+                .last_mut()
+                .ok_or(generic_error!("Unable to get current layer"))?;
+
+            // Break the loop if all the numbers are 0
+            if current_layer.iter().all(|&n| n == 0) {
+                break;
+            }
+
+            // Add the next layer
+            let next_layer = current_layer
+                .iter()
+                .zip(current_layer.iter().skip(1))
+                .map(|(&a, &b)| b - a)
+                .collect::<Vec<_>>();
+
+            stack.push(next_layer);
+        }
+
+        Ok(Sequence { stack })
     }
 }
 
@@ -38,30 +60,8 @@ impl Sequence {
     /// The last layer adds a 0, which adds a 3+0 to the layer above, which will add 15+3+0 to the
     /// top layer, so the next value is 18
     fn next_value(&self) -> Result<i64, AdventError> {
-        let mut stack = vec![self.numbers.clone()];
-
-        loop {
-            let current_layer = stack
-                .last_mut()
-                .ok_or(generic_error!("Unable to get current layer"))?;
-
-            // Break the loop if all the numbers are 0
-            if current_layer.iter().all(|&n| n == 0) {
-                break;
-            }
-
-            // Add the next layer
-            let next_layer = current_layer
-                .iter()
-                .zip(current_layer.iter().skip(1))
-                .map(|(&a, &b)| b - a)
-                .collect::<Vec<_>>();
-
-            stack.push(next_layer);
-        }
-
         // Add the last value of all the layers
-        Ok(stack.iter().map(|layer| layer.last().unwrap()).sum())
+        Ok(self.stack.iter().map(|layer| layer.last().unwrap()).sum())
     }
 
     /// Find the previous value in the sequence
@@ -71,30 +71,8 @@ impl Sequence {
     ///
     /// For the example above, with 0 3 6 9 12 15 we'd be looking for -3 at the start
     fn previous_value(&self) -> Result<i64, AdventError> {
-        let mut stack = vec![self.numbers.clone()];
-
-        loop {
-            let current_layer = stack
-                .last_mut()
-                .ok_or(generic_error!("Unable to get current layer"))?;
-
-            // Break the loop if all the numbers are 0
-            if current_layer.iter().all(|&n| n == 0) {
-                break;
-            }
-
-            // Add the next layer
-            let next_layer = current_layer
-                .iter()
-                .zip(current_layer.iter().skip(1))
-                .map(|(&a, &b)| b - a)
-                .collect::<Vec<_>>();
-
-            stack.push(next_layer);
-        }
-
         let mut last = 0;
-        for layer in stack.iter().rev() {
+        for layer in self.stack.iter().rev() {
             let first_val = layer
                 .first()
                 .ok_or(generic_error!("Unable to get first value"))?;
@@ -116,9 +94,9 @@ fn main() -> Result<(), AdventError> {
 }
 
 fn part1(input: &str) -> Result<i64, AdventError> {
-    let sequences = input
+    let sequences: Vec<Sequence> = input
         .lines()
-        .map(|line| line.parse::<Sequence>())
+        .map(|line| line.parse())
         .collect::<Result<Vec<_>, _>>()?;
     let sum_of_next_values = sequences
         .iter()
@@ -130,9 +108,9 @@ fn part1(input: &str) -> Result<i64, AdventError> {
 }
 
 fn part2(input: &str) -> Result<i64, AdventError> {
-    let sequences = input
+    let sequences: Vec<Sequence> = input
         .lines()
-        .map(|line| line.parse::<Sequence>())
+        .map(|line| line.parse())
         .collect::<Result<Vec<_>, _>>()?;
     let sum_of_previous_values = sequences
         .iter()
@@ -163,7 +141,9 @@ mod tests {
     fn test_sequence_from_str() {
         let sequence = "1 2 3 4 5".parse::<Sequence>().unwrap();
 
-        assert_eq!(sequence.numbers, vec![1, 2, 3, 4, 5]);
+        assert_eq!(sequence.stack[0], vec![1, 2, 3, 4, 5]);
+        assert_eq!(sequence.stack[1], vec![1, 1, 1, 1]);
+        assert_eq!(sequence.stack[2], vec![0, 0, 0]);
     }
 
     #[test]

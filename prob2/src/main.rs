@@ -1,5 +1,6 @@
 use advent_core::error::AdventError;
 use advent_core::parse_error;
+use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -16,8 +17,10 @@ struct Round {
     blue: Option<u32>,
 }
 
-impl Game {
-    fn try_from_line(line: &str) -> Result<Self, AdventError> {
+impl FromStr for Game {
+    type Err = AdventError;
+
+    fn from_str(line: &str) -> Result<Self, Self::Err> {
         let mut parts = line.split(": ");
         let num = parts
             .next()
@@ -56,7 +59,9 @@ impl Game {
 
         Ok(Game { num, rounds })
     }
+}
 
+impl Game {
     fn above_max(&self, red: u32, green: u32, blue: u32) -> bool {
         for round in &self.rounds {
             if let Some(amount) = round.red {
@@ -115,7 +120,7 @@ fn part1(input: &str) -> Result<u32, AdventError> {
 
     input
         .lines()
-        .map(Game::try_from_line)
+        .map(str::parse::<Game>)
         .try_fold(0, |acc, game| {
             let game = game?;
             if game.above_max(red, green, blue) {
@@ -129,7 +134,7 @@ fn part1(input: &str) -> Result<u32, AdventError> {
 fn part2(input: &str) -> Result<u32, AdventError> {
     input
         .lines()
-        .map(Game::try_from_line)
+        .map(str::parse::<Game>)
         .try_fold(0, |acc, game| Ok(acc + game?.min_power()))
 }
 
@@ -154,7 +159,7 @@ mod tests {
     fn test_game_from_line() {
         let line = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green";
 
-        let game = Game::try_from_line(line).unwrap();
+        let game: Game = line.parse().unwrap();
 
         assert_eq!(
             game,
