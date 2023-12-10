@@ -36,7 +36,7 @@ macro_rules! parse_error {
 
 #[macro_export]
 macro_rules! generic_error {
-    ($e:expr) => {
-        AdventError::GenericError($e.to_string())
+    ($($t:tt)*) => {
+        AdventError::GenericError(format!($($t)*))
     };
 }

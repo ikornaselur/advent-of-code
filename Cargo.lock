@@ -17,6 +17,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "prob10"
+version = "0.1.0"
+dependencies = [
+ "advent_core",
+]
+
+[[package]]
 name = "prob2"
 version = "0.1.0"
 dependencies = [
