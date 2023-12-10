@@ -26,7 +26,7 @@ impl Direction {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum Pipe {
     Horizontal,
     Vertical,
@@ -251,6 +251,55 @@ impl PipeMap {
             }
         }
     }
+
+    /// Count how many tiles are closed inside the pipemap loop
+    ///
+    /// We do this by assuming the upper right corner is outisde the loop, then go through each row
+    /// by row and keep track of when we transition in to and out of the loop, counting each tile
+    /// we come across while inside the loop.
+    ///
+    /// NOTE: This assumes that all tiles that are not a part of the loop have been replaced with
+    /// just a Pipe::None
+    fn count_internal_tiles(&self) -> Result<usize, AdventError> {
+        let mut in_loop = false;
+        let mut count = 0;
+        let mut prev_corner: Option<&Pipe> = None;
+
+        for x in 0..self.height {
+            for y in 0..self.width {
+                let node = self.get_node((x, y))?;
+                match node {
+                    // Note: I know that the start in my input is a vertical pipe
+                    Pipe::Vertical | Pipe::Start => in_loop = !in_loop,
+                    Pipe::Horizontal => {}
+                    Pipe::CornerNorthEast | Pipe::CornerSouthEast => {
+                        prev_corner = Some(node);
+                    }
+                    Pipe::CornerNorthWest => {
+                        if let Some(prev_corner) = prev_corner {
+                            if prev_corner == &Pipe::CornerSouthEast {
+                                in_loop = !in_loop;
+                            }
+                        }
+                    }
+                    Pipe::CornerSouthWest => {
+                        if let Some(prev_corner) = prev_corner {
+                            if prev_corner == &Pipe::CornerNorthEast {
+                                in_loop = !in_loop;
+                            }
+                        }
+                    }
+                    Pipe::None => {
+                        if in_loop {
+                            count += 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(count)
+    }
 }
 
 fn main() -> Result<(), AdventError> {
@@ -295,8 +344,39 @@ fn part1(input: &str) -> Result<u32, AdventError> {
     Ok(steps)
 }
 
-fn part2(input: &str) -> Result<u32, AdventError> {
-    Ok(0)
+fn part2(input: &str) -> Result<usize, AdventError> {
+    let map: PipeMap = input.parse()?;
+
+    // Create an empty map to fill with _just_ the loop
+    let mut clean_map = PipeMap {
+        nodes: vec![vec![Pipe::None; map.width]; map.height],
+        height: map.height,
+        width: map.width,
+    };
+
+    // Thread the map until we reach the start again
+    let start_coord = map.find_start()?;
+    clean_map.nodes[start_coord.0][start_coord.1] = Pipe::Start;
+
+    let start_directions = map.get_start_directions()?;
+    let direction = start_directions[0].clone(); // We'll just pick one direction
+
+    let mut current_coord =
+        map.shift_coord(start_coord, direction.clone())
+            .ok_or(generic_error!(
+                "Invalid start coordinate: {:?}",
+                start_coord
+            ))?;
+    let mut from_direction = direction.opposite();
+
+    while current_coord != start_coord {
+        let current_node = map.get_node(current_coord)?;
+        clean_map.nodes[current_coord.0][current_coord.1] = current_node.clone();
+
+        (current_coord, from_direction) = map.get_next_node(current_coord, from_direction)?;
+    }
+
+    clean_map.count_internal_tiles()
 }
 
 #[cfg(test)]
@@ -313,7 +393,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(PART_2_TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(PART_2_TEST_INPUT).unwrap(), 8);
     }
 
     #[test]
