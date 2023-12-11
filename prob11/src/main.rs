@@ -1,7 +1,5 @@
 use advent_core::error::AdventError;
-use advent_core::generic_error;
 use std::collections::HashMap;
-use std::collections::VecDeque;
 use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
@@ -11,20 +9,7 @@ type Coord = (usize, usize);
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct Node {
     galaxy: bool,
-    distance: Option<usize>,
-}
-
-impl Node {
-    fn new(galaxy: bool) -> Self {
-        Node {
-            galaxy,
-            distance: None,
-        }
-    }
-
-    fn visited(&self) -> bool {
-        self.distance.is_some()
-    }
+    distance: usize,
 }
 
 #[derive(Debug, Default)]
@@ -40,62 +25,29 @@ impl DistanceMap {
             self.map.insert((from, to), distance);
         }
     }
-
-    fn get(&self, from: Coord, to: Coord) -> Option<&usize> {
-        if from > to {
-            self.map.get(&(to, from))
-        } else {
-            self.map.get(&(from, to))
-        }
-    }
 }
 
 /// An image is a list of strings, which contain "." for empty space and "#" for a galaxy
 struct Image {
-    map: Vec<Vec<bool>>, // true is a galaxy
+    map: Vec<Vec<bool>>,
+    row_scale: Vec<usize>,
+    column_scale: Vec<usize>,
 }
 
 impl Image {
-    /// Expand the image
-    ///
-    /// Each row and column that has no galaxies in it needs to be doubled up
-    ///
-    /// This means that the map before of
-    ///
-    /// ..#
-    /// #..
-    /// ...
-    ///
-    /// will expand to
-    ///
-    /// ...#
-    /// #...
-    /// ....
-    /// ....
-    fn expand(&mut self) {
-        // First iterare through the columns to expand
-        let mut col = 0;
-        while col < self.map[0].len() {
-            if self.map.iter().all(|row| !row[col]) {
-                // Add a new column
-                for row in &mut self.map {
-                    row.insert(col, false);
-                }
-                col += 1; // We skip the next column, since we just added it
-            }
-            col += 1;
-        }
+    /// Set the
+    fn set_scale(&mut self, amount: usize) {
+        self.row_scale = self
+            .map
+            .iter()
+            .map(|row| row.iter().any(|&value| value))
+            .map(|has_true| if has_true { 1 } else { amount })
+            .collect();
 
-        // Then we iterate through the rows as well
-        let mut row = 0;
-        while row < self.map.len() {
-            if self.map[row].iter().all(|&c| !c) {
-                // Add a new row
-                self.map.insert(row, vec![false; self.map[0].len()]);
-                row += 1; // We skip the next row, since we just added it
-            }
-            row += 1
-        }
+        self.column_scale = (0..self.map[0].len())
+            .map(|col_idx| self.map.iter().any(|row| row[col_idx]))
+            .map(|has_true| if has_true { 1 } else { amount })
+            .collect();
     }
 
     /// Get the distance map for this image
@@ -114,54 +66,40 @@ impl Image {
             }
         }
 
-        // Then we start from each galaxy and search outwards until we reach all the others
-        for galaxy_coord in galaxy_coords {
-            // Create a node map to visit
-            let mut node_map: Vec<Vec<Node>> = self
-                .map
-                .iter()
-                .map(|row| {
-                    row.iter()
-                        .map(|&galaxy| Node::new(galaxy))
-                        .collect::<Vec<Node>>()
-                })
-                .collect();
-            node_map[galaxy_coord.1][galaxy_coord.0].distance = Some(0);
+        // Then we start from each galaxy and calculate the distance to other galaxies
+        // We can simply calculate the difference between the x and y coordinates
+        //
+        // Examples:
+        //  if we have a galaxy at (0, 0) and (3, 3), the distance is 6
+        //  if we have a galaxy at (2, 3) and (4, 6), the distance is 5
+        for left_idx in 0..galaxy_coords.len() {
+            for right_idx in left_idx + 1..galaxy_coords.len() {
+                let left_coord = galaxy_coords[left_idx];
+                let right_coord = galaxy_coords[right_idx];
+                // Check if we would cross any nodes that are scaled
+                let mut distance = 0;
 
-            let mut to_visit: VecDeque<Coord> = VecDeque::from(vec![galaxy_coord]);
-
-            // Then we traverse the map
-            while let Some(coord) = to_visit.pop_front() {
-                let distance = node_map[coord.1][coord.0]
-                    .distance
-                    .ok_or(generic_error!("No distance for {:?}", coord))?;
-                // Check the 4 directions
-                for (x, y) in &[(0, 1), (0, -1), (1, 0), (-1, 0)] {
-                    let new_coord = (coord.0 as isize + x, coord.1 as isize + y);
-                    if new_coord.0 < 0
-                        || new_coord.1 < 0
-                        || new_coord.0 >= node_map[0].len() as isize
-                        || new_coord.1 >= node_map.len() as isize
-                    {
-                        // Out of bounds
-                        continue;
-                    }
-                    let new_coord = (new_coord.0 as usize, new_coord.1 as usize);
-                    if node_map[new_coord.1][new_coord.0].visited() {
-                        // Already visited
-                        continue;
-                    }
-                    if self.map[new_coord.1][new_coord.0] {
-                        // Galaxy
-                        node_map[new_coord.1][new_coord.0].distance = Some(distance + 1);
-                        to_visit.push_back(new_coord);
-                        distance_map.insert(galaxy_coord, new_coord, distance + 1);
-                    } else {
-                        // Empty space
-                        node_map[new_coord.1][new_coord.0].distance = Some(distance + 1);
-                        to_visit.push_back(new_coord);
-                    }
+                let (mut x, x_end) = if left_coord.0 < right_coord.0 {
+                    (left_coord.0, right_coord.0)
+                } else {
+                    (right_coord.0, left_coord.0)
+                };
+                while x < x_end {
+                    distance += self.column_scale[x];
+                    x += 1;
                 }
+
+                let (mut y, y_end) = if left_coord.1 < right_coord.1 {
+                    (left_coord.1, right_coord.1)
+                } else {
+                    (right_coord.1, left_coord.1)
+                };
+                while y < y_end {
+                    distance += self.row_scale[y];
+                    y += 1;
+                }
+
+                distance_map.insert(left_coord, right_coord, distance);
             }
         }
 
@@ -173,12 +111,16 @@ impl FromStr for Image {
     type Err = AdventError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let map = s
+        let map: Vec<_> = s
             .lines()
             .map(|line| line.chars().map(|c| c == '#').collect())
             .collect();
 
-        Ok(Image { map })
+        Ok(Image {
+            map: map.clone(),
+            row_scale: vec![1; map.len()],
+            column_scale: vec![1; map[0].len()],
+        })
     }
 }
 
@@ -195,37 +137,48 @@ fn main() -> Result<(), AdventError> {
 fn part1(input: &str) -> Result<usize, AdventError> {
     let mut image: Image = input.parse()?;
 
-    image.expand();
+    image.set_scale(2);
 
     let distance_map = image.get_distance_map()?;
 
     Ok(distance_map.map.values().sum())
 }
 
-fn part2(input: &str) -> Result<u32, AdventError> {
-    Ok(0)
+fn part2(input: &str) -> Result<usize, AdventError> {
+    let mut image: Image = input.parse()?;
+
+    image.set_scale(1000000);
+
+    let distance_map = image.get_distance_map()?;
+
+    Ok(distance_map.map.values().sum())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const PART_1_TEST_INPUT: &str = include_str!("../part_1_test.txt");
-    const PART_2_TEST_INPUT: &str = include_str!("../part_2_test.txt");
+    const TEST_INPUT: &str = include_str!("../test.txt");
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(PART_1_TEST_INPUT).unwrap(), 374);
+        assert_eq!(part1(TEST_INPUT).unwrap(), 374);
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(PART_2_TEST_INPUT).unwrap(), 0);
+        let mut image: Image = TEST_INPUT.parse().unwrap();
+
+        image.set_scale(100);
+
+        let distance_map = image.get_distance_map().unwrap();
+
+        assert_eq!(distance_map.map.values().sum::<usize>(), 8410)
     }
 
     #[test]
     fn test_image_from_str() {
-        let image: Image = PART_1_TEST_INPUT.parse().unwrap();
+        let image: Image = TEST_INPUT.parse().unwrap();
 
         assert_eq!(image.map.len(), 10);
         assert_eq!(
@@ -236,28 +189,31 @@ mod tests {
 
     #[test]
     fn test_image_expand_base_test() {
+        // ...
+        // #..
+        // ..#
         let mut image: Image = "...\n#..\n..#".parse().unwrap();
 
-        assert_eq!(image.map.len(), 3);
-        assert_eq!(image.map[0].len(), 3);
+        assert_eq!(image.row_scale, vec![1, 1, 1]);
+        assert_eq!(image.column_scale, vec![1, 1, 1]);
 
-        image.expand();
+        image.set_scale(2);
 
-        assert_eq!(image.map.len(), 4);
-        assert_eq!(image.map[0].len(), 4);
+        assert_eq!(image.row_scale, vec![2, 1, 1]);
+        assert_eq!(image.column_scale, vec![1, 2, 1]);
     }
 
     #[test]
     fn test_image_expand_bigger_input() {
-        let mut image: Image = PART_1_TEST_INPUT.parse().unwrap();
+        let mut image: Image = TEST_INPUT.parse().unwrap();
 
-        assert_eq!(image.map.len(), 10);
-        assert_eq!(image.map[0].len(), 10);
+        assert_eq!(image.row_scale, vec![1; 10]);
+        assert_eq!(image.column_scale, vec![1; 10]);
 
-        image.expand();
+        image.set_scale(2);
 
-        assert_eq!(image.map.len(), 12);
-        assert_eq!(image.map[0].len(), 13);
+        assert_eq!(image.row_scale, vec![1, 1, 1, 2, 1, 1, 1, 2, 1, 1]);
+        assert_eq!(image.column_scale, vec![1, 1, 2, 1, 1, 2, 1, 1, 2, 1]);
     }
 
     #[test]
@@ -268,36 +224,5 @@ mod tests {
         distance_map.insert((1, 0), (0, 0), 1);
 
         assert_eq!(distance_map.map.len(), 1);
-    }
-
-    #[test]
-    fn test_distance_map_get_by_sorted_tuple() {
-        let mut distance_map = DistanceMap::default();
-
-        distance_map.insert((0, 0), (1, 0), 1);
-
-        assert_eq!(distance_map.get((0, 0), (1, 0)), Some(&1));
-        assert_eq!(distance_map.get((1, 0), (0, 0)), Some(&1));
-    }
-
-    #[test]
-    fn test_image_get_distance_map() {
-        let image: Image = "....\n....\n##.#\n...#".parse().unwrap();
-
-        // Map will be
-        // ....
-        // ....
-        // ##.#
-        // ...#
-
-        let distance_map = image.get_distance_map().unwrap();
-
-        assert_eq!(distance_map.map.len(), 6);
-        assert_eq!(distance_map.get((0, 2), (3, 2)), Some(&3));
-        assert_eq!(distance_map.get((0, 2), (3, 3)), Some(&4));
-        assert_eq!(distance_map.get((3, 2), (3, 3)), Some(&1));
-        assert_eq!(distance_map.get((1, 2), (0, 2)), Some(&1));
-        assert_eq!(distance_map.get((1, 2), (3, 2)), Some(&2));
-        assert_eq!(distance_map.get((1, 2), (3, 3)), Some(&3));
     }
 }
