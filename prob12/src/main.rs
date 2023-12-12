@@ -1,9 +1,7 @@
 use advent_core::error::AdventError;
 use advent_core::parse_error;
-use rayon::prelude::*;
 use std::collections::HashMap;
 use std::str::FromStr;
-use std::sync::{Arc, Mutex};
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -63,6 +61,10 @@ impl ConditionInfo {
         counts_idx: usize,
         current_damage_count: usize,
     ) -> Result<usize, AdventError> {
+        if let Some(&cached) = self.cache.get(&(pos, counts_idx, current_damage_count)) {
+            return Ok(cached);
+        }
+
         if pos >= self.conditions_len {
             // The case of ending on a non-damaged spring
             if counts_idx == self.counts.len() && current_damage_count == 0 {
@@ -77,44 +79,33 @@ impl ConditionInfo {
             return Ok(0);
         }
 
-        let out = match self.conditions[pos] {
-            Condition::Unknown => {
-                // Try replacing Unknown with Operational
-                self.conditions[pos] = Condition::Operational;
-                let if_conditional = self.backtrack(pos, counts_idx, current_damage_count)?;
-
-                // Try replacing Unknown with Damaged
-                self.conditions[pos] = Condition::Damaged;
-                let if_damaged = self.backtrack(pos, counts_idx, current_damage_count)?;
-
-                // Reset to Unknown before returning
-                self.conditions[pos] = Condition::Unknown;
-
-                if_conditional + if_damaged
-            }
-            Condition::Damaged => {
-                if counts_idx >= self.counts.len()
-                    || current_damage_count + 1 > self.counts[counts_idx]
-                {
-                    // We can't have more damaged than the count allows
-                    return Ok(0);
-                }
-
-                self.backtrack(pos + 1, counts_idx, current_damage_count + 1)?
-            }
-            Condition::Operational => {
-                if current_damage_count == 0 {
-                    self.backtrack(pos + 1, counts_idx, 0)?
-                } else if current_damage_count > 0
-                    && counts_idx < self.counts.len()
-                    && self.counts[counts_idx] == current_damage_count
-                {
-                    self.backtrack(pos + 1, counts_idx + 1, 0)?
-                } else {
-                    0
-                }
-            }
+        let (damaged, operational) = match self.conditions[pos] {
+            Condition::Damaged => (true, false),
+            Condition::Operational => (false, true),
+            Condition::Unknown => (true, true),
         };
+
+        let mut out = 0;
+        if damaged
+            && counts_idx < self.counts.len()
+            && current_damage_count < self.counts[counts_idx]
+        {
+            out += self.backtrack(pos + 1, counts_idx, current_damage_count + 1)?;
+        }
+
+        if operational {
+            if current_damage_count == 0 {
+                out += self.backtrack(pos + 1, counts_idx, 0)?;
+            } else if current_damage_count > 0
+                && counts_idx < self.counts.len()
+                && self.counts[counts_idx] == current_damage_count
+            {
+                out += self.backtrack(pos + 1, counts_idx + 1, 0)?;
+            }
+        }
+
+        self.cache
+            .insert((pos, counts_idx, current_damage_count), out);
 
         Ok(out)
     }
@@ -172,7 +163,9 @@ fn part1(input: &str) -> Result<usize, AdventError> {
 
     let sum_of_options = infos
         .iter_mut()
-        .map(|info| info.backtrack(0, 0, 0).unwrap())
+        .map(|info| info.backtrack(0, 0, 0))
+        .collect::<Result<Vec<_>, _>>()?
+        .iter()
         .sum::<usize>();
 
     Ok(sum_of_options)
@@ -187,19 +180,11 @@ fn part2(input: &str) -> Result<usize, AdventError> {
     // Expand all infos by 5
     infos.iter_mut().for_each(|info| info.expand(5));
 
-    let total = infos.len();
-    let finished = Arc::new(Mutex::new(0));
-
     let sum_of_options = infos
-        //.par_iter_mut()
         .iter_mut()
-        .map(|info| {
-            let counter = info.backtrack(0, 0, 0).unwrap();
-            let mut finished = finished.lock().unwrap();
-            *finished += 1;
-            println!("Finished: {}/{}", *finished, total);
-            counter
-        })
+        .map(|info| info.backtrack(0, 0, 0))
+        .collect::<Result<Vec<_>, _>>()?
+        .iter()
         .sum::<usize>();
 
     Ok(sum_of_options)
