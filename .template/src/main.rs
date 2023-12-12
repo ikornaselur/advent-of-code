@@ -1,4 +1,6 @@
 use advent_core::error::AdventError;
+use advent_core::generic_error;
+use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -24,16 +26,15 @@ fn part2(input: &str) -> Result<u32, AdventError> {
 mod tests {
     use super::*;
 
-    const PART_1_TEST_INPUT: &str = include_str!("../part_1_test.txt");
-    const PART_2_TEST_INPUT: &str = include_str!("../part_2_test.txt");
+    const TEST_INPUT: &str = include_str!("../test.txt");
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(PART_1_TEST_INPUT).unwrap(), 0);
+        assert_eq!(part1(TEST_INPUT).unwrap(), 0);
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(PART_2_TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
     }
 }
