@@ -1,6 +1,7 @@
 use advent_core::error::AdventError;
-use advent_core::{generic_error, parse_error};
+use advent_core::parse_error;
 use rayon::prelude::*;
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
@@ -26,8 +27,10 @@ impl From<char> for Condition {
 
 #[derive(Debug)]
 struct ConditionInfo {
-    springs: Vec<Condition>,
+    conditions: Vec<Condition>,
+    conditions_len: usize,
     counts: Vec<usize>,
+    cache: HashMap<(usize, usize, usize), usize>,
 }
 
 impl ConditionInfo {
@@ -38,19 +41,82 @@ impl ConditionInfo {
     /// The counts expands similary, without any separator, so that if we have [1, 2] and exapnd 3
     /// times, we'll get [1, 2, 1, 2, 1, 2]
     fn expand(&mut self, times: usize) {
-        let mut new_springs: Vec<Condition> = Vec::new();
+        let mut new_conditions: Vec<Condition> = Vec::new();
         let mut new_counts: Vec<usize> = Vec::new();
 
         for _ in 0..(times - 1) {
-            new_springs.extend(self.springs.clone());
-            new_springs.push(Condition::Unknown);
+            new_conditions.extend(self.conditions.clone());
+            new_conditions.push(Condition::Unknown);
             new_counts.extend(self.counts.iter());
         }
-        new_springs.extend(self.springs.clone());
+        new_conditions.extend(self.conditions.clone());
         new_counts.extend(self.counts.iter());
 
-        self.springs = new_springs;
+        self.conditions = new_conditions;
+        self.conditions_len = self.conditions.len();
         self.counts = new_counts;
+    }
+
+    fn backtrack(
+        &mut self,
+        pos: usize,
+        counts_idx: usize,
+        current_damage_count: usize,
+    ) -> Result<usize, AdventError> {
+        if pos >= self.conditions_len {
+            // The case of ending on a non-damaged spring
+            if counts_idx == self.counts.len() && current_damage_count == 0 {
+                return Ok(1);
+            }
+            // The case of ending on a damaged spring
+            if counts_idx == self.counts.len() - 1
+                && current_damage_count == self.counts[counts_idx]
+            {
+                return Ok(1);
+            }
+            return Ok(0);
+        }
+
+        let out = match self.conditions[pos] {
+            Condition::Unknown => {
+                // Try replacing Unknown with Operational
+                self.conditions[pos] = Condition::Operational;
+                let if_conditional = self.backtrack(pos, counts_idx, current_damage_count)?;
+
+                // Try replacing Unknown with Damaged
+                self.conditions[pos] = Condition::Damaged;
+                let if_damaged = self.backtrack(pos, counts_idx, current_damage_count)?;
+
+                // Reset to Unknown before returning
+                self.conditions[pos] = Condition::Unknown;
+
+                if_conditional + if_damaged
+            }
+            Condition::Damaged => {
+                if counts_idx >= self.counts.len()
+                    || current_damage_count + 1 > self.counts[counts_idx]
+                {
+                    // We can't have more damaged than the count allows
+                    return Ok(0);
+                }
+
+                self.backtrack(pos + 1, counts_idx, current_damage_count + 1)?
+            }
+            Condition::Operational => {
+                if current_damage_count == 0 {
+                    self.backtrack(pos + 1, counts_idx, 0)?
+                } else if current_damage_count > 0
+                    && counts_idx < self.counts.len()
+                    && self.counts[counts_idx] == current_damage_count
+                {
+                    self.backtrack(pos + 1, counts_idx + 1, 0)?
+                } else {
+                    0
+                }
+            }
+        };
+
+        Ok(out)
     }
 }
 
@@ -64,7 +130,7 @@ impl FromStr for ConditionInfo {
     /// which represents the springs conditions on the left and the counts on the right
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut parts = s.split_whitespace();
-        let springs: Vec<Condition> = parts
+        let conditions: Vec<Condition> = parts
             .next()
             .ok_or(parse_error!("Unable to get springs from line"))?
             .chars()
@@ -77,101 +143,15 @@ impl FromStr for ConditionInfo {
             .split(',')
             .map(|s| s.parse::<usize>())
             .collect::<Result<Vec<usize>, _>>()?;
+        let conditions_len = conditions.len();
 
-        Ok(Self { springs, counts })
+        Ok(Self {
+            conditions,
+            conditions_len,
+            counts,
+            cache: HashMap::new(),
+        })
     }
-}
-
-/// Check if the counts are valid for the conditions
-///
-/// This functions is just used to check if the counts are valid for a part of the conditions,
-/// meaning that if you provide the counts [1, 1, 3] then the following conditions are all valid:
-///
-///     * #.#.###
-///     * #.#.#
-///     * #
-///
-/// because they are valid within the counts
-///
-/// Returns a tuple of (is_valid_prefix, is_complete_match)
-fn counts_valid_prefix(
-    conditions: &[Condition],
-    counts: &[usize],
-) -> Result<(bool, bool), AdventError> {
-    let mut current_count = 0;
-    let mut count_idx = 0;
-    let mut is_counting = false;
-    let mut total_damaged = 0;
-
-    for condition in conditions {
-        match condition {
-            Condition::Damaged => {
-                current_count += 1;
-                total_damaged += 1;
-                is_counting = true;
-            }
-            Condition::Operational => {
-                if is_counting {
-                    if count_idx >= counts.len() || current_count != counts[count_idx] {
-                        return Ok((false, false));
-                    }
-                    count_idx += 1;
-                    current_count = 0;
-                    is_counting = false;
-                }
-            }
-            Condition::Unknown => {
-                // We return immediately, as we can't be sure if the count is valid or not
-                return Err(generic_error!("Unknown condition"));
-            }
-        }
-    }
-
-    // If we are still counting, check that we are still valid within the next counts
-    if is_counting && (count_idx >= counts.len() || current_count > counts[count_idx]) {
-        Ok((false, false))
-    } else {
-        Ok((true, total_damaged == counts.iter().sum::<usize>()))
-    }
-}
-
-fn backtrack(
-    conditions: &mut Vec<Condition>,
-    pos: usize,
-    counts: &[usize],
-    counter: &mut usize,
-) -> Result<(), AdventError> {
-    if pos >= conditions.len() {
-        let (is_valid_prefix, is_complete_match) = counts_valid_prefix(conditions, counts)?;
-        if is_valid_prefix && is_complete_match {
-            *counter += 1;
-        }
-        return Ok(());
-    }
-
-    match conditions[pos] {
-        Condition::Unknown => {
-            // Try replacing Unknown with Operational
-            conditions[pos] = Condition::Operational;
-            let (is_valid_prefix, _) = counts_valid_prefix(&conditions[..pos + 1], counts)?;
-            if is_valid_prefix {
-                backtrack(conditions, pos + 1, counts, counter)?;
-            }
-
-            // Try replacing Unknown with Damaged
-            conditions[pos] = Condition::Damaged;
-            let (is_valid_prefix, _) = counts_valid_prefix(&conditions[..pos + 1], counts)?;
-            if is_valid_prefix {
-                backtrack(conditions, pos + 1, counts, counter)?;
-            }
-
-            // Reset to Unknown before returning
-            conditions[pos] = Condition::Unknown;
-        }
-        _ => backtrack(conditions, pos + 1, counts, counter)?, // Move to the next position for non-Unknown
-    }
-
-    Ok(())
 }
 
 fn main() -> Result<(), AdventError> {
@@ -185,19 +165,14 @@ fn main() -> Result<(), AdventError> {
 }
 
 fn part1(input: &str) -> Result<usize, AdventError> {
-    let infos: Vec<ConditionInfo> = input
+    let mut infos: Vec<ConditionInfo> = input
         .lines()
         .map(|l| l.parse::<ConditionInfo>())
         .collect::<Result<Vec<_>, _>>()?;
 
     let sum_of_options = infos
-        .iter()
-        .map(|info| {
-            let mut conditions = info.springs.clone();
-            let mut counter = 0;
-            backtrack(&mut conditions, 0, &info.counts, &mut counter).unwrap();
-            counter
-        })
+        .iter_mut()
+        .map(|info| info.backtrack(0, 0, 0).unwrap())
         .sum::<usize>();
 
     Ok(sum_of_options)
@@ -216,11 +191,10 @@ fn part2(input: &str) -> Result<usize, AdventError> {
     let finished = Arc::new(Mutex::new(0));
 
     let sum_of_options = infos
-        .par_iter()
+        //.par_iter_mut()
+        .iter_mut()
         .map(|info| {
-            let mut conditions = info.springs.clone();
-            let mut counter = 0;
-            backtrack(&mut conditions, 0, &info.counts, &mut counter).unwrap();
+            let counter = info.backtrack(0, 0, 0).unwrap();
             let mut finished = finished.lock().unwrap();
             *finished += 1;
             println!("Finished: {}/{}", *finished, total);
@@ -254,7 +228,7 @@ mod tests {
         let info: ConditionInfo = input.parse().unwrap();
 
         assert_eq!(
-            info.springs,
+            info.conditions,
             vec![
                 Condition::Unknown,
                 Condition::Unknown,
@@ -275,86 +249,25 @@ mod tests {
     }
 
     #[test]
-    fn test_counts_valid_prefix() {
-        let counts = vec![1, 1, 3];
-
-        let (is_valid_prefix, is_complete_match) = counts_valid_prefix(
-            "#.#.###"
-                .chars()
-                .map(Condition::from)
-                .collect::<Vec<_>>()
-                .as_slice(),
-            &counts,
-        )
-        .unwrap();
-        assert!(is_valid_prefix);
-        assert!(is_complete_match);
-
-        let (is_valid_prefix, is_complete_match) = counts_valid_prefix(
-            "#.#.#"
-                .chars()
-                .map(Condition::from)
-                .collect::<Vec<_>>()
-                .as_slice(),
-            &counts,
-        )
-        .unwrap();
-        assert!(is_valid_prefix);
-        assert!(!is_complete_match);
-
-        let (is_valid_prefix, is_complete_match) = counts_valid_prefix(
-            "#".chars()
-                .map(Condition::from)
-                .collect::<Vec<_>>()
-                .as_slice(),
-            &counts,
-        )
-        .unwrap();
-        assert!(is_valid_prefix);
-        assert!(!is_complete_match);
-
-        let (is_valid_prefix, is_complete_match) = counts_valid_prefix(
-            "##".chars()
-                .map(Condition::from)
-                .collect::<Vec<_>>()
-                .as_slice(),
-            &counts,
-        )
-        .unwrap();
-        assert!(!is_valid_prefix);
-        assert!(!is_complete_match);
-    }
-
-    #[test]
     fn test_backtrack_case_1() {
-        let mut conditions: Vec<Condition> = "???.##?.".chars().map(Condition::from).collect();
-        let counts = vec![1, 1, 3];
-        let mut counter = 0;
-
-        backtrack(&mut conditions, 0, &counts, &mut counter).unwrap();
+        let mut info: ConditionInfo = "???.##?. 1,1,3".parse().unwrap();
+        let counter = info.backtrack(0, 0, 0).unwrap();
 
         assert_eq!(counter, 1);
     }
 
     #[test]
     fn test_backtrack_case_2() {
-        let mut conditions: Vec<Condition> =
-            ".??..??...?##.".chars().map(Condition::from).collect();
-        let counts = vec![1, 1, 3];
-        let mut counter = 0;
-
-        backtrack(&mut conditions, 0, &counts, &mut counter).unwrap();
+        let mut info: ConditionInfo = ".??..??...?##. 1,1,3".parse().unwrap();
+        let counter = info.backtrack(0, 0, 0).unwrap();
 
         assert_eq!(counter, 4);
     }
 
     #[test]
     fn test_backtrack_case_3() {
-        let mut conditions: Vec<Condition> = "?###????????".chars().map(Condition::from).collect();
-        let counts = vec![3, 2, 1];
-        let mut counter = 0;
-
-        backtrack(&mut conditions, 0, &counts, &mut counter).unwrap();
+        let mut info: ConditionInfo = "?###???????? 3,2,1".parse().unwrap();
+        let counter = info.backtrack(0, 0, 0).unwrap();
 
         assert_eq!(counter, 10);
     }
@@ -366,7 +279,7 @@ mod tests {
         info.expand(2);
 
         assert_eq!(
-            info.springs,
+            info.conditions,
             vec![
                 Condition::Operational,
                 Condition::Damaged,
