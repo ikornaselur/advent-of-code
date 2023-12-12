@@ -1,6 +1,8 @@
 use advent_core::error::AdventError;
 use advent_core::{generic_error, parse_error};
+use rayon::prelude::*;
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -26,6 +28,30 @@ impl From<char> for Condition {
 struct ConditionInfo {
     springs: Vec<Condition>,
     counts: Vec<usize>,
+}
+
+impl ConditionInfo {
+    /// Expand the springs and counts
+    ///
+    /// The springs are just duplicated X times and joined with a new Unknown, so that if we have
+    /// #.?# and expand 3 times it will expand to #.?#?#.?#?#.?#
+    /// The counts expands similary, without any separator, so that if we have [1, 2] and exapnd 3
+    /// times, we'll get [1, 2, 1, 2, 1, 2]
+    fn expand(&mut self, times: usize) {
+        let mut new_springs: Vec<Condition> = Vec::new();
+        let mut new_counts: Vec<usize> = Vec::new();
+
+        for _ in 0..(times - 1) {
+            new_springs.extend(self.springs.clone());
+            new_springs.push(Condition::Unknown);
+            new_counts.extend(self.counts.iter());
+        }
+        new_springs.extend(self.springs.clone());
+        new_counts.extend(self.counts.iter());
+
+        self.springs = new_springs;
+        self.counts = new_counts;
+    }
 }
 
 impl FromStr for ConditionInfo {
@@ -177,25 +203,48 @@ fn part1(input: &str) -> Result<usize, AdventError> {
     Ok(sum_of_options)
 }
 
-fn part2(input: &str) -> Result<u32, AdventError> {
-    Ok(0)
+fn part2(input: &str) -> Result<usize, AdventError> {
+    let mut infos: Vec<ConditionInfo> = input
+        .lines()
+        .map(|l| l.parse::<ConditionInfo>())
+        .collect::<Result<Vec<_>, _>>()?;
+
+    // Expand all infos by 5
+    infos.iter_mut().for_each(|info| info.expand(5));
+
+    let total = infos.len();
+    let finished = Arc::new(Mutex::new(0));
+
+    let sum_of_options = infos
+        .par_iter()
+        .map(|info| {
+            let mut conditions = info.springs.clone();
+            let mut counter = 0;
+            backtrack(&mut conditions, 0, &info.counts, &mut counter).unwrap();
+            let mut finished = finished.lock().unwrap();
+            *finished += 1;
+            println!("Finished: {}/{}", *finished, total);
+            counter
+        })
+        .sum::<usize>();
+
+    Ok(sum_of_options)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const PART_1_TEST_INPUT: &str = include_str!("../part_1_test.txt");
-    const PART_2_TEST_INPUT: &str = include_str!("../part_2_test.txt");
+    const TEST_INPUT: &str = include_str!("../test.txt");
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(PART_1_TEST_INPUT).unwrap(), 21);
+        assert_eq!(part1(TEST_INPUT).unwrap(), 21);
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(PART_2_TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 525152);
     }
 
     #[test]
@@ -308,5 +357,24 @@ mod tests {
         backtrack(&mut conditions, 0, &counts, &mut counter).unwrap();
 
         assert_eq!(counter, 10);
+    }
+
+    #[test]
+    fn test_condition_info_expand() {
+        let mut info: ConditionInfo = ".# 1".parse().unwrap();
+
+        info.expand(2);
+
+        assert_eq!(
+            info.springs,
+            vec![
+                Condition::Operational,
+                Condition::Damaged,
+                Condition::Unknown,
+                Condition::Operational,
+                Condition::Damaged,
+            ]
+        );
+        assert_eq!(info.counts, vec![1, 1]);
     }
 }
