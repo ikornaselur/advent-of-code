@@ -129,15 +129,14 @@ fn part2(input: &str) -> Result<usize, AdventError> {
         }
     }
 
-    let mut sum = 0;
-
-    for (box_idx, bx) in boxes.iter().enumerate() {
-        for (lens_idx, (_, focal_length)) in bx.iter().enumerate() {
-            sum += (box_idx + 1) * (lens_idx + 1) * (*focal_length as usize);
-        }
-    }
-
-    Ok(sum)
+    Ok(boxes.iter().enumerate().fold(0, |acc, (box_idx, bx)| {
+        acc + bx
+            .iter()
+            .enumerate()
+            .fold(0, |acc, (lens_idx, (_, focal_length))| {
+                acc + (box_idx + 1) * (lens_idx + 1) * (*focal_length as usize)
+            })
+    }))
 }
 
 #[cfg(test)]
