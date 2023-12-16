@@ -1,5 +1,6 @@
 use advent_core::error::AdventError;
 use advent_core::generic_error;
+use rayon::prelude::*;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::str::FromStr;
@@ -313,17 +314,21 @@ fn part2(input: &str) -> Result<usize, AdventError> {
 
     // We try to send a beam through every edge possible, the top edge will send the beam down,
     // the right edge will send the beam left, etc.
-    let top = (0..layout.grid[0].len()).map(|y| layout.beam(((0, y), Direction::Down)));
-    let left = (0..layout.grid.len()).map(|x| layout.beam(((x, 0), Direction::Right)));
-    let bottom =
-        (0..layout.grid[0].len()).map(|y| layout.beam(((layout.grid.len() - 1, y), Direction::Up)));
+    let top = (0..layout.grid[0].len())
+        .into_par_iter()
+        .map(|y| layout.beam(((0, y), Direction::Down)));
+    let left = (0..layout.grid.len())
+        .into_par_iter()
+        .map(|x| layout.beam(((x, 0), Direction::Right)));
+    let bottom = (0..layout.grid[0].len())
+        .into_par_iter()
+        .map(|y| layout.beam(((layout.grid.len() - 1, y), Direction::Up)));
     let right = (0..layout.grid.len())
+        .into_par_iter()
         .map(|x| layout.beam(((x, layout.grid[0].len() - 1), Direction::Left)));
 
-    top.chain(left)
-        .chain(bottom)
-        .chain(right)
-        .try_fold(0, |acc, energy| energy.map(|v| acc.max(v)))
+    top.chain(left).chain(bottom).chain(right).try_reduce(|| 0, |mx, energy| Ok(energy.max(mx)))
+
 }
 
 #[cfg(test)]
