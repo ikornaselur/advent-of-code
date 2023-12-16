@@ -27,7 +27,7 @@ impl Layout {
     /// Send a beam through the layout
     ///
     /// Keep track of all the nodes it passes through
-    fn beam(&self) -> Result<usize, AdventError> {
+    fn beam(&self, start: Beam) -> Result<usize, AdventError> {
         // The current beams we are tracking, containing the current node and the direction we will
         // take in the next iteration
         // We start in the top right (0, 0) and go right
@@ -37,20 +37,93 @@ impl Layout {
         // There is no need to repeatedly following the beam again if it loops back around
         let mut paths_taken: HashSet<Beam> = HashSet::new();
 
-        // Handle the first node separately
-        let first_node = self.grid[0][0];
-        match first_node {
-            Node::Empty | Node::Horizontal => {
+        // Handle the first node separately, as it can contain a mirror already
+        let (start_coord, start_dir) = start;
+        let first_node = self.grid[start_coord.0][start_coord.1];
+        match (first_node, start_dir) {
+            (Node::Empty, _) => {
                 // We just continue in the same direction
-                queue.push_back(((0, 0), Direction::Right));
+                queue.push_back(start);
             }
-            Node::Up => {
-                // Uhm.. we just go right off ASAP
-                return Ok(1);
+            (Node::Horizontal, Direction::Right) | (Node::Horizontal, Direction::Left) => {
+                // We just continue in the same direction
+                queue.push_back(start);
             }
-            Node::Down | Node::Vertical => {
-                // We are going to start by going down instead
-                queue.push_back(((0, 0), Direction::Down));
+            (Node::Vertical, Direction::Up) | (Node::Vertical, Direction::Down) => {
+                // We just continue in the same direction
+                queue.push_back(start);
+            }
+            (Node::Horizontal, _) => {
+                queue.push_back((start_coord, Direction::Left));
+                queue.push_back((start_coord, Direction::Right));
+            }
+            (Node::Vertical, _) => {
+                queue.push_back((start_coord, Direction::Up));
+                queue.push_back((start_coord, Direction::Down));
+            }
+            (Node::Up, dir) => {
+                match dir {
+                    Direction::Right => {
+                        if start_coord.0 == 0 {
+                            // We are at the top, so we go off the grid immediately
+                            return Ok(1);
+                        }
+                        queue.push_back((start_coord, Direction::Up));
+                    }
+                    Direction::Left => {
+                        if start_coord.0 >= self.grid.len() - 1 {
+                            // We are at the bottom, so we go off the grid immediately
+                            return Ok(1);
+                        }
+                        queue.push_back((start_coord, Direction::Down));
+                    }
+                    Direction::Down => {
+                        if start_coord.1 == 0 {
+                            // We are at the left, so we go off the grid immediately
+                            return Ok(1);
+                        }
+                        queue.push_back((start_coord, Direction::Left));
+                    }
+                    Direction::Up => {
+                        if start_coord.1 >= self.grid[0].len() - 1 {
+                            // We are at the right, so we go off the grid immediately
+                            return Ok(1);
+                        }
+                        queue.push_back((start_coord, Direction::Right));
+                    }
+                }
+            }
+            (Node::Down, dir) => {
+                match dir {
+                    Direction::Right => {
+                        if start_coord.0 >= self.grid.len() - 1 {
+                            // We are at the bottom, so we go off the grid immediately
+                            return Ok(1);
+                        }
+                        queue.push_back((start_coord, Direction::Down));
+                    }
+                    Direction::Left => {
+                        if start_coord.0 == 0 {
+                            // We are at the top, so we go off the grid immediately
+                            return Ok(1);
+                        }
+                        queue.push_back((start_coord, Direction::Up));
+                    }
+                    Direction::Down => {
+                        if start_coord.1 >= self.grid[0].len() - 1 {
+                            // We are at the right, so we go off the grid immediately
+                            return Ok(1);
+                        }
+                        queue.push_back((start_coord, Direction::Right));
+                    }
+                    Direction::Up => {
+                        if start_coord.1 == 0 {
+                            // We are at the left, so we go off the grid immediately
+                            return Ok(1);
+                        }
+                        queue.push_back((start_coord, Direction::Left));
+                    }
+                }
             }
         }
 
@@ -232,11 +305,25 @@ fn main() -> Result<(), AdventError> {
 fn part1(input: &str) -> Result<usize, AdventError> {
     let layout: Layout = input.parse()?;
 
-    Ok(layout.beam()?)
+    layout.beam(((0, 0), Direction::Right))
 }
 
 fn part2(input: &str) -> Result<usize, AdventError> {
-    Ok(0)
+    let layout: Layout = input.parse()?;
+
+    // We try to send a beam through every edge possible, the top edge will send the beam down,
+    // the right edge will send the beam left, etc.
+    let top = (0..layout.grid[0].len()).map(|y| layout.beam(((0, y), Direction::Down)));
+    let left = (0..layout.grid.len()).map(|x| layout.beam(((x, 0), Direction::Right)));
+    let bottom =
+        (0..layout.grid[0].len()).map(|y| layout.beam(((layout.grid.len() - 1, y), Direction::Up)));
+    let right = (0..layout.grid.len())
+        .map(|x| layout.beam(((x, layout.grid[0].len() - 1), Direction::Left)));
+
+    top.chain(left)
+        .chain(bottom)
+        .chain(right)
+        .try_fold(0, |acc, energy| energy.map(|v| acc.max(v)))
 }
 
 #[cfg(test)]
@@ -252,7 +339,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 51);
     }
 
     #[test]
@@ -286,7 +373,7 @@ mod tests {
         let layout: Layout = "...\n...\n...".parse().unwrap();
 
         // Should just pass straight through
-        assert_eq!(layout.beam().unwrap(), 3);
+        assert_eq!(layout.beam(((0, 0), Direction::Right)).unwrap(), 3);
     }
 
     #[test]
@@ -294,7 +381,7 @@ mod tests {
         let layout: Layout = "..\\\n...\n...".parse().unwrap();
 
         // Should redirect down in the corner
-        assert_eq!(layout.beam().unwrap(), 5);
+        assert_eq!(layout.beam(((0, 0), Direction::Right)).unwrap(), 5);
     }
 
     #[test]
@@ -302,7 +389,7 @@ mod tests {
         let layout: Layout = ".\\.\n.-.\n...".parse().unwrap();
 
         // Should redirect down in the middle, then split to left and right
-        assert_eq!(layout.beam().unwrap(), 5);
+        assert_eq!(layout.beam(((0, 0), Direction::Right)).unwrap(), 5);
     }
 
     #[test]
@@ -311,7 +398,7 @@ mod tests {
 
         // The beam will split in the middle and go around in a loop, which should be ignored and
         // all be good
-        assert_eq!(layout.beam().unwrap(), 7);
+        assert_eq!(layout.beam(((0, 0), Direction::Right)).unwrap(), 7);
     }
 
     #[test]
@@ -319,6 +406,6 @@ mod tests {
         let layout: Layout = "\\/.\n...\n\\..".parse().unwrap();
 
         // The beam should go down immediately, then again in the corner to the right
-        assert_eq!(layout.beam().unwrap(), 5);
+        assert_eq!(layout.beam(((0, 0), Direction::Right)).unwrap(), 5);
     }
 }
