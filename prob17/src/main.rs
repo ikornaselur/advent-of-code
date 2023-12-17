@@ -33,6 +33,7 @@ impl Layout {
     fn find_cheapest_path(
         &self,
         to: Coordinate,
+        min_straight_line: i32,
         max_straight_line: i32,
     ) -> Result<i32, AdventError> {
         let mut seen: HashSet<(Coordinate, CardinalDirection, StraightDistance)> = HashSet::new();
@@ -101,14 +102,16 @@ impl Layout {
                     }
                     continue;
                 }
-                // Try to turn
-                if let Some(next_coord) = self.shift_coordinate(coord, next_direction) {
-                    heap.push((
-                        -(heat_loss + self.node_heat(next_coord)),
-                        next_coord,
-                        next_direction.clone(),
-                        0,
-                    ));
+                if straight_distance >= min_straight_line {
+                    // Try to turn
+                    if let Some(next_coord) = self.shift_coordinate(coord, next_direction) {
+                        heap.push((
+                            -(heat_loss + self.node_heat(next_coord)),
+                            next_coord,
+                            next_direction.clone(),
+                            0,
+                        ));
+                    }
                 }
             }
         }
@@ -184,11 +187,13 @@ fn main() -> Result<(), AdventError> {
 fn part1(input: &str) -> Result<i32, AdventError> {
     let layout: Layout = input.parse()?;
 
-    layout.find_cheapest_path((layout.nodes.len() - 1, layout.nodes[0].len() - 1), 3)
+    layout.find_cheapest_path((layout.nodes.len() - 1, layout.nodes[0].len() - 1), 0, 3)
 }
 
-fn part2(input: &str) -> Result<u32, AdventError> {
-    Ok(0)
+fn part2(input: &str) -> Result<i32, AdventError> {
+    let layout: Layout = input.parse()?;
+
+    layout.find_cheapest_path((layout.nodes.len() - 1, layout.nodes[0].len() - 1), 3, 10)
 }
 
 #[cfg(test)]
@@ -204,7 +209,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 94);
     }
 
     #[test]
@@ -215,13 +220,13 @@ mod tests {
     }
 
     #[test]
-    fn test_layout_find_cheapest_path() {
+    fn test_layout_find_cheapest_path_no_min_straight_line() {
         let layout: Layout = "1456\n1416\n1816\n1111".parse().unwrap();
 
-        assert_eq!(layout.find_cheapest_path((3, 3), 4).unwrap(), 6);
-        assert_eq!(layout.find_cheapest_path((3, 3), 3).unwrap(), 6);
-        assert_eq!(layout.find_cheapest_path((3, 3), 2).unwrap(), 9);
-        assert_eq!(layout.find_cheapest_path((3, 3), 1).unwrap(), 16);
+        assert_eq!(layout.find_cheapest_path((3, 3), 0, 4).unwrap(), 6);
+        assert_eq!(layout.find_cheapest_path((3, 3), 0, 3).unwrap(), 6);
+        assert_eq!(layout.find_cheapest_path((3, 3), 0, 2).unwrap(), 9);
+        assert_eq!(layout.find_cheapest_path((3, 3), 0, 1).unwrap(), 16);
     }
 
     #[test]
