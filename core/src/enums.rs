@@ -1,4 +1,4 @@
-#[derive(Debug, Eq, PartialEq, Hash, Clone)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Clone)]
 pub enum CardinalDirection {
     North,
     South,
