@@ -1,5 +1,4 @@
 use advent::prelude::*;
-use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -35,7 +34,7 @@ impl Layout {
         to: Coordinate,
         min_straight_line: i32,
         max_straight_line: i32,
-    ) -> Result<i32, AdventError> {
+    ) -> Result<i32> {
         let mut seen: HashSet<(Coordinate, CardinalDirection, StraightDistance)> = HashSet::new();
 
         // This is a max heap, so we store the scores negative to turn it into a min heap
@@ -164,7 +163,7 @@ impl FromStr for Layout {
     type Err = AdventError;
 
     // Parse lines of digits into u8
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let nodes = s
             .lines()
             .map(|l| l.chars().map(|c| (c as u8) - 48).collect())
@@ -174,7 +173,7 @@ impl FromStr for Layout {
     }
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -184,13 +183,13 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<i32, AdventError> {
+fn part1(input: &str) -> Result<i32> {
     let layout: Layout = input.parse()?;
 
     layout.find_cheapest_path((layout.nodes.len() - 1, layout.nodes[0].len() - 1), 0, 3)
 }
 
-fn part2(input: &str) -> Result<i32, AdventError> {
+fn part2(input: &str) -> Result<i32> {
     let layout: Layout = input.parse()?;
 
     layout.find_cheapest_path((layout.nodes.len() - 1, layout.nodes[0].len() - 1), 3, 10)

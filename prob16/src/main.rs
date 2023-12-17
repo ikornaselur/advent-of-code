@@ -1,8 +1,5 @@
 use advent::prelude::*;
 use rayon::prelude::*;
-use std::collections::HashSet;
-use std::collections::VecDeque;
-use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -26,7 +23,7 @@ impl Layout {
     /// Send a beam through the layout
     ///
     /// Keep track of all the nodes it passes through
-    fn beam(&self, start: Beam) -> Result<usize, AdventError> {
+    fn beam(&self, start: Beam) -> Result<usize> {
         // The current beams we are tracking, containing the current node and the direction we will
         // take in the next iteration
         // We start in the top right (0, 0) and go right
@@ -245,15 +242,15 @@ impl Layout {
 impl FromStr for Layout {
     type Err = AdventError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let grid = s
             .lines()
             .map(|line| {
                 line.chars()
                     .map(Node::try_from)
-                    .collect::<Result<Vec<Node>, AdventError>>()
+                    .collect::<Result<Vec<Node>>>()
             })
-            .collect::<Result<Vec<Vec<Node>>, AdventError>>()?;
+            .collect::<Result<Vec<Vec<Node>>>>()?;
 
         Ok(Self { grid })
     }
@@ -279,7 +276,7 @@ enum Direction {
 impl TryFrom<char> for Node {
     type Error = AdventError;
 
-    fn try_from(c: char) -> Result<Self, Self::Error> {
+    fn try_from(c: char) -> std::result::Result<Self, Self::Error> {
         match c {
             '.' => Ok(Node::Empty),
             '-' => Ok(Node::Horizontal),
@@ -291,7 +288,7 @@ impl TryFrom<char> for Node {
     }
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -301,13 +298,13 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<usize, AdventError> {
+fn part1(input: &str) -> Result<usize> {
     let layout: Layout = input.parse()?;
 
     layout.beam(((0, 0), Direction::Right))
 }
 
-fn part2(input: &str) -> Result<usize, AdventError> {
+fn part2(input: &str) -> Result<usize> {
     let layout: Layout = input.parse()?;
 
     // We try to send a beam through every edge possible, the top edge will send the beam down,

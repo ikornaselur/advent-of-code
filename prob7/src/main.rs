@@ -1,5 +1,4 @@
 use advent::prelude::*;
-use std::collections::HashMap;
 use std::fmt;
 
 const INPUT: &str = include_str!("../input.txt");
@@ -145,7 +144,7 @@ impl Ord for Hand {
     }
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -155,7 +154,7 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<u32, AdventError> {
+fn part1(input: &str) -> Result<u32> {
     // Each line is of the form: <cards> <score>, such as:
     //
     // 32T3K 123
@@ -186,7 +185,7 @@ fn part1(input: &str) -> Result<u32, AdventError> {
     Ok(sum)
 }
 
-fn part2(input: &str) -> Result<u32, AdventError> {
+fn part2(input: &str) -> Result<u32> {
     // Replace the J with a * for part 2
     part1(&input.replace('J', "*"))
 }

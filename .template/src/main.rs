@@ -1,10 +1,8 @@
-use advent_core::error::AdventError;
-use advent_core::generic_error;
-use std::str::FromStr;
+use advent::prelude::*;
 
 const INPUT: &str = include_str!("../input.txt");
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -14,11 +12,11 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<u32, AdventError> {
+fn part1(input: &str) -> Result<u32> {
     Ok(0)
 }
 
-fn part2(input: &str) -> Result<u32, AdventError> {
+fn part2(input: &str) -> Result<u32> {
     Ok(0)
 }
 

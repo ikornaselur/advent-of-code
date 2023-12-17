@@ -1,6 +1,4 @@
 use advent::prelude::*;
-use std::collections::HashSet;
-use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -19,7 +17,7 @@ enum Pipe {
 impl FromStr for Pipe {
     type Err = AdventError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s {
             "-" => Ok(Self::Horizontal),
             "|" => Ok(Self::Vertical),
@@ -60,15 +58,15 @@ struct PipeMap {
 impl FromStr for PipeMap {
     type Err = AdventError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let nodes = s
             .lines()
             .map(|line| {
                 line.chars()
                     .map(|c| c.to_string().parse::<Pipe>())
-                    .collect::<Result<Vec<Pipe>, Self::Err>>()
+                    .collect::<std::result::Result<Vec<Pipe>, Self::Err>>()
             })
-            .collect::<Result<Vec<Vec<Pipe>>, Self::Err>>()?;
+            .collect::<std::result::Result<Vec<Vec<Pipe>>, Self::Err>>()?;
 
         let height = nodes.len();
         let width = nodes[0].len();
@@ -84,7 +82,7 @@ impl PipeMap {
     /// Find the start node and return the coordinate
     ///
     /// The start node is the 'S' node
-    fn find_start(&self) -> Result<Coordinate, AdventError> {
+    fn find_start(&self) -> Result<Coordinate> {
         for (x, row) in self.nodes.iter().enumerate() {
             for (y, node) in row.iter().enumerate() {
                 if *node == Pipe::Start {
@@ -96,7 +94,7 @@ impl PipeMap {
     }
 
     /// Get the node at the given coordinate
-    fn get_node(&self, coord: Coordinate) -> Result<&Pipe, AdventError> {
+    fn get_node(&self, coord: Coordinate) -> Result<&Pipe> {
         let (row, col) = coord;
         if row >= self.height || col >= self.width {
             return Err(error!("Invalid coordinate: {:?}", coord));
@@ -109,7 +107,7 @@ impl PipeMap {
         &self,
         current_node_coord: Coordinate,
         came_from_direction: CardinalDirection,
-    ) -> Result<(Coordinate, CardinalDirection), AdventError> {
+    ) -> Result<(Coordinate, CardinalDirection)> {
         let current_node = self.get_node(current_node_coord)?;
         if *current_node == Pipe::None || *current_node == Pipe::Start {
             return Err(error!("Invalid node: {:?}", current_node));
@@ -147,7 +145,7 @@ impl PipeMap {
     }
 
     // Get the two directions that connect to the start
-    fn get_start_directions(&self) -> Result<Vec<CardinalDirection>, AdventError> {
+    fn get_start_directions(&self) -> Result<Vec<CardinalDirection>> {
         let start_coord = self.find_start()?;
         let mut directions = vec![];
 
@@ -238,7 +236,7 @@ impl PipeMap {
     ///
     /// NOTE: This assumes that all tiles that are not a part of the loop have been replaced with
     /// just a Pipe::None
-    fn count_internal_tiles(&self) -> Result<usize, AdventError> {
+    fn count_internal_tiles(&self) -> Result<usize> {
         let mut in_loop = false;
         let mut count = 0;
         let mut prev_corner: Option<&Pipe> = None;
@@ -280,7 +278,7 @@ impl PipeMap {
     }
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -290,7 +288,7 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<u32, AdventError> {
+fn part1(input: &str) -> Result<u32> {
     let map: PipeMap = input.parse()?;
     let start_coord = map.find_start()?;
     let start_directions = map.get_start_directions()?;
@@ -316,7 +314,7 @@ fn part1(input: &str) -> Result<u32, AdventError> {
     Ok(steps)
 }
 
-fn part2(input: &str) -> Result<usize, AdventError> {
+fn part2(input: &str) -> Result<usize> {
     let map: PipeMap = input.parse()?;
 
     // Create an empty map to fill with _just_ the loop

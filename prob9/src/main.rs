@@ -1,5 +1,4 @@
 use advent::prelude::*;
-use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -10,11 +9,11 @@ struct Sequence {
 impl FromStr for Sequence {
     type Err = AdventError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let numbers = s
             .split_whitespace()
             .map(|s| s.parse::<i64>())
-            .collect::<Result<Vec<_>, _>>()?;
+            .collect::<std::result::Result<Vec<_>, _>>()?;
 
         let mut stack = vec![numbers];
 
@@ -58,7 +57,7 @@ impl Sequence {
     ///
     /// The last layer adds a 0, which adds a 3+0 to the layer above, which will add 15+3+0 to the
     /// top layer, so the next value is 18
-    fn next_value(&self) -> Result<i64, AdventError> {
+    fn next_value(&self) -> Result<i64> {
         // Add the last value of all the layers
         Ok(self.stack.iter().map(|layer| layer.last().unwrap()).sum())
     }
@@ -69,7 +68,7 @@ impl Sequence {
     /// current sequence
     ///
     /// For the example above, with 0 3 6 9 12 15 we'd be looking for -3 at the start
-    fn previous_value(&self) -> Result<i64, AdventError> {
+    fn previous_value(&self) -> Result<i64> {
         let mut last = 0;
         for layer in self.stack.iter().rev() {
             let first_val = layer.first().ok_or(error!("Unable to get first value"))?;
@@ -80,7 +79,7 @@ impl Sequence {
     }
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -90,29 +89,29 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<i64, AdventError> {
+fn part1(input: &str) -> Result<i64> {
     let sequences: Vec<Sequence> = input
         .lines()
         .map(|line| line.parse())
-        .collect::<Result<Vec<_>, _>>()?;
+        .collect::<Result<Vec<_>>>()?;
     let sum_of_next_values = sequences
         .iter()
         .map(|sequence| sequence.next_value())
-        .collect::<Result<Vec<_>, _>>()?
+        .collect::<Result<Vec<_>>>()?
         .iter()
         .sum::<i64>();
     Ok(sum_of_next_values)
 }
 
-fn part2(input: &str) -> Result<i64, AdventError> {
+fn part2(input: &str) -> Result<i64> {
     let sequences: Vec<Sequence> = input
         .lines()
         .map(|line| line.parse())
-        .collect::<Result<Vec<_>, _>>()?;
+        .collect::<Result<Vec<_>>>()?;
     let sum_of_previous_values = sequences
         .iter()
         .map(|sequence| sequence.previous_value())
-        .collect::<Result<Vec<_>, _>>()?
+        .collect::<Result<Vec<_>>>()?
         .iter()
         .sum::<i64>();
     Ok(sum_of_previous_values)

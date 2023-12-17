@@ -1,6 +1,4 @@
 use advent::prelude::*;
-use std::collections::HashMap;
-use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -30,7 +28,7 @@ struct Map {
 impl FromStr for Map {
     type Err = AdventError;
 
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+    fn from_str(input: &str) -> std::result::Result<Self, Self::Err> {
         let mut lines = input.lines();
         // First line is the directions, which is a list of R and L (no spacing)
         let directions = lines
@@ -84,7 +82,7 @@ impl FromStr for Map {
                     (Node(left.to_string()), Node(right.to_string())),
                 ))
             })
-            .collect::<Result<HashMap<Node, (Node, Node)>, AdventError>>()?;
+            .collect::<Result<HashMap<Node, (Node, Node)>>>()?;
 
         Ok(Self { nodes, directions })
     }
@@ -114,7 +112,7 @@ fn calculate_lcm(numbers: &[u64]) -> u64 {
     numbers.iter().cloned().fold(1, lcm_of_two)
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -124,7 +122,7 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<usize, AdventError> {
+fn part1(input: &str) -> Result<usize> {
     let map: Map = input.parse()?;
 
     // We'll follow the directions until we reach the end, which is ZZZ
@@ -152,7 +150,7 @@ fn part1(input: &str) -> Result<usize, AdventError> {
     Ok(steps_taken)
 }
 
-fn part2(input: &str) -> Result<u64, AdventError> {
+fn part2(input: &str) -> Result<u64> {
     let map = Map::from_str(input)?;
 
     // Get all start nodes

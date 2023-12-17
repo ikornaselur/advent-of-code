@@ -1,6 +1,4 @@
 use advent::prelude::*;
-use std::collections::HashMap;
-use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -51,7 +49,7 @@ impl Image {
     /// Get the distance map for this image
     ///
     /// The distance map is the shortest distance between all galaxies
-    fn get_distance_map(&self) -> Result<DistanceMap, AdventError> {
+    fn get_distance_map(&self) -> Result<DistanceMap> {
         let mut distance_map = DistanceMap::default();
 
         // Find all the galaxies
@@ -108,7 +106,7 @@ impl Image {
 impl FromStr for Image {
     type Err = AdventError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let map: Vec<_> = s
             .lines()
             .map(|line| line.chars().map(|c| c == '#').collect())
@@ -122,7 +120,7 @@ impl FromStr for Image {
     }
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -132,7 +130,7 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<usize, AdventError> {
+fn part1(input: &str) -> Result<usize> {
     let mut image: Image = input.parse()?;
 
     image.set_scale(2);
@@ -142,7 +140,7 @@ fn part1(input: &str) -> Result<usize, AdventError> {
     Ok(distance_map.map.values().sum())
 }
 
-fn part2(input: &str) -> Result<usize, AdventError> {
+fn part2(input: &str) -> Result<usize> {
     let mut image: Image = input.parse()?;
 
     image.set_scale(1000000);

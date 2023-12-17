@@ -2,7 +2,7 @@ use advent::prelude::*;
 
 const INPUT: &str = include_str!("../input.txt");
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -25,10 +25,10 @@ const TEXT_TO_DIGIT_MAP: [(&str, u32); 9] = [
     ("nine", 9),
 ];
 
-fn part1(input: &str) -> Result<u32, AdventError> {
+fn part1(input: &str) -> Result<u32> {
     input.lines().try_fold(0, |acc, line| {
         // Get the left most and right most number in the string
-        let numbers: Result<Vec<u32>, _> = line
+        let numbers: Result<Vec<u32>> = line
             .chars()
             .filter(|c| c.is_ascii_digit())
             .map(|c| c.to_digit(10).ok_or(AdventError::ConversionError))
@@ -45,7 +45,7 @@ fn part1(input: &str) -> Result<u32, AdventError> {
     })
 }
 
-fn part2(input: &str) -> Result<u32, AdventError> {
+fn part2(input: &str) -> Result<u32> {
     input.lines().try_fold(0, |acc, line| {
         let mut numbers: Vec<u32> = Vec::new();
         for (idx, char) in line.chars().enumerate() {

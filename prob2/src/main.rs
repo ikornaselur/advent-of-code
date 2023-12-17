@@ -1,5 +1,4 @@
 use advent::prelude::*;
-use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -19,7 +18,7 @@ struct Round {
 impl FromStr for Game {
     type Err = AdventError;
 
-    fn from_str(line: &str) -> Result<Self, Self::Err> {
+    fn from_str(line: &str) -> std::result::Result<Self, Self::Err> {
         let mut parts = line.split(": ");
         let num = parts
             .next()
@@ -102,7 +101,7 @@ impl Game {
     }
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -112,7 +111,7 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<u32, AdventError> {
+fn part1(input: &str) -> Result<u32> {
     let red = 12;
     let green = 13;
     let blue = 14;
@@ -130,7 +129,7 @@ fn part1(input: &str) -> Result<u32, AdventError> {
         })
 }
 
-fn part2(input: &str) -> Result<u32, AdventError> {
+fn part2(input: &str) -> Result<u32> {
     input
         .lines()
         .map(str::parse::<Game>)

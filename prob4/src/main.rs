@@ -1,6 +1,4 @@
 use advent::prelude::*;
-use std::collections::HashSet;
-use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -19,7 +17,7 @@ impl FromStr for Card {
     ///
     /// where the first 5 numbers left of the | are the winning numbers and on the right are the
     /// playing numbers
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+    fn from_str(input: &str) -> std::result::Result<Self, Self::Err> {
         let input = input.split_whitespace().collect::<Vec<_>>().join(" ");
         // Get everything after the first :
         let input = input.split(": ").collect::<Vec<_>>()[1];
@@ -67,7 +65,7 @@ impl Card {
     }
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -77,20 +75,14 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<u32, AdventError> {
-    let cards: Vec<Card> = input
-        .lines()
-        .map(str::parse)
-        .collect::<Result<Vec<_>, _>>()?;
+fn part1(input: &str) -> Result<u32> {
+    let cards: Vec<Card> = input.lines().map(str::parse).collect::<Result<Vec<_>>>()?;
     let score = cards.iter().map(Card::get_score).sum::<u32>();
     Ok(score)
 }
 
-fn part2(input: &str) -> Result<u32, AdventError> {
-    let mut cards: Vec<Card> = input
-        .lines()
-        .map(str::parse)
-        .collect::<Result<Vec<_>, _>>()?;
+fn part2(input: &str) -> Result<u32> {
+    let mut cards: Vec<Card> = input.lines().map(str::parse).collect::<Result<Vec<_>>>()?;
 
     let mut counts = vec![1; cards.len()];
 

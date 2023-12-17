@@ -1,6 +1,4 @@
 use advent::prelude::*;
-use std::collections::HashMap;
-use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -59,7 +57,7 @@ impl ConditionInfo {
         pos: usize,
         counts_idx: usize,
         current_damage_count: usize,
-    ) -> Result<usize, AdventError> {
+    ) -> Result<usize> {
         if let Some(&cached) = self.cache.get(&(pos, counts_idx, current_damage_count)) {
             return Ok(cached);
         }
@@ -118,7 +116,7 @@ impl FromStr for ConditionInfo {
     /// ????.##.##?.. 2,2,3
     ///
     /// which represents the springs conditions on the left and the counts on the right
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let mut parts = s.split_whitespace();
         let conditions: Vec<Condition> = parts
             .next()
@@ -132,7 +130,7 @@ impl FromStr for ConditionInfo {
             .ok_or(parse_error!("Unable to get spring counts from line"))?
             .split(',')
             .map(|s| s.parse::<usize>())
-            .collect::<Result<Vec<usize>, _>>()?;
+            .collect::<std::result::Result<Vec<usize>, _>>()?;
         let conditions_len = conditions.len();
 
         Ok(Self {
@@ -144,7 +142,7 @@ impl FromStr for ConditionInfo {
     }
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -154,27 +152,27 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<usize, AdventError> {
+fn part1(input: &str) -> Result<usize> {
     let mut infos: Vec<ConditionInfo> = input
         .lines()
         .map(|l| l.parse::<ConditionInfo>())
-        .collect::<Result<Vec<_>, _>>()?;
+        .collect::<Result<Vec<_>>>()?;
 
     let sum_of_options = infos
         .iter_mut()
         .map(|info| info.backtrack(0, 0, 0))
-        .collect::<Result<Vec<_>, _>>()?
+        .collect::<Result<Vec<_>>>()?
         .iter()
         .sum::<usize>();
 
     Ok(sum_of_options)
 }
 
-fn part2(input: &str) -> Result<usize, AdventError> {
+fn part2(input: &str) -> Result<usize> {
     let mut infos: Vec<ConditionInfo> = input
         .lines()
         .map(|l| l.parse::<ConditionInfo>())
-        .collect::<Result<Vec<_>, _>>()?;
+        .collect::<Result<Vec<_>>>()?;
 
     // Expand all infos by 5
     infos.iter_mut().for_each(|info| info.expand(5));
@@ -182,7 +180,7 @@ fn part2(input: &str) -> Result<usize, AdventError> {
     let sum_of_options = infos
         .iter_mut()
         .map(|info| info.backtrack(0, 0, 0))
-        .collect::<Result<Vec<_>, _>>()?
+        .collect::<Result<Vec<_>>>()?
         .iter()
         .sum::<usize>();
 

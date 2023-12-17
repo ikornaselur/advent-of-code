@@ -1,5 +1,4 @@
 use advent::prelude::*;
-use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -61,7 +60,7 @@ impl FromStr for Almanac {
     ///     31 6 21
     ///
     /// each map can have any number of mappings listed under the title
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+    fn from_str(input: &str) -> std::result::Result<Self, Self::Err> {
         let mut lines = input.lines();
 
         // Get the seeds first
@@ -136,7 +135,7 @@ impl Almanac {
     }
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -146,7 +145,7 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<u64, AdventError> {
+fn part1(input: &str) -> Result<u64> {
     let almanac: Almanac = input.parse()?;
 
     let mut lowest_number = u64::MAX;
@@ -161,7 +160,7 @@ fn part1(input: &str) -> Result<u64, AdventError> {
     Ok(lowest_number)
 }
 
-fn part2(input: &str) -> Result<u64, AdventError> {
+fn part2(input: &str) -> Result<u64> {
     let almanac: Almanac = input.parse()?;
 
     let mut lowest_number = u64::MAX;

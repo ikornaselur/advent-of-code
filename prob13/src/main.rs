@@ -1,5 +1,4 @@
 use advent::prelude::*;
-use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -12,7 +11,7 @@ struct Pattern {
 impl FromStr for Pattern {
     type Err = AdventError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let lines: Vec<_> = s.lines().collect();
 
         // Since the input is just ash or rocks, we can represent it as bits in a 64 bit binary
@@ -116,16 +115,16 @@ impl Pattern {
 /// Parse the input of multiple patterns
 ///
 /// Each pattern is separated by a blank line
-fn parse_input(input: &str) -> Result<Vec<Pattern>, AdventError> {
+fn parse_input(input: &str) -> Result<Vec<Pattern>> {
     let patterns = input
         .split("\n\n")
         .map(|pattern| pattern.parse::<Pattern>())
-        .collect::<Result<Vec<Pattern>, AdventError>>()?;
+        .collect::<Result<Vec<Pattern>>>()?;
 
     Ok(patterns)
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -135,7 +134,7 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<usize, AdventError> {
+fn part1(input: &str) -> Result<usize> {
     let patterns: Vec<Pattern> = parse_input(input)?;
     let total = patterns
         .iter()
@@ -147,7 +146,7 @@ fn part1(input: &str) -> Result<usize, AdventError> {
     Ok(total)
 }
 
-fn part2(input: &str) -> Result<usize, AdventError> {
+fn part2(input: &str) -> Result<usize> {
     let patterns: Vec<Pattern> = parse_input(input)?;
     let total = patterns
         .iter()

@@ -1,6 +1,4 @@
 use advent::prelude::*;
-use std::collections::{HashMap, HashSet};
-use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -47,7 +45,7 @@ enum Direction {
 impl FromStr for Schematic {
     type Err = AdventError;
 
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+    fn from_str(input: &str) -> std::result::Result<Self, Self::Err> {
         let rows: Vec<String> = input.lines().map(|line| line.to_string()).collect();
         let height = rows.len();
         let width = rows[0].len();
@@ -64,7 +62,7 @@ impl Schematic {
     /// Returns a list of all the part numbers in the schematic.
     ///
     /// A number in the schematic is considered a part number only if it is adjacent to any symbol
-    fn get_part_numbers(&self) -> Result<Vec<u32>, AdventError> {
+    fn get_part_numbers(&self) -> Result<Vec<u32>> {
         let mut part_numbers = Vec::new();
 
         for (row_index, row) in self.rows.iter().enumerate() {
@@ -97,7 +95,7 @@ impl Schematic {
     ///
     /// By going through all the numbers in the schematic, we can associate them to any adjacent
     /// gear by adding the number to the gear map.
-    fn build_gear_map(&mut self) -> Result<(), AdventError> {
+    fn build_gear_map(&mut self) -> Result<()> {
         for (row_index, row) in self.rows.iter().enumerate() {
             let mut number = 0; // We can treat 0 as not a number, because we need to return the
             let mut adjacent_gear_coords = HashSet::new();
@@ -180,16 +178,12 @@ impl Schematic {
     }
 
     /// Return the charater, if any, adjacent to a coordinate
-    fn get_char(&self, x: usize, y: usize) -> Result<char, AdventError> {
+    fn get_char(&self, x: usize, y: usize) -> Result<char> {
         self.rows[x].chars().nth(y).ok_or(invalid_coordinate!(x, y))
     }
 
     /// Return if there is a symbol at adjacent cells
-    fn is_adjacent_to_symbol(
-        &self,
-        row_index: usize,
-        col_index: usize,
-    ) -> Result<bool, AdventError> {
+    fn is_adjacent_to_symbol(&self, row_index: usize, col_index: usize) -> Result<bool> {
         for direction in [
             Direction::Above,
             Direction::Below,
@@ -213,7 +207,7 @@ impl Schematic {
     }
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -223,13 +217,13 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<u32, AdventError> {
+fn part1(input: &str) -> Result<u32> {
     let schematic: Schematic = input.parse()?;
 
     Ok(schematic.get_part_numbers()?.iter().sum())
 }
 
-fn part2(input: &str) -> Result<u32, AdventError> {
+fn part2(input: &str) -> Result<u32> {
     let mut schematic: Schematic = input.parse()?;
 
     schematic.build_gear_map()?;

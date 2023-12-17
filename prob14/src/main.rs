@@ -14,7 +14,7 @@ impl Platform {
     ///
     /// Tilting a platform will cause all RoundRock to slide until they reach the edge or hit
     /// another rock
-    fn tilt_platform(&mut self, direction: &Direction) -> Result<(), AdventError> {
+    fn tilt_platform(&mut self, direction: &Direction) -> Result<()> {
         let row_count = self.nodes.len();
         let col_count = self.nodes[0].len();
 
@@ -129,7 +129,7 @@ impl Platform {
 impl FromStr for Platform {
     type Err = AdventError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let mut nodes = Vec::new();
 
         for line in s.lines() {
@@ -170,7 +170,7 @@ impl From<char> for Node {
     }
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -180,7 +180,7 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<usize, AdventError> {
+fn part1(input: &str) -> Result<usize> {
     let mut platform: Platform = input.parse()?;
 
     platform.tilt_platform(&Direction::North)?;
@@ -188,7 +188,7 @@ fn part1(input: &str) -> Result<usize, AdventError> {
     Ok(platform.get_load())
 }
 
-fn part2(input: &str) -> Result<usize, AdventError> {
+fn part2(input: &str) -> Result<usize> {
     let mut platform: Platform = input.parse()?;
 
     // Keep track of how many times we've seen a state, and which direction we tilted to get here

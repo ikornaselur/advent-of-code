@@ -1,5 +1,4 @@
 use advent::prelude::*;
-use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -15,7 +14,7 @@ struct Element {
 impl FromStr for Element {
     type Err = AdventError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let hash_fold_func = |acc: u8, c: char| acc.wrapping_add(c as u8).wrapping_mul(17);
         let hash: u8 = s.chars().fold(0, hash_fold_func);
 
@@ -67,7 +66,7 @@ enum Operation {
     Subtract,
 }
 
-fn main() -> Result<(), AdventError> {
+fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
 
@@ -77,12 +76,12 @@ fn main() -> Result<(), AdventError> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<u32, AdventError> {
+fn part1(input: &str) -> Result<u32> {
     let elements: Vec<Element> = input
         .trim()
         .split(',')
         .map(|e| e.parse::<Element>())
-        .collect::<Result<Vec<Element>, AdventError>>()?;
+        .collect::<Result<Vec<Element>>>()?;
 
     let sum = elements.iter().fold(0, |acc, e| acc + e.hash as u32);
 
@@ -92,12 +91,12 @@ fn part1(input: &str) -> Result<u32, AdventError> {
 #[derive(Debug, Clone)]
 struct Lens {}
 
-fn part2(input: &str) -> Result<usize, AdventError> {
+fn part2(input: &str) -> Result<usize> {
     let elements: Vec<Element> = input
         .trim()
         .split(',')
         .map(|e| e.parse::<Element>())
-        .collect::<Result<Vec<Element>, AdventError>>()?;
+        .collect::<Result<Vec<Element>>>()?;
 
     let mut boxes: Vec<Vec<(String, u8)>> = vec![Vec::new(); 256];
     for element in elements {

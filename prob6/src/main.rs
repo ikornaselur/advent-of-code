@@ -2,17 +2,7 @@ use advent::prelude::*;
 
 const INPUT: &str = include_str!("../input.txt");
 
-fn main() -> Result<(), AdventError> {
-    println!("## Part 1");
-    println!(" > {}", part1(INPUT)?);
-
-    println!("## Part 2");
-    println!(" > {}", part2(INPUT)?);
-
-    Ok(())
-}
-
-fn parse_input(input: &str) -> Result<Vec<(i64, i64)>, AdventError> {
+fn parse_input(input: &str) -> Result<Vec<(i64, i64)>> {
     let mut lines = input.lines();
 
     let times = lines
@@ -49,7 +39,17 @@ fn solve(y: i64, d: i64) -> (f64, f64) {
     (x1, x2)
 }
 
-fn part1(input: &str) -> Result<i64, AdventError> {
+fn main() -> Result<()> {
+    println!("## Part 1");
+    println!(" > {}", part1(INPUT)?);
+
+    println!("## Part 2");
+    println!(" > {}", part2(INPUT)?);
+
+    Ok(())
+}
+
+fn part1(input: &str) -> Result<i64> {
     let mut result = 1;
 
     for (time, distance) in parse_input(input)? {
@@ -67,7 +67,7 @@ fn part1(input: &str) -> Result<i64, AdventError> {
     Ok(result)
 }
 
-fn part2(input: &str) -> Result<i64, AdventError> {
+fn part2(input: &str) -> Result<i64> {
     part1(&input.replace(' ', ""))
 }
 
