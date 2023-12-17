@@ -1,4 +1,4 @@
-use advent_core::error::AdventError;
+use advent::prelude::*;
 use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");

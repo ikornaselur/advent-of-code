@@ -1,10 +1,8 @@
-use advent_core::error::AdventError;
+use advent::prelude::*;
 use std::collections::HashMap;
 use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
-
-type Coord = (usize, usize);
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct Node {
@@ -14,11 +12,11 @@ struct Node {
 
 #[derive(Debug, Default)]
 struct DistanceMap {
-    map: HashMap<(Coord, Coord), usize>,
+    map: HashMap<(Coordinate, Coordinate), usize>,
 }
 
 impl DistanceMap {
-    fn insert(&mut self, from: Coord, to: Coord, distance: usize) {
+    fn insert(&mut self, from: Coordinate, to: Coordinate, distance: usize) {
         if from > to {
             self.map.insert((to, from), distance);
         } else {
@@ -57,7 +55,7 @@ impl Image {
         let mut distance_map = DistanceMap::default();
 
         // Find all the galaxies
-        let mut galaxy_coords: Vec<Coord> = vec![];
+        let mut galaxy_coords: Vec<Coordinate> = vec![];
         for (y, row) in self.map.iter().enumerate() {
             for (x, &galaxy) in row.iter().enumerate() {
                 if galaxy {

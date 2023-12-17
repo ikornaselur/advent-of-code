@@ -1,4 +1,4 @@
-use advent_core::error::AdventError;
+use advent::prelude::*;
 
 const INPUT: &str = include_str!("../input.txt");
 

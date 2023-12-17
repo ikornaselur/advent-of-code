@@ -3,7 +3,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum AdventError {
     #[error("Error: {0}")]
-    GenericError(String),
+    Error(String),
     #[error("Unable to convert character to digit")]
     ConversionError,
     #[error("Invalid input")]
@@ -35,8 +35,8 @@ macro_rules! parse_error {
 }
 
 #[macro_export]
-macro_rules! generic_error {
+macro_rules! error {
     ($($t:tt)*) => {
-        AdventError::GenericError(format!($($t)*))
+        AdventError::Error(format!($($t)*))
     };
 }

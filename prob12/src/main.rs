@@ -1,5 +1,4 @@
-use advent_core::error::AdventError;
-use advent_core::parse_error;
+use advent::prelude::*;
 use std::collections::HashMap;
 use std::str::FromStr;
 

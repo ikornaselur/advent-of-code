@@ -1,5 +1,4 @@
-use advent_core::error::AdventError;
-use advent_core::generic_error;
+use advent::prelude::*;
 use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
@@ -22,7 +21,7 @@ impl FromStr for Sequence {
         loop {
             let current_layer = stack
                 .last_mut()
-                .ok_or(generic_error!("Unable to get current layer"))?;
+                .ok_or(error!("Unable to get current layer"))?;
 
             // Break the loop if all the numbers are 0
             if current_layer.iter().all(|&n| n == 0) {
@@ -73,9 +72,7 @@ impl Sequence {
     fn previous_value(&self) -> Result<i64, AdventError> {
         let mut last = 0;
         for layer in self.stack.iter().rev() {
-            let first_val = layer
-                .first()
-                .ok_or(generic_error!("Unable to get first value"))?;
+            let first_val = layer.first().ok_or(error!("Unable to get first value"))?;
             last = first_val - last;
         }
 

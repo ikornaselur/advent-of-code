@@ -1,5 +1,4 @@
-use advent_core::error::AdventError;
-use advent_core::generic_error;
+use advent::prelude::*;
 use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
@@ -104,16 +103,13 @@ fn part2(input: &str) -> Result<usize, AdventError> {
     for element in elements {
         let idx = element.label_hash as usize;
 
-        let bx = boxes
-            .get_mut(idx)
-            .ok_or(generic_error!("Invalid box index"))?;
+        let bx = boxes.get_mut(idx).ok_or(error!("Invalid box index"))?;
 
         match element.operation {
             Operation::Equal => {
-                let focal_length = element.focal_length.ok_or(generic_error!(
-                    "Invalid focal length for element {}",
-                    element.data
-                ))?;
+                let focal_length = element
+                    .focal_length
+                    .ok_or(error!("Invalid focal length for element {}", element.data))?;
                 let lens = (element.label, focal_length);
                 if let Some(i) = bx.iter().position(|e| e.0 == lens.0) {
                     bx[i] = lens;

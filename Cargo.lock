@@ -3,7 +3,7 @@
 version = 3
 
 [[package]]
-name = "advent_core"
+name = "advent"
 version = "0.1.0"
 dependencies = [
  "thiserror",
@@ -72,113 +72,120 @@ dependencies = [
 name = "prob1"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob10"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob11"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob12"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob13"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob14"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob15"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob16"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
  "rayon",
+]
+
+[[package]]
+name = "prob17"
+version = "0.1.0"
+dependencies = [
+ "advent",
 ]
 
 [[package]]
 name = "prob2"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob3"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob4"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob5"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob6"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob7"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob8"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]
 name = "prob9"
 version = "0.1.0"
 dependencies = [
- "advent_core",
+ "advent",
 ]
 
 [[package]]

@@ -1,5 +1,4 @@
-use advent_core::error::AdventError;
-use advent_core::invalid_coordinate;
+use advent::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 

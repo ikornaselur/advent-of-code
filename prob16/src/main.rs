@@ -1,5 +1,4 @@
-use advent_core::error::AdventError;
-use advent_core::generic_error;
+use advent::prelude::*;
 use rayon::prelude::*;
 use std::collections::HashSet;
 use std::collections::VecDeque;
@@ -7,7 +6,6 @@ use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
 
-type Coordinate = (usize, usize);
 type Beam = (Coordinate, Direction);
 
 #[derive(Debug, PartialEq)]
@@ -288,7 +286,7 @@ impl TryFrom<char> for Node {
             '|' => Ok(Node::Vertical),
             '/' => Ok(Node::Up),
             '\\' => Ok(Node::Down),
-            _ => Err(generic_error!("Unknown node type: {}", c)),
+            _ => Err(error!("Unknown node type: {}", c)),
         }
     }
 }
@@ -327,8 +325,10 @@ fn part2(input: &str) -> Result<usize, AdventError> {
         .into_par_iter()
         .map(|x| layout.beam(((x, layout.grid[0].len() - 1), Direction::Left)));
 
-    top.chain(left).chain(bottom).chain(right).try_reduce(|| 0, |mx, energy| Ok(energy.max(mx)))
-
+    top.chain(left)
+        .chain(bottom)
+        .chain(right)
+        .try_reduce(|| 0, |mx, energy| Ok(energy.max(mx)))
 }
 
 #[cfg(test)]

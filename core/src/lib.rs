@@ -1,2 +1,5 @@
 #[macro_use]
-pub mod error;
+pub mod error_handling;
+pub mod enums;
+pub mod prelude;
+pub mod types;
