@@ -8,7 +8,12 @@ struct Layout {
 
 type HeatLoss = i32;
 type StraightDistance = i32;
-type Key = (HeatLoss, Coordinate<usize>, CardinalDirection, StraightDistance);
+type Key = (
+    HeatLoss,
+    Coordinate<usize>,
+    CardinalDirection,
+    StraightDistance,
+);
 
 /// Notes
 ///
@@ -35,7 +40,8 @@ impl Layout {
         min_straight_line: i32,
         max_straight_line: i32,
     ) -> Result<i32> {
-        let mut seen: HashSet<(Coordinate<usize>, CardinalDirection, StraightDistance)> = HashSet::new();
+        let mut seen: HashSet<(Coordinate<usize>, CardinalDirection, StraightDistance)> =
+            HashSet::new();
 
         // This is a max heap, so we store the scores negative to turn it into a min heap
         let mut heap: BinaryHeap<Key> = BinaryHeap::new();

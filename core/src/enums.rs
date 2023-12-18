@@ -36,7 +36,7 @@ impl OrdinalDirection {
     }
 
     /// From a single character, U/D/L/R
-    pub fn from_UDLR(c: &str) -> Option<Self> {
+    pub fn from_udlr(c: &str) -> Option<Self> {
         match c {
             "U" => Some(OrdinalDirection::Up),
             "D" => Some(OrdinalDirection::Down),
