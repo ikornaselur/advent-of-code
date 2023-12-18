@@ -1,1 +1,1 @@
-pub type Coordinate = (usize, usize);
+pub type Coordinate<T> = (T, T);

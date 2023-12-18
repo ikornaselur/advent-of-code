@@ -133,6 +133,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "prob18"
+version = "0.1.0"
+dependencies = [
+ "advent",
+]
+
+[[package]]
 name = "prob2"
 version = "0.1.0"
 dependencies = [

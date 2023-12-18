@@ -3,14 +3,14 @@ use rayon::prelude::*;
 
 const INPUT: &str = include_str!("../input.txt");
 
-type Beam = (Coordinate, Direction);
+type Beam = (Coordinate<usize>, Direction);
 
 #[derive(Debug, PartialEq)]
 struct Layout {
     grid: Vec<Vec<Node>>,
 }
 
-fn get_next_coordinate(beam: Beam) -> Coordinate {
+fn get_next_coordinate(beam: Beam) -> Coordinate<usize> {
     match beam {
         ((x, y), Direction::Right) => (x, y + 1),
         ((x, y), Direction::Down) => (x + 1, y),

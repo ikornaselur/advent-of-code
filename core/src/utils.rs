@@ -1,7 +1,12 @@
 use crate::types::Coordinate;
+use std::cmp::PartialOrd;
+use std::ops::{Add, Neg, Sub};
 
 /// Calculate the manhattan distance between two coordinates
-pub fn manhattan_distance(from: Coordinate, to: Coordinate) -> usize {
+pub fn manhattan_distance<T>(from: Coordinate<T>, to: Coordinate<T>) -> T
+where
+    T: Sub<Output = T> + Add<Output = T> + Neg<Output = T> + PartialOrd + Copy,
+{
     let x = if from.0 > to.0 {
         from.0 - to.0
     } else {

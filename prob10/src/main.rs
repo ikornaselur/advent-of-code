@@ -82,7 +82,7 @@ impl PipeMap {
     /// Find the start node and return the coordinate
     ///
     /// The start node is the 'S' node
-    fn find_start(&self) -> Result<Coordinate> {
+    fn find_start(&self) -> Result<Coordinate<usize>> {
         for (x, row) in self.nodes.iter().enumerate() {
             for (y, node) in row.iter().enumerate() {
                 if *node == Pipe::Start {
@@ -94,7 +94,7 @@ impl PipeMap {
     }
 
     /// Get the node at the given coordinate
-    fn get_node(&self, coord: Coordinate) -> Result<&Pipe> {
+    fn get_node(&self, coord: Coordinate<usize>) -> Result<&Pipe> {
         let (row, col) = coord;
         if row >= self.height || col >= self.width {
             return Err(error!("Invalid coordinate: {:?}", coord));
@@ -105,9 +105,9 @@ impl PipeMap {
     /// Look at the nodes around to see which node is the next one
     fn get_next_node(
         &self,
-        current_node_coord: Coordinate,
+        current_node_coord: Coordinate<usize>,
         came_from_direction: CardinalDirection,
-    ) -> Result<(Coordinate, CardinalDirection)> {
+    ) -> Result<(Coordinate<usize>, CardinalDirection)> {
         let current_node = self.get_node(current_node_coord)?;
         if *current_node == Pipe::None || *current_node == Pipe::Start {
             return Err(error!("Invalid node: {:?}", current_node));
@@ -193,7 +193,11 @@ impl PipeMap {
         Ok(directions)
     }
 
-    fn shift_coord(&self, coord: Coordinate, direction: CardinalDirection) -> Option<Coordinate> {
+    fn shift_coord(
+        &self,
+        coord: Coordinate<usize>,
+        direction: CardinalDirection,
+    ) -> Option<Coordinate<usize>> {
         let (row, col) = coord;
 
         match direction {

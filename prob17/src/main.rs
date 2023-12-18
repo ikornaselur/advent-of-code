@@ -8,7 +8,7 @@ struct Layout {
 
 type HeatLoss = i32;
 type StraightDistance = i32;
-type Key = (HeatLoss, Coordinate, CardinalDirection, StraightDistance);
+type Key = (HeatLoss, Coordinate<usize>, CardinalDirection, StraightDistance);
 
 /// Notes
 ///
@@ -31,11 +31,11 @@ impl Layout {
     /// The start node does not incurr a cost, unless the path takes us back over that node
     fn find_cheapest_path(
         &self,
-        to: Coordinate,
+        to: Coordinate<usize>,
         min_straight_line: i32,
         max_straight_line: i32,
     ) -> Result<i32> {
-        let mut seen: HashSet<(Coordinate, CardinalDirection, StraightDistance)> = HashSet::new();
+        let mut seen: HashSet<(Coordinate<usize>, CardinalDirection, StraightDistance)> = HashSet::new();
 
         // This is a max heap, so we store the scores negative to turn it into a min heap
         let mut heap: BinaryHeap<Key> = BinaryHeap::new();
@@ -119,9 +119,9 @@ impl Layout {
 
     fn shift_coordinate(
         &self,
-        coord: Coordinate,
+        coord: Coordinate<usize>,
         direction: &CardinalDirection,
-    ) -> Option<Coordinate> {
+    ) -> Option<Coordinate<usize>> {
         match direction {
             CardinalDirection::North => {
                 if coord.0 == 0 {
@@ -154,7 +154,7 @@ impl Layout {
         }
     }
 
-    fn node_heat(&self, coord: Coordinate) -> i32 {
+    fn node_heat(&self, coord: Coordinate<usize>) -> i32 {
         self.nodes[coord.0][coord.1] as i32
     }
 }

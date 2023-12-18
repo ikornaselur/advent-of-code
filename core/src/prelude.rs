@@ -1,4 +1,4 @@
-pub use crate::enums::CardinalDirection;
+pub use crate::enums::{CardinalDirection, OrdinalDirection};
 pub use crate::error_handling::AdventError;
 pub use crate::types::Coordinate;
 pub use crate::utils::manhattan_distance;

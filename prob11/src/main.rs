@@ -10,11 +10,11 @@ struct Node {
 
 #[derive(Debug, Default)]
 struct DistanceMap {
-    map: HashMap<(Coordinate, Coordinate), usize>,
+    map: HashMap<(Coordinate<usize>, Coordinate<usize>), usize>,
 }
 
 impl DistanceMap {
-    fn insert(&mut self, from: Coordinate, to: Coordinate, distance: usize) {
+    fn insert(&mut self, from: Coordinate<usize>, to: Coordinate<usize>, distance: usize) {
         if from > to {
             self.map.insert((to, from), distance);
         } else {
@@ -53,7 +53,7 @@ impl Image {
         let mut distance_map = DistanceMap::default();
 
         // Find all the galaxies
-        let mut galaxy_coords: Vec<Coordinate> = vec![];
+        let mut galaxy_coords: Vec<Coordinate<usize>> = vec![];
         for (y, row) in self.map.iter().enumerate() {
             for (x, &galaxy) in row.iter().enumerate() {
                 if galaxy {
