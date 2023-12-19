@@ -192,6 +192,107 @@ impl FromStr for Condition {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+struct Ranges {
+    x: (u32, u32),
+    m: (u32, u32),
+    a: (u32, u32),
+    s: (u32, u32),
+}
+
+impl Ranges {
+    fn combinations(&self) -> u64 {
+        (self.x.1 - self.x.0) as u64
+            * (self.m.1 - self.m.0) as u64
+            * (self.a.1 - self.a.0) as u64
+            * (self.s.1 - self.s.0) as u64
+    }
+}
+
+fn get_combinations(key: &str, workflows: &HashMap<String, Workflow>, ranges: &Ranges) -> u64 {
+    if key == "A" {
+        return ranges.combinations();
+    }
+    if key == "R" {
+        return 0;
+    }
+
+    let workflow = workflows.get(key).unwrap();
+    let mut combinations = 0;
+
+    let mut ranges = *ranges;
+
+    // Loop through the conditions
+    //
+    // For any condition that has a category, value and ordering, we split up the ranges and recurse
+    // For the other half of the range, we continue through to the next condition
+    //
+    // When we reach the final condition (which will not have a category, value or ordering), we
+    // recurse without splitting the ranges any more
+    for condition in &workflow.conditions {
+        match condition {
+            Condition {
+                category: None,
+                value: None,
+                ordering: None,
+                workflow_name,
+            } => {
+                // This is the final condition, we will just recurse with the ranges as they are
+                // now
+                combinations += get_combinations(workflow_name, workflows, &ranges);
+            }
+            Condition {
+                category: Some(category),
+                value: Some(value),
+                ordering: Some(ordering),
+                workflow_name,
+            } => {
+                // We need to split up the ranges and recurse
+                let mut new_ranges = ranges;
+                match (category, ordering) {
+                    (Category::X, Ordering::Greater) => {
+                        new_ranges.x = (value + 1, ranges.x.1);
+                        ranges.x = (ranges.x.0, value + 1);
+                    }
+                    (Category::X, Ordering::Less) => {
+                        new_ranges.x = (ranges.x.0, *value);
+                        ranges.x = (*value, ranges.x.1);
+                    }
+                    (Category::M, Ordering::Greater) => {
+                        new_ranges.m = (value + 1, ranges.m.1);
+                        ranges.m = (ranges.m.0, value + 1);
+                    }
+                    (Category::M, Ordering::Less) => {
+                        new_ranges.m = (ranges.m.0, *value);
+                        ranges.m = (*value, ranges.m.1);
+                    }
+                    (Category::A, Ordering::Greater) => {
+                        new_ranges.a = (value + 1, ranges.a.1);
+                        ranges.a = (ranges.a.0, value + 1);
+                    }
+                    (Category::A, Ordering::Less) => {
+                        new_ranges.a = (ranges.a.0, *value);
+                        ranges.a = (*value, ranges.a.1);
+                    }
+                    (Category::S, Ordering::Greater) => {
+                        new_ranges.s = (value + 1, ranges.s.1);
+                        ranges.s = (ranges.s.0, value + 1);
+                    }
+                    (Category::S, Ordering::Less) => {
+                        new_ranges.s = (ranges.s.0, *value);
+                        ranges.s = (*value, ranges.s.1);
+                    }
+                    _ => panic!("Unknown condition"),
+                }
+                combinations += get_combinations(workflow_name, workflows, &new_ranges);
+            }
+            _ => panic!("Unknown condition"),
+        }
+    }
+
+    combinations
+}
+
 fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
@@ -230,7 +331,8 @@ fn part1(input: &str) -> Result<u32> {
             loop {
                 let workflow = workflows
                     .get(&workflow_name)
-                    .ok_or(error!("Unable to get workflow")).unwrap();
+                    .ok_or(error!("Unable to get workflow"))
+                    .unwrap();
                 workflow_name = part.run_workflow(workflow);
                 if workflow_name == "A" {
                     return part.x + part.m + part.a + part.s;
@@ -244,8 +346,30 @@ fn part1(input: &str) -> Result<u32> {
     Ok(total)
 }
 
-fn part2(input: &str) -> Result<u32> {
-    Ok(0)
+fn part2(input: &str) -> Result<u64> {
+    let mut sections = input.split("\n\n");
+    let workflows: HashMap<String, Workflow> = sections
+        .next()
+        .ok_or(error!("Unable to get workflows"))?
+        .lines()
+        .map(|s| {
+            let workflow = s.parse::<Workflow>()?;
+            Ok((workflow.name.clone(), workflow))
+        })
+        .collect::<Result<HashMap<String, Workflow>>>()?;
+
+    let combinations = get_combinations(
+        "in",
+        &workflows,
+        &Ranges {
+            x: (1, 4001),
+            m: (1, 4001),
+            a: (1, 4001),
+            s: (1, 4001),
+        },
+    );
+
+    Ok(combinations)
 }
 
 #[cfg(test)]
@@ -256,12 +380,12 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(TEST_INPUT).unwrap(), 19114);
+        assert_eq!(part1(TEST_INPUT).unwrap(), 19_114);
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 167_409_079_868_000);
     }
 
     #[test]
@@ -325,5 +449,127 @@ mod tests {
 
         let workflow: Workflow = "qkq{x>10:abc,R}".parse().unwrap();
         assert_eq!(part.run_workflow(&workflow), "R");
+    }
+
+    #[test]
+    fn test_ranges_combinations() {
+        assert_eq!(
+            Ranges {
+                x: (1, 11),
+                m: (1, 11),
+                a: (1, 11),
+                s: (1, 11),
+            }
+            .combinations(),
+            10 * 10 * 10 * 10
+        );
+
+        assert_eq!(
+            Ranges {
+                x: (1, 11),
+                m: (1, 11),
+                a: (1, 11),
+                s: (1, 10),
+            }
+            .combinations(),
+            10 * 10 * 10 * 9
+        );
+
+        assert_eq!(
+            Ranges {
+                x: (1, 11),
+                m: (1, 11),
+                a: (1, 11),
+                s: (2, 11),
+            }
+            .combinations(),
+            10 * 10 * 10 * 9
+        );
+
+        assert_eq!(
+            Ranges {
+                x: (1, 11),
+                m: (1, 11),
+                a: (1, 11),
+                s: (6, 11),
+            }
+            .combinations(),
+            10 * 10 * 10 * 5
+        );
+    }
+
+    #[test]
+    fn test_get_combinations_base_case_rejected() {
+        let combinations = get_combinations(
+            "R",
+            &HashMap::new(),
+            &Ranges {
+                x: (1, 4000),
+                m: (1, 4000),
+                a: (1, 4000),
+                s: (1, 4000),
+            },
+        );
+
+        assert_eq!(combinations, 0);
+    }
+
+    #[test]
+    fn test_get_combinations_base_case_accepted() {
+        let combinations = get_combinations(
+            "A",
+            &HashMap::new(),
+            &Ranges {
+                x: (1, 11),
+                m: (1, 11),
+                a: (1, 11),
+                s: (1, 11),
+            },
+        );
+        assert_eq!(combinations, 10 * 10 * 10 * 10);
+    }
+
+    #[test]
+    fn test_get_combinations_with_one_split_less() {
+        let workflows: HashMap<String, Workflow> = [
+            ("abc".to_string(), "abc{a<5:xyz,R}".parse().unwrap()),
+            ("xyz".to_string(), "xyz{A}".parse().unwrap()),
+        ]
+        .into();
+
+        let combinations = get_combinations(
+            "abc",
+            &workflows,
+            &Ranges {
+                x: (1, 11),
+                m: (1, 11),
+                a: (1, 11),
+                s: (1, 11),
+            },
+        );
+
+        assert_eq!(combinations, 10 * 10 * 10 * 4);
+    }
+
+    #[test]
+    fn test_get_combinations_with_one_split_more() {
+        let workflows: HashMap<String, Workflow> = [
+            ("abc".to_string(), "abc{a>5:xyz,R}".parse().unwrap()),
+            ("xyz".to_string(), "xyz{A}".parse().unwrap()),
+        ]
+        .into();
+
+        let combinations = get_combinations(
+            "abc",
+            &workflows,
+            &Ranges {
+                x: (1, 11),
+                m: (1, 11),
+                a: (1, 11),
+                s: (1, 11),
+            },
+        );
+
+        assert_eq!(combinations, 10 * 10 * 10 * 5);
     }
 }
