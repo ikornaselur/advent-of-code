@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 advent = { path = "../core" }
-regex = "1.10.2"
+nom = "7.1.3"

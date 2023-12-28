@@ -1,6 +1,7 @@
 use advent::prelude::*;
-use regex::Regex;
 use std::cmp::Ordering;
+
+mod parse;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -69,30 +70,7 @@ impl FromStr for Part {
     type Err = AdventError;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        let re = Regex::new(r"\{x=(?P<x>\d+),m=(?P<m>\d+),a=(?P<a>\d+),s=(?P<s>\d+)\}")
-            .map_err(|e| error!("Unable to create regex: {}", e))?;
-
-        let caps = re.captures(s).ok_or(error!("Unable to get captures"))?;
-        let x = caps
-            .name("x")
-            .ok_or(error!("Unable to get x"))?
-            .as_str()
-            .parse::<u32>()?;
-        let m = caps
-            .name("m")
-            .ok_or(error!("Unable to get m"))?
-            .as_str()
-            .parse::<u32>()?;
-        let a = caps
-            .name("a")
-            .ok_or(error!("Unable to get a"))?
-            .as_str()
-            .parse::<u32>()?;
-        let s = caps
-            .name("s")
-            .ok_or(error!("Unable to get s"))?
-            .as_str()
-            .parse::<u32>()?;
+        let (_, (x, m, a, s)) = parse::xmas(s).map_err(|e| error!("Unable to parse: {}", e))?;
 
         Ok(Part { x, m, a, s })
     }
@@ -108,23 +86,26 @@ impl FromStr for Workflow {
     type Err = AdventError;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        let re = Regex::new(r"(?<name>\w+)\{(?<conditions>.+)\}")
-            .map_err(|e| error!("Unable to create regex: {}", e))?;
-
-        let caps = re.captures(s).ok_or(error!("Unable to get captures"))?;
-        let name = caps
-            .name("name")
-            .ok_or(error!("Unable to get name"))?
-            .as_str()
-            .to_string();
-
-        let conditions = caps
-            .name("conditions")
-            .ok_or(error!("Unable to get conditions"))?
-            .as_str()
-            .split(',')
-            .map(|s| s.parse::<Condition>())
-            .collect::<Result<Vec<Condition>>>()?;
+        let (_, (name, conditions)) =
+            parse::workflow(s).map_err(|e| error!("Unable to parse: {}", e))?;
+        let name = name.to_string();
+        let conditions: Vec<Condition> = conditions
+            .into_iter()
+            .map(|(condition, workflow_name)| match condition {
+                Some((category, ordering, value)) => Condition {
+                    category: Some(category),
+                    value: Some(value),
+                    ordering: Some(ordering),
+                    workflow_name: workflow_name.to_string(),
+                },
+                None => Condition {
+                    category: None,
+                    value: None,
+                    ordering: None,
+                    workflow_name: workflow_name.to_string(),
+                },
+            })
+            .collect();
 
         Ok(Workflow { name, conditions })
     }
@@ -147,48 +128,22 @@ impl FromStr for Condition {
         //   a<2006:qkq
         //
         // This is <category><operation><value>:<workflow>
-        let re =
-            Regex::new(r"(?:(?P<category>\w)(?P<ordering>[<>])(?P<value>\d+):)?(?P<workflow>\w+)")
-                .map_err(|e| error!("Unable to create regex: {}", e))?;
-        let caps = re.captures(s).ok_or(error!("Unable to get captures"))?;
+        let (_, result) = parse::condition(s).unwrap();
 
-        let category = match caps.name("category") {
-            Some(category) => match category.as_str() {
-                "x" => Some(Category::X),
-                "m" => Some(Category::M),
-                "a" => Some(Category::A),
-                "s" => Some(Category::S),
-                _ => return Err(error!("Unknown category")),
-            },
-            None => None,
-        };
-
-        let value = match caps.name("value") {
-            Some(value) => Some(value.as_str().parse::<u32>()?),
-            None => None,
-        };
-
-        let ordering = match caps.name("ordering") {
-            Some(ordering) => match ordering.as_str() {
-                ">" => Some(Ordering::Greater),
-                "<" => Some(Ordering::Less),
-                _ => return Err(error!("Unknown ordering")),
-            },
-            None => None,
-        };
-
-        let workflow_name = caps
-            .name("workflow")
-            .ok_or(error!("Unable to get workflow"))?
-            .as_str()
-            .to_string();
-
-        Ok(Condition {
-            category,
-            value,
-            ordering,
-            workflow_name,
-        })
+        match result {
+            (Some((category, ordering, value)), workflow_name) => Ok(Condition {
+                category: Some(category),
+                value: Some(value),
+                ordering: Some(ordering),
+                workflow_name: workflow_name.to_string(),
+            }),
+            (None, workflow_name) => Ok(Condition {
+                category: None,
+                value: None,
+                ordering: None,
+                workflow_name: workflow_name.to_string(),
+            }),
+        }
     }
 }
 
