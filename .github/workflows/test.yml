@@ -25,7 +25,7 @@ jobs:
           shared-key: "run"
 
       - name: Create empty inputs
-        run: find . -maxdepth 1 -type d -name 'prob*' -exec touch "{}/input.txt" \;
+        run: find . -maxdepth 2 -type d -name 'prob*' -exec touch "{}/input.txt" \;
 
       - name: Build project
         if: steps.cache.outputs.cache-hit != 'true'
@@ -54,7 +54,7 @@ jobs:
           shared-key: "run"
 
       - name: Create empty inputs
-        run: find . -maxdepth 1 -type d -name 'prob*' -exec touch "{}/input.txt" \;
+        run: find . -maxdepth 2 -type d -name 'prob*' -exec touch "{}/input.txt" \;
 
       - name: Run cargo check
         run: cargo check
@@ -79,7 +79,7 @@ jobs:
           shared-key: "run"
 
       - name: Create empty inputs
-        run: find . -maxdepth 1 -type d -name 'prob*' -exec touch "{}/input.txt" \;
+        run: find . -maxdepth 2 -type d -name 'prob*' -exec touch "{}/input.txt" \;
 
       - name: Run cargo test
         run: cargo test
@@ -103,7 +103,7 @@ jobs:
           shared-key: "run"
 
       - name: Create empty inputs
-        run: find . -maxdepth 1 -type d -name 'prob*' -exec touch "{}/input.txt" \;
+        run: find . -maxdepth 2 -type d -name 'prob*' -exec touch "{}/input.txt" \;
 
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
