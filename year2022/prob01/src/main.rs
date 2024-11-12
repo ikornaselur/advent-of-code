@@ -1,4 +1,5 @@
 use advent::prelude::*;
+use std::collections::BinaryHeap;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -25,7 +26,30 @@ fn part1(input: &str) -> Result<u32> {
 }
 
 fn part2(input: &str) -> Result<u32> {
-    Ok(0)
+    let mut heap = BinaryHeap::new();
+    let mut acc = 0;
+    for val in input.lines() {
+        match val {
+            "" => {
+                heap.push(0 - acc);  // BinaryHeap is a max-heap, we want a min-heap
+                if heap.len() > 3 {
+                    heap.pop(); // Get rid of the smallest 
+                }
+                acc = 0;
+            }
+            _ => {
+                acc += val.parse::<i32>()?;
+            }
+        }
+    }
+
+    // Add the last group
+    heap.push(0 - acc);
+    if heap.len() > 3 {
+        heap.pop(); // Get rid of the smallest 
+    }
+
+    Ok(heap.iter().sum::<i32>().unsigned_abs())
 }
 
 #[cfg(test)]
@@ -41,6 +65,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 45000);
     }
 }
