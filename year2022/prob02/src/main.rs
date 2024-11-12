@@ -2,9 +2,6 @@ use advent::prelude::*;
 
 const INPUT: &str = include_str!("../input.txt");
 
-const WIN_POINTS: u32 = 6;
-const DRAW_POINTS: u32 = 3;
-
 fn main() -> Result<()> {
     println!("## Part 1");
     println!(" > {}", part1(INPUT)?);
@@ -13,6 +10,32 @@ fn main() -> Result<()> {
     println!(" > {}", part2(INPUT)?);
 
     Ok(())
+}
+
+#[derive(Debug, PartialEq)]
+enum Goal {
+    Win,
+    Draw,
+    Lose,
+}
+
+impl Goal {
+    fn from_str(s: &str) -> Option<Goal> {
+        match s {
+            "X" => Some(Goal::Lose),
+            "Y" => Some(Goal::Draw),
+            "Z" => Some(Goal::Win),
+            _ => None,
+        }
+    }
+
+    fn to_score(&self) -> u32 {
+        match self {
+            Goal::Win => 6,
+            Goal::Draw => 3,
+            Goal::Lose => 0,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -40,6 +63,23 @@ impl Hand {
         }
     }
 
+    fn better(&self) -> Hand {
+        match self {
+            Hand::Rock => Hand::Paper,
+            Hand::Paper => Hand::Scissors,
+            Hand::Scissors => Hand::Rock,
+        }
+    }
+
+    fn worse(&self) -> Hand {
+        match self {
+            Hand::Rock => Hand::Scissors,
+            Hand::Paper => Hand::Rock,
+            Hand::Scissors => Hand::Paper,
+        }
+    }
+       
+
     fn beats(&self, other: &Hand) -> bool {
         matches!((self, other), (Hand::Paper, Hand::Rock) | (Hand::Rock, Hand::Scissors) | (Hand::Scissors, Hand::Paper))
     }
@@ -52,8 +92,8 @@ fn part1(input: &str) -> Result<u32> {
         let mut hands = line.split_whitespace().filter_map(Hand::from_str);
         if let (Some(left), Some(right)) = (hands.next(), hands.next()) {
             match (&left, &right) {
-                (l, r) if r.beats(l) => acc + right.to_score() + WIN_POINTS, 
-                (l, r) if r == l => acc + right.to_score() + DRAW_POINTS,
+                (l, r) if r.beats(l) => acc + right.to_score() + Goal::Win.to_score(), 
+                (l, r) if r == l => acc + right.to_score() + Goal::Draw.to_score(),
                 _ => acc + right.to_score(),
             }
         } else {
@@ -63,7 +103,25 @@ fn part1(input: &str) -> Result<u32> {
 }
 
 fn part2(input: &str) -> Result<u32> {
-    Ok(0)
+    Ok(input.lines().fold(0, |acc, line| {
+        let mut chars = line.split_whitespace();
+
+        if let (Some(left), Some(right)) = (chars.next(), chars.next()) {
+            let hand = Hand::from_str(left).unwrap();
+            let goal = Goal::from_str(right).unwrap();
+
+            let opposite_hand = match &goal {
+                Goal::Draw => hand,
+                Goal::Win => hand.better(),
+                Goal::Lose => hand.worse(),
+            };
+
+            acc + opposite_hand.to_score() + goal.to_score()
+            
+        } else {
+            panic!("Invalid input");
+        }
+    }))
 }
 
 #[cfg(test)]
@@ -79,6 +137,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 12);
     }
 }
