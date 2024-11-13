@@ -1,4 +1,5 @@
 use advent::prelude::*;
+use itertools::Itertools;
 
 const INPUT: &str = include_str!("../input.txt");
 
@@ -43,13 +44,42 @@ fn char_score(char: char) -> u32 {
 }
 
 fn part1(input: &str) -> Result<u32> {
-    Ok(input.lines().fold(0, |acc, line| {
-        acc + char_score(find_dup(line))
-    }))
+    Ok(input
+        .lines()
+        .fold(0, |acc, line| acc + char_score(find_dup(line))))
+}
+
+/// Find the common character between all lines in a chunk and return the score of it
+///
+/// Will panic if there is not exactly one character common
+fn chunk_score(chunk: &[&str]) -> u32 {
+    let intersection = chunk
+        .iter()
+        .fold(None, |acc, line| {
+            if acc.is_none() {
+                Some(line.chars().collect::<HashSet<_>>())
+            } else {
+                let chars: HashSet<_> = line.chars().collect();
+                Some(acc.unwrap().intersection(&chars).cloned().collect())
+            }
+        })
+        .unwrap();
+
+    if intersection.len() != 1 {
+        panic!("Invalid common chars");
+    }
+
+    let common_char = intersection.iter().next().cloned().unwrap();
+    char_score(common_char)
 }
 
 fn part2(input: &str) -> Result<u32> {
-    Ok(0)
+    Ok(input
+        .lines()
+        .chunks(3)
+        .into_iter()
+        .map(|chunk| chunk_score(&chunk.collect::<Vec<_>>()))
+        .sum())
 }
 
 #[cfg(test)]
@@ -65,7 +95,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 70);
     }
 
     #[test]
