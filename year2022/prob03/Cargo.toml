@@ -1,0 +1,7 @@
+[package]
+name = "prob3"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+advent = { path = "../../core" }

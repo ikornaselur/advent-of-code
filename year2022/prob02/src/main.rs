@@ -81,7 +81,7 @@ impl Hand {
        
 
     fn beats(&self, other: &Hand) -> bool {
-        matches!((self, other), (Hand::Paper, Hand::Rock) | (Hand::Rock, Hand::Scissors) | (Hand::Scissors, Hand::Paper))
+        self.worse() == *other
     }
 }
 
