@@ -9,6 +9,14 @@ jobs:
   build:
     name: Build and cache project
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        base-dir:
+          - "year2022"
+          - "year2023"
+    defaults:
+      run:
+        working-directory: ${{ matrix.base-dir }}
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -22,10 +30,10 @@ jobs:
         id: cache
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: "run"
+          shared-key: "run-${{ matrix.base-dir }}"
 
       - name: Create empty inputs
-        run: find . -maxdepth 2 -type d -name 'prob*' -exec touch "{}/input.txt" \;
+        run: find . -maxdepth 1 -type d -name 'prob*' -exec touch "{}/input.txt" \;
 
       - name: Build project
         if: steps.cache.outputs.cache-hit != 'true'
@@ -38,6 +46,14 @@ jobs:
   check:
     name: Check
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        base-dir:
+          - "year2022"
+          - "year2023"
+    defaults:
+      run:
+        working-directory: ${{ matrix.base-dir }}
     needs: [build]
     steps:
       - name: Checkout sources
@@ -51,10 +67,10 @@ jobs:
       - name: Cache
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: "run"
+          shared-key: "run-${{ matrix.base-dir }}"
 
       - name: Create empty inputs
-        run: find . -maxdepth 2 -type d -name 'prob*' -exec touch "{}/input.txt" \;
+        run: find . -maxdepth 1 -type d -name 'prob*' -exec touch "{}/input.txt" \;
 
       - name: Run cargo check
         run: cargo check
@@ -62,7 +78,14 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        base-dir:
+          - "year2022"
+          - "year2023"
+    defaults:
+      run:
+        working-directory: ${{ matrix.base-dir }}
     needs: [build]
     steps:
       - name: Checkout sources
@@ -76,10 +99,10 @@ jobs:
       - name: Cache
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: "run"
+          shared-key: "run-${{ matrix.base-dir }}"
 
       - name: Create empty inputs
-        run: find . -maxdepth 2 -type d -name 'prob*' -exec touch "{}/input.txt" \;
+        run: find . -maxdepth 1 -type d -name 'prob*' -exec touch "{}/input.txt" \;
 
       - name: Run cargo test
         run: cargo test
@@ -87,6 +110,14 @@ jobs:
   lints:
     name: Lint
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        base-dir:
+          - "year2022"
+          - "year2023"
+    defaults:
+      run:
+        working-directory: ${{ matrix.base-dir }}
     needs: [build]
     steps:
       - name: Checkout sources
@@ -100,10 +131,10 @@ jobs:
       - name: Cache
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: "run"
+          shared-key: "run-${{ matrix.base-dir }}"
 
       - name: Create empty inputs
-        run: find . -maxdepth 2 -type d -name 'prob*' -exec touch "{}/input.txt" \;
+        run: find . -maxdepth 1 -type d -name 'prob*' -exec touch "{}/input.txt" \;
 
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
