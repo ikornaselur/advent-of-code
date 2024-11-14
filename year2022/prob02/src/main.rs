@@ -19,16 +19,20 @@ enum Goal {
     Lose,
 }
 
-impl Goal {
-    fn from_str(s: &str) -> Option<Goal> {
-        match s {
-            "X" => Some(Goal::Lose),
-            "Y" => Some(Goal::Draw),
-            "Z" => Some(Goal::Win),
-            _ => None,
+impl FromStr for Goal {
+    type Err = AdventError;
+
+    fn from_str(input: &str) -> std::result::Result<Self, Self::Err> {
+        match input {
+            "X" => Ok(Goal::Lose),
+            "Y" => Ok(Goal::Draw),
+            "Z" => Ok(Goal::Win),
+            _ => Err(AdventError::InvalidInput),
         }
     }
+}
 
+impl Goal {
     fn to_score(&self) -> u32 {
         match self {
             Goal::Win => 6,
@@ -45,16 +49,20 @@ enum Hand {
     Scissors,
 }
 
-impl Hand {
-    fn from_str(s: &str) -> Option<Hand> {
-        match s {
-            "A" | "X" => Some(Hand::Rock),
-            "B" | "Y" => Some(Hand::Paper),
-            "C" | "Z" => Some(Hand::Scissors),
-            _ => None,
+impl FromStr for Hand {
+    type Err = AdventError;
+
+    fn from_str(input: &str) -> std::result::Result<Self, Self::Err> {
+        match input {
+            "A" | "X" => Ok(Hand::Rock),
+            "B" | "Y" => Ok(Hand::Paper),
+            "C" | "Z" => Ok(Hand::Scissors),
+            _ => Err(AdventError::InvalidInput),
         }
     }
+}
 
+impl Hand {
     fn to_score(&self) -> u32 {
         match self {
             Hand::Rock => 1,
@@ -85,28 +93,29 @@ impl Hand {
 }
 
 fn part1(input: &str) -> Result<u32> {
-    Ok(input.lines().fold(0, |acc, line| {
+    input.lines().try_fold(0, |acc, line| {
         // Parse each line into two hands variables
-        let mut hands = line.split_whitespace().filter_map(Hand::from_str);
-        if let (Some(left), Some(right)) = (hands.next(), hands.next()) {
-            match (&left, &right) {
+        let mut hands = line.split_whitespace().map(Hand::from_str);
+
+        if let (Some(Ok(left)), Some(Ok(right))) = (hands.next(), hands.next()) {
+            Ok(match (&left, &right) {
                 (l, r) if r.beats(l) => acc + right.to_score() + Goal::Win.to_score(),
                 (l, r) if r == l => acc + right.to_score() + Goal::Draw.to_score(),
                 _ => acc + right.to_score(),
-            }
+            })
         } else {
             panic!("Invalid input");
         }
-    }))
+    })
 }
 
 fn part2(input: &str) -> Result<u32> {
-    Ok(input.lines().fold(0, |acc, line| {
+    input.lines().try_fold(0, |acc, line| {
         let mut chars = line.split_whitespace();
 
         if let (Some(left), Some(right)) = (chars.next(), chars.next()) {
-            let hand = Hand::from_str(left).unwrap();
-            let goal = Goal::from_str(right).unwrap();
+            let hand: Hand = left.parse()?;
+            let goal: Goal = right.parse()?;
 
             let opposite_hand = match &goal {
                 Goal::Draw => hand,
@@ -114,11 +123,11 @@ fn part2(input: &str) -> Result<u32> {
                 Goal::Lose => hand.worse(),
             };
 
-            acc + opposite_hand.to_score() + goal.to_score()
+            Ok(acc + opposite_hand.to_score() + goal.to_score())
         } else {
             panic!("Invalid input");
         }
-    }))
+    })
 }
 
 #[cfg(test)]

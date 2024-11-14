@@ -1,5 +1,4 @@
 use advent::prelude::*;
-use std::collections::HashMap;
 use std::str::FromStr;
 
 const INPUT: &str = include_str!("../input.txt");
