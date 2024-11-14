@@ -21,6 +21,21 @@ impl Range {
     fn fully_contains(&self, other: &Self) -> bool {
         self.start <= other.start && self.end >= other.end
     }
+
+    fn overlaps(&self, other: &Self) -> bool {
+        self.start <= other.end && self.end >= other.start
+    }
+
+    // Note: Not used, because.. I misread the problem first, but it worked!
+    // So leaving it in.
+    #[allow(dead_code)]
+    fn overlap_count(&self, other: &Self) -> u32 {
+        if !self.overlaps(other) {
+            return 0;
+        }
+
+        self.end.min(other.end) - self.start.max(other.start) + 1
+    }
 }
 
 fn main() -> Result<()> {
@@ -45,7 +60,14 @@ fn part1(input: &str) -> Result<u32> {
 }
 
 fn part2(input: &str) -> Result<u32> {
-    Ok(0)
+    input.lines().try_fold(0, |acc, line| {
+        let (range1, range2) = parse_range_pair(line)?;
+        if range1.overlaps(&range2) {
+            Ok(acc + 1)
+        } else {
+            Ok(acc)
+        }
+    })
 }
 
 #[cfg(test)]
@@ -61,6 +83,39 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 4);
+    }
+
+    #[test]
+    fn test_range_overlaps() {
+        let range1 = Range { start: 1, end: 5 };
+        let range2 = Range { start: 5, end: 7 };
+        let range3 = Range { start: 6, end: 10 };
+
+        assert!(range1.overlaps(&range2));
+        assert!(range2.overlaps(&range1));
+
+        assert!(!range1.overlaps(&range3));
+        assert!(!range3.overlaps(&range1));
+    }
+
+    #[test]
+    fn test_range_overlap_count() {
+        let range1 = Range { start: 1, end: 5 };
+        let range2 = Range { start: 5, end: 10 };
+        let range3 = Range { start: 3, end: 7 };
+        let range4 = Range { start: 2, end: 3 };
+
+        assert_eq!(range1.overlap_count(&range2), 1);
+        assert_eq!(range2.overlap_count(&range1), 1);
+
+        assert_eq!(range1.overlap_count(&range3), 3);
+        assert_eq!(range3.overlap_count(&range1), 3);
+
+        assert_eq!(range2.overlap_count(&range3), 3);
+        assert_eq!(range3.overlap_count(&range2), 3);
+
+        assert_eq!(range1.overlap_count(&range4), 2);
+        assert_eq!(range4.overlap_count(&range1), 2);
     }
 }
