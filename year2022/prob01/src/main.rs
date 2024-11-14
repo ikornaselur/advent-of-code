@@ -14,15 +14,17 @@ fn main() -> Result<()> {
 }
 
 fn part1(input: &str) -> Result<u32> {
-    Ok(input.lines().fold((0, 0), |(acc, max), val| {
-        let new_acc = match val {
-            "" => 0,
-            _ => acc + val.parse::<u32>().unwrap()
-        };
+    Ok(input
+        .lines()
+        .fold((0, 0), |(acc, max), val| {
+            let new_acc = match val {
+                "" => 0,
+                _ => acc + val.parse::<u32>().unwrap(),
+            };
 
-        (new_acc, max.max(new_acc))
-    }).1)
-
+            (new_acc, max.max(new_acc))
+        })
+        .1)
 }
 
 fn part2(input: &str) -> Result<u32> {
@@ -31,9 +33,9 @@ fn part2(input: &str) -> Result<u32> {
     for val in input.lines() {
         match val {
             "" => {
-                heap.push(0 - acc);  // BinaryHeap is a max-heap, we want a min-heap
+                heap.push(0 - acc); // BinaryHeap is a max-heap, we want a min-heap
                 if heap.len() > 3 {
-                    heap.pop(); // Get rid of the smallest 
+                    heap.pop(); // Get rid of the smallest
                 }
                 acc = 0;
             }
@@ -46,7 +48,7 @@ fn part2(input: &str) -> Result<u32> {
     // Add the last group
     heap.push(0 - acc);
     if heap.len() > 3 {
-        heap.pop(); // Get rid of the smallest 
+        heap.pop(); // Get rid of the smallest
     }
 
     Ok(heap.iter().sum::<i32>().unsigned_abs())

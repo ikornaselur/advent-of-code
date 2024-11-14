@@ -78,13 +78,11 @@ impl Hand {
             Hand::Scissors => Hand::Paper,
         }
     }
-       
 
     fn beats(&self, other: &Hand) -> bool {
         self.worse() == *other
     }
 }
-
 
 fn part1(input: &str) -> Result<u32> {
     Ok(input.lines().fold(0, |acc, line| {
@@ -92,7 +90,7 @@ fn part1(input: &str) -> Result<u32> {
         let mut hands = line.split_whitespace().filter_map(Hand::from_str);
         if let (Some(left), Some(right)) = (hands.next(), hands.next()) {
             match (&left, &right) {
-                (l, r) if r.beats(l) => acc + right.to_score() + Goal::Win.to_score(), 
+                (l, r) if r.beats(l) => acc + right.to_score() + Goal::Win.to_score(),
                 (l, r) if r == l => acc + right.to_score() + Goal::Draw.to_score(),
                 _ => acc + right.to_score(),
             }
@@ -117,7 +115,6 @@ fn part2(input: &str) -> Result<u32> {
             };
 
             acc + opposite_hand.to_score() + goal.to_score()
-            
         } else {
             panic!("Invalid input");
         }
