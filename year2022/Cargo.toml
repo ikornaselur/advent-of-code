@@ -2,5 +2,5 @@
 resolver = "2"
 
 members = [
-  "prob01", "prob02", "prob03",
+  "prob01", "prob02", "prob03", "prob04",
 ]
