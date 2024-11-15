@@ -50,8 +50,32 @@ fn part1(input: &str) -> Result<String> {
         .collect::<String>())
 }
 
-fn part2(_input: &str) -> Result<u32> {
-    Ok(0)
+fn part2(input: &str) -> Result<String> {
+    let (mut stacks, instructions) = parse::parse_input(input)?;
+
+    // Each instruction tells us how many crates to move from one stack to another, so an
+    // instruction 'move 1 from 2 to 1' means "move 1 crate from stack 2 onto stack 1"
+    // Crates are all moved at once this time.
+    for instruction in instructions {
+        let from_idx = instruction.from - 1;
+        let to_idx = instruction.to - 1;
+
+        // Pop the crates from the source stack and push them onto the destination stack
+        // in the order they were popped
+        let mut crates = Vec::new();
+        for _ in 0..instruction.count {
+            crates.push(stacks[from_idx].crates.pop().unwrap());
+        }
+        for crate_ in crates.into_iter().rev() {
+            stacks[to_idx].crates.push(crate_);
+        }
+    }
+
+    // Finally we go through the stacks and construct a string of the top element of each
+    Ok(stacks
+        .iter()
+        .map(|stack| stack.crates.last().unwrap())
+        .collect::<String>())
 }
 
 #[cfg(test)]
@@ -67,6 +91,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), String::from("MCD"));
     }
 }
