@@ -60,15 +60,9 @@ fn part2(input: &str) -> Result<String> {
         let from_idx = instruction.from - 1;
         let to_idx = instruction.to - 1;
 
-        // Pop the crates from the source stack and push them onto the destination stack
-        // in the order they were popped
-        let mut crates = Vec::new();
-        for _ in 0..instruction.count {
-            crates.push(stacks[from_idx].crates.pop().unwrap());
-        }
-        for crate_ in crates.into_iter().rev() {
-            stacks[to_idx].crates.push(crate_);
-        }
+        let split_off_index = stacks[from_idx].crates.len() - instruction.count;
+        let tail = stacks[from_idx].crates.split_off(split_off_index);
+        stacks[to_idx].crates.extend(tail);
     }
 
     // Finally we go through the stacks and construct a string of the top element of each
