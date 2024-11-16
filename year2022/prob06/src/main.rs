@@ -12,27 +12,24 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<usize> {
-    let input_len = input.len();
-
-    for i in 0..(input_len - 4) {
-        // Get a chunk of 4 charcters
-        let chars = &input[i..i + 4];
-
-        // Convert to as HashSet
-        let set: HashSet<_> = chars.chars().collect();
-
-        // Check if the length is 4, that means the chunk is unique
-        if set.len() == 4 {
-            return Ok(i + 4);
-        }
-    }
-
-    Err(error!("No unique chunk found"))
+fn get_marker(input: &str, chunk_size: usize) -> Result<usize> {
+    let mut set = HashSet::new();
+    (0..=input.len() - chunk_size)
+        .find(|&i| {
+            set.clear();
+            set.extend(input[i..i + chunk_size].chars());
+            set.len() == chunk_size
+        })
+        .map(|i| i + chunk_size)
+        .ok_or_else(|| error!("No marker found"))
 }
 
-fn part2(_input: &str) -> Result<u32> {
-    Ok(0)
+fn part1(input: &str) -> Result<usize> {
+    get_marker(input, 4)
+}
+
+fn part2(input: &str) -> Result<usize> {
+    get_marker(input, 14)
 }
 
 #[cfg(test)]
@@ -48,6 +45,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 29);
     }
 }
