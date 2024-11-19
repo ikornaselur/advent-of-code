@@ -110,6 +110,54 @@ impl Forest {
             tree.visible = Some(tree.visibility.is_visible(tree));
         });
     }
+
+    /// Calculate the scenic score at a coordinate
+    ///
+    /// A scenic score is a multiple of how many trees can be seen from each side
+    /// This is done by traversing in all directions, counting seen tree, until hitting either an
+    /// edge or a tree that is of equal height or higher. Any trees past that do not matter.
+    /// The total count is then multiplied, giving a scenic score
+    fn get_tree_scenic_score(&self, x: usize, y: usize) -> usize {
+        let tree = &self.trees[x][y];
+        let height = tree.height;
+
+        // Keep the counts, in the order of left, right, above, below
+        let mut tree_counts = [0; 4];
+
+        // Check left side:
+        for col in (0..y).rev() {
+            tree_counts[0] += 1;
+            if self.trees[x][col].height >= height {
+                break;
+            }
+        }
+
+        // Check right side:
+        for col in y + 1..self.trees[x].len() {
+            tree_counts[1] += 1;
+            if self.trees[x][col].height >= height {
+                break;
+            }
+        }
+
+        // Check above:
+        for row in (0..x).rev() {
+            tree_counts[2] += 1;
+            if self.trees[row][y].height >= height {
+                break;
+            }
+        }
+
+        // Check below:
+        for row in x + 1..self.trees.len() {
+            tree_counts[3] += 1;
+            if self.trees[row][y].height >= height {
+                break;
+            }
+        }
+
+        tree_counts.iter().product()
+    }
 }
 
 impl FromStr for Forest {
@@ -155,8 +203,17 @@ fn part1(input: &str) -> Result<usize> {
         .count())
 }
 
-fn part2(_input: &str) -> Result<u32> {
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let forest: Forest = input.parse()?;
+
+    let row_count = forest.trees.len();
+    let col_count = forest.trees[0].len();
+
+    (0..row_count)
+        .flat_map(|x| (0..col_count).map(move |y| (x, y)))
+        .map(|(x, y)| forest.get_tree_scenic_score(x, y))
+        .max()
+        .ok_or(error!("Unable to find max scenic score"))
 }
 
 #[cfg(test)]
@@ -172,7 +229,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 8);
     }
 
     #[test]
@@ -210,5 +267,14 @@ mod tests {
         assert_eq!(forest.trees[1][1].visibility.above, 6);
         assert_eq!(forest.trees[1][1].visibility.below, 8);
         assert_eq!(forest.trees[1][1].visible, Some(false));
+    }
+
+    #[test]
+    fn test_forest_scenic_score() {
+        let forest: Forest = TEST_INPUT.parse().unwrap();
+
+        assert_eq!(forest.get_tree_scenic_score(1, 2), 4);
+        assert_eq!(forest.get_tree_scenic_score(3, 2), 8);
+        assert_eq!(forest.get_tree_scenic_score(0, 2), 0);
     }
 }
