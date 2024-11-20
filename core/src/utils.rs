@@ -32,6 +32,7 @@ mod tests {
         assert_eq!(manhattan_distance((0, 0), (0, 1)), 1);
         assert_eq!(manhattan_distance((1, 0), (0, 0)), 1);
         assert_eq!(manhattan_distance((0, 1), (0, 0)), 1);
+        assert_eq!(manhattan_distance((1, 1), (0, 0)), 2);
 
         assert_eq!(manhattan_distance((12, 71), (125, 51)), 133);
     }
