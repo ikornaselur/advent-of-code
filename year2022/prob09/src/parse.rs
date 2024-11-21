@@ -1,6 +1,7 @@
 use advent::prelude::*;
 use nom::{
     character::complete::{alpha1, digit1, newline, space1},
+    multi::separated_list1,
     sequence::separated_pair,
     IResult,
 };
@@ -14,7 +15,7 @@ fn nom_instruction(input: &str) -> IResult<&str, (OrdinalDirection, usize)> {
 }
 
 pub fn parse_instructions(input: &str) -> Result<Vec<(OrdinalDirection, usize)>> {
-    let mut parser = nom::multi::separated_list1(newline, nom_instruction);
+    let mut parser = separated_list1(newline, nom_instruction);
 
     let (_, instructions) = parser(input).map_err(|e| error!("Unable to parse: {}", e))?;
 

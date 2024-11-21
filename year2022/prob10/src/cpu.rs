@@ -1,3 +1,5 @@
+use std::ops::RangeInclusive;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Instruction {
     AddX(i32),
@@ -38,6 +40,12 @@ impl CPU {
             }
         }
     }
+
+    pub fn sprite_range(&self) -> RangeInclusive<i32> {
+        let start = self.reg_a - 1;
+        let end = self.reg_a + 1;
+        start..=end
+    }
 }
 
 #[cfg(test)]
@@ -59,5 +67,15 @@ mod tests {
         cpu.run_instruction(Instruction::AddX(-5));
         assert_eq!(cpu.reg_a, -1);
         assert_eq!(cpu.cycles, 5);
+    }
+
+    #[test]
+    fn test_cpu_sprite_range() {
+        let cpu = CPU {
+            reg_a: 5,
+            cycles: 0,
+        };
+
+        assert_eq!(cpu.sprite_range(), 4..=6);
     }
 }

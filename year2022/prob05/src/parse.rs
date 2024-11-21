@@ -182,5 +182,6 @@ mod tests {
 
         assert_eq!(stacks.len(), 3);
         assert_eq!(stacks[0].crates.len(), 2);
+        assert_eq!(instructions.len(), 4);
     }
 }
