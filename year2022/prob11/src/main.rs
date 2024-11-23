@@ -91,8 +91,30 @@ fn part1(input: &str) -> Result<usize> {
     }
 }
 
-fn part2(_input: &str) -> Result<u32> {
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let rounds = 10_000;
+    let mut monkeys = parse::parse_monkeys(input)?;
+
+    let common_div = monkeys.iter().map(|m| m.test).product::<usize>();
+
+    for _ in 0..rounds {
+        for i in 0..monkeys.len() {
+            // Go through each item and process them
+            while let Some(value) = monkeys[i].items.pop_front() {
+                let value = monkeys[i].apply_operation(value);
+                let next_monkey = monkeys[i].get_next_monkey(value);
+                monkeys[next_monkey].items.push_back(value % common_div);
+            }
+        }
+    }
+    let mut inspections = monkeys.iter().map(|m| m.inspections).collect::<Vec<_>>();
+    // Return the multiplication of the *two* highest values
+    inspections.sort_unstable_by(|a, b| b.cmp(a));
+    if let [a, b] = &inspections[..2] {
+        Ok(a * b)
+    } else {
+        Err(error!("Could not find two highest values"))
+    }
 }
 
 #[cfg(test)]
@@ -103,12 +125,12 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(TEST_INPUT).unwrap(), 10605);
+        assert_eq!(part1(TEST_INPUT).unwrap(), 10_605);
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 2_713_310_158);
     }
 
     #[test]
