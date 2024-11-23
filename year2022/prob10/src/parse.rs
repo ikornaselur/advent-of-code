@@ -29,7 +29,7 @@ pub fn parse_instructions(input: &str) -> Result<Vec<Instruction>> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]
