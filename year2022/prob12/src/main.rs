@@ -5,7 +5,7 @@ mod parse;
 
 const INPUT: &str = include_str!("../input.txt");
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 enum Point {
     Start,
     End,
@@ -28,23 +28,25 @@ struct Heightmap {
     height: usize,
     map: Vec<Vec<Point>>,
     steps: Vec<Vec<Option<usize>>>,
-    start: Coordinate<usize>,
     end: Coordinate<usize>,
 }
 
 impl Heightmap {
     fn new(map: Vec<Vec<Point>>) -> Self {
-        let mut start = None;
-        let mut end = None;
-        for (x, row) in map.iter().enumerate() {
-            for (y, point) in row.iter().enumerate() {
-                match point {
-                    Point::Start => start = Some((x, y)),
-                    Point::End => end = Some((x, y)),
-                    _ => {}
-                }
-            }
-        }
+        let end = map
+            .iter()
+            .enumerate()
+            .flat_map(|(x, row)| {
+                row.iter().enumerate().filter_map(move |(y, point)| {
+                    if point == &Point::End {
+                        Some((x, y))
+                    } else {
+                        None
+                    }
+                })
+            })
+            .next();
+
         let width = map[0].len();
         let height = map.len();
         Self {
@@ -52,67 +54,63 @@ impl Heightmap {
             height,
             map,
             steps: vec![vec![None; width]; height],
-            start: start.expect("No start point found"),
             end: end.expect("No end point found"),
         }
     }
 
-    /// Find the shortest path from Start to End
+    /// Find the shortest path from any lowest point to End
     ///
-    /// We do this by creating a queue of valid steps to take, making note of how many steps we've
-    /// taken to get there
-    /// If we've been there in fewer steps, we stop traversing
-    fn find_shortest_path(&mut self) -> usize {
+    /// We'll traverse backwards from 'end' so that we can either find the shortest path to
+    /// 'Start' or any of the lowest height points.
+    fn find_shortest_path_to_end(&mut self, only_start: bool) -> usize {
         let mut queue = VecDeque::new();
-        queue.push_back((self.start, 0));
+        queue.push_back((self.end, 0));
 
         while let Some(((x, y), steps)) = queue.pop_front() {
-            if let Some(end_steps) = self.steps[self.end.0][self.end.1] {
-                if steps > end_steps {
-                    // Can we just return here immediately?
-                    continue;
-                }
+            match (only_start, self.map[x][y]) {
+                (true, Point::Start) => return steps,
+                (false, p) if p.elevation() == 0 => return steps,
+                _ => {}
             }
+            let current_elevation = self.map[x][y].elevation();
+
             // Check if we've already been here
             if let Some(prev_steps) = self.steps[x][y] {
                 // We can just continue
                 if prev_steps <= steps {
                     continue;
                 }
-                todo!("Not implemented. Do we need to?");
             }
             self.steps[x][y] = Some(steps);
-
-            let current_elevation = self.map[x][y].elevation();
 
             // Then we check if we can traverse in any of the four directions
             if x > 0 {
                 let left_elevation = self.map[x - 1][y].elevation();
-                if left_elevation - current_elevation <= 1 {
+                if current_elevation - left_elevation <= 1 {
                     queue.push_back(((x - 1, y), steps + 1));
                 }
             }
             if x < self.height - 1 {
                 let right_elevation = self.map[x + 1][y].elevation();
-                if right_elevation - current_elevation <= 1 {
+                if current_elevation - right_elevation <= 1 {
                     queue.push_back(((x + 1, y), steps + 1));
                 }
             }
             if y > 0 {
                 let up_elevation = self.map[x][y - 1].elevation();
-                if up_elevation - current_elevation <= 1 {
+                if current_elevation - up_elevation <= 1 {
                     queue.push_back(((x, y - 1), steps + 1));
                 }
             }
             if y < self.width - 1 {
                 let down_elevation = self.map[x][y + 1].elevation();
-                if down_elevation - current_elevation <= 1 {
+                if current_elevation - down_elevation <= 1 {
                     queue.push_back(((x, y + 1), steps + 1));
                 }
             }
         }
 
-        self.steps[self.end.0][self.end.1].unwrap()
+        panic!("No path found");
     }
 }
 
@@ -128,11 +126,12 @@ fn main() -> Result<()> {
 
 fn part1(input: &str) -> Result<usize> {
     let mut heightmap = parse_heightmap(input)?;
-    Ok(heightmap.find_shortest_path())
+    Ok(heightmap.find_shortest_path_to_end(true))
 }
 
-fn part2(_input: &str) -> Result<u32> {
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let mut heightmap = parse_heightmap(input)?;
+    Ok(heightmap.find_shortest_path_to_end(false))
 }
 
 #[cfg(test)]
@@ -148,6 +147,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 29);
     }
 }

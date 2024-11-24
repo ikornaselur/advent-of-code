@@ -75,7 +75,6 @@ mod tests {
                 ],
             ]
         );
-        assert_eq!(heightmap.start, (0, 1));
         assert_eq!(heightmap.end, (1, 2));
     }
 }
