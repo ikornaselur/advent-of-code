@@ -1,10 +1,4 @@
 use advent::prelude::*;
-use nom::{
-    character::complete::{alpha1, digit1, newline, space1},
-    multi::separated_list1,
-    sequence::separated_pair,
-    IResult,
-};
 
 fn nom_instruction(input: &str) -> IResult<&str, (OrdinalDirection, usize)> {
     let (input, (direction, steps)) = separated_pair(alpha1, space1, digit1)(input)?;

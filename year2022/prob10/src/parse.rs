@@ -1,14 +1,5 @@
 use crate::cpu::Instruction;
 use advent::prelude::*;
-use nom::{
-    branch::alt,
-    bytes::complete::tag,
-    character::complete::{char, digit1, newline},
-    combinator::{map, opt, recognize, value},
-    multi::separated_list1,
-    sequence::{pair, preceded},
-    IResult,
-};
 
 fn nom_instruction(input: &str) -> IResult<&str, Instruction> {
     let addx_parser = map(

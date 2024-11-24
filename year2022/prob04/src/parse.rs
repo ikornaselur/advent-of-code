@@ -1,9 +1,4 @@
 use advent::prelude::*;
-use nom::{
-    character::complete::{char, digit1},
-    sequence::separated_pair,
-    IResult,
-};
 
 use crate::Range;
 

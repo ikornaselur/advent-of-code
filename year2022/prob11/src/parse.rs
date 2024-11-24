@@ -1,14 +1,5 @@
 use crate::{Monkey, Operation, OperationValue};
 use advent::prelude::*;
-use nom::{
-    branch::alt,
-    bytes::complete::tag,
-    character::complete::{digit1, newline, space0},
-    combinator::{map, map_res, value},
-    multi::separated_list1,
-    sequence::{delimited, preceded},
-    IResult,
-};
 
 /// Parse the input header in the form:
 /// `Monkey <usize>`

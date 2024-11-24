@@ -1,12 +1,4 @@
 use advent::prelude::*;
-use nom::{
-    branch::alt,
-    bytes::complete::{tag, take},
-    character::complete::{char, digit1, line_ending, multispace0, space0},
-    multi::separated_list1,
-    sequence::{delimited, preceded},
-    IResult,
-};
 
 use crate::{Instruction, Stack};
 

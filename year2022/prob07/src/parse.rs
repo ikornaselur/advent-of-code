@@ -1,12 +1,4 @@
 use advent::prelude::*;
-use nom::{
-    branch::alt,
-    bytes::complete::tag,
-    character::complete::{digit1, line_ending, not_line_ending, space1},
-    multi::separated_list0,
-    sequence::separated_pair,
-    IResult,
-};
 
 use crate::ParsedLine;
 
