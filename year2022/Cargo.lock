@@ -6,6 +6,7 @@ version = 3
 name = "advent"
 version = "0.1.0"
 dependencies = [
+ "nom",
  "thiserror",
 ]
 
@@ -64,6 +65,14 @@ dependencies = [
 
 [[package]]
 name = "prob11"
+version = "0.1.0"
+dependencies = [
+ "advent",
+ "nom",
+]
+
+[[package]]
+name = "prob12"
 version = "0.1.0"
 dependencies = [
  "advent",
