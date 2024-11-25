@@ -1,5 +1,6 @@
 use advent::prelude::*;
 use parse::parse_packets;
+use std::cmp::Ordering;
 use std::fmt;
 
 mod parse;
@@ -96,8 +97,40 @@ fn part1(input: &str) -> Result<usize> {
         .sum())
 }
 
-fn part2(input: &str) -> Result<u32> {
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let packet_pairs = parse_packets(input)?;
+
+    // Flatten the list of tuples into a list of packets
+    let mut packets = packet_pairs
+        .iter()
+        .flat_map(|(left, right)| vec![left, right])
+        .collect::<Vec<_>>();
+
+    let group_2 = Packet::Group(vec![Packet::Group(vec![Packet::Value(2)])]);
+    let group_6 = Packet::Group(vec![Packet::Group(vec![Packet::Value(6)])]);
+
+    // We then add the two new packets from part 2
+    packets.push(&group_2);
+    packets.push(&group_6);
+
+    // Now we sort the list, following the rules from 'compare_packets'
+    packets.sort_unstable_by(|left, right| {
+        compare_packets(left, right)
+            .map(|result| {
+                if result {
+                    Ordering::Less
+                } else {
+                    Ordering::Greater
+                }
+            })
+            .unwrap_or(Ordering::Equal)
+    });
+
+    // Now find the inde of the two new packets
+    let index_2 = packets.iter().position(|p| *p == &group_2).unwrap();
+    let index_6 = packets.iter().position(|p| *p == &group_6).unwrap();
+
+    Ok((index_2 + 1) * (index_6 + 1))
 }
 
 #[cfg(test)]
@@ -113,7 +146,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 140);
     }
 
     #[test]
