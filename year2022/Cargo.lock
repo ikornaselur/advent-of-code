@@ -88,6 +88,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "prob14"
+version = "0.1.0"
+dependencies = [
+ "advent",
+ "nom",
+]
+
+[[package]]
 name = "prob2"
 version = "0.1.0"
 dependencies = [
