@@ -19,6 +19,6 @@ pub use nom::{
     },
     combinator::{map, map_res, opt, recognize, value},
     multi::{many0, many1, separated_list0, separated_list1},
-    sequence::{delimited, pair, preceded, separated_pair},
+    sequence::{delimited, pair, preceded, separated_pair, terminated},
     IResult,
 };
