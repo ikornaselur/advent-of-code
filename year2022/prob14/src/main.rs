@@ -22,6 +22,7 @@ enum Cell {
     Stone,
     Air,
     Source,
+    Floor,
 }
 
 impl Cell {
@@ -37,6 +38,7 @@ impl std::fmt::Display for Cell {
             Cell::Sand => 'O',
             Cell::Stone => '#',
             Cell::Air => '.',
+            Cell::Floor => '=',
         };
         write!(f, "{}", c)
     }
@@ -53,7 +55,10 @@ struct Map {
 /// The coordinates are (x, y) with x being the row, growing down (1 is below 0) and y growing to
 /// the right
 impl Map {
-    fn from_coordinates_lists(coordinates_lists: Vec<Vec<Coordinate<usize>>>) -> Self {
+    fn from_coordinates_lists(
+        coordinates_lists: Vec<Vec<Coordinate<usize>>>,
+        with_floor: bool,
+    ) -> Self {
         // Find the edges of the coordinates. We know that sand will start pouring in at 500,0, so
         // we can start with the edges there
         let mut left_edge = 500;
@@ -73,8 +78,25 @@ impl Map {
                 }
             }
         }
+
+        // If we have the floor, we'll have to support at least the total heigh both left and
+        // right, because it's going to be a big pyramid
+        // NOTE: In theory we have to figure out the tallest wall, furthest away from the spawn,
+        // but.. this should be fine - we'll cross that bridge if we need to
+        let height = if with_floor {
+            // Floor is 2 below the edge
+            let height = bottom_edge + 2;
+
+            left_edge = 500 - height;
+            right_edge = 500 + height;
+
+            height
+        } else {
+            bottom_edge
+        };
+
         let width = right_edge - left_edge;
-        let mut map = vec![vec![Cell::Air; width + 1]; bottom_edge + 1];
+        let mut map = vec![vec![Cell::Air; width + 1]; height + 1];
 
         // Fill in the walls
         for coordinates in coordinates_lists {
@@ -110,6 +132,14 @@ impl Map {
             }
         }
 
+        // Paint in the floor if included
+        if with_floor {
+            let floor_height = bottom_edge + 2;
+            for x in left_edge..=right_edge {
+                map[floor_height][x - left_edge] = Cell::Floor;
+            }
+        }
+
         // And mark the source
         map[0][500 - left_edge] = Cell::Source;
 
@@ -123,11 +153,11 @@ impl Map {
         let (mut x, mut y) = self.source;
 
         // We now move the sand until it comes to a rest
-        // Note: There are optimisations to be made, but for now we just move the sand one step at
+        // NOTE: There are optimisations to be made, but for now we just move the sand one step at
         // a time
         loop {
             if animate {
-                thread::sleep(time::Duration::from_millis(100));
+                thread::sleep(time::Duration::from_millis(20));
                 let prv = self.map[y][x];
                 self.map[y][x] = Cell::Sand;
                 print!("{}[2J", 27 as char);
@@ -162,7 +192,8 @@ impl Map {
             } else {
                 // We're stuck, so we have come to a rest
                 self.map[y][x] = Cell::Sand;
-                return false;
+                // If we're just at source, we're done!
+                return (x, y) == self.source;
             }
         }
     }
@@ -170,7 +201,7 @@ impl Map {
 
 fn part1(input: &str) -> Result<u32> {
     let coordinates_lists = parse_coordinate_lists(input)?;
-    let mut map = Map::from_coordinates_lists(coordinates_lists);
+    let mut map = Map::from_coordinates_lists(coordinates_lists, false);
 
     let mut grains = 0;
 
@@ -181,8 +212,18 @@ fn part1(input: &str) -> Result<u32> {
     Ok(grains)
 }
 
-fn part2(_input: &str) -> Result<u32> {
-    Ok(0)
+fn part2(input: &str) -> Result<u32> {
+    let coordinates_lists = parse_coordinate_lists(input)?;
+    let mut map = Map::from_coordinates_lists(coordinates_lists, true);
+
+    let mut grains = 0;
+
+    while !map.spawn_sand(false) {
+        grains += 1;
+    }
+
+    // Need to plus one.. because we're counting the last grain?
+    Ok(grains + 1)
 }
 
 #[cfg(test)]
@@ -198,13 +239,13 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 93);
     }
 
     #[test]
     fn test_map_init() {
         let coordinates_lists = parse_coordinate_lists(TEST_INPUT).unwrap();
-        let map = Map::from_coordinates_lists(coordinates_lists);
+        let map = Map::from_coordinates_lists(coordinates_lists, false);
 
         assert_eq!(map.map.len(), 10);
         assert_eq!(map.map[0].len(), 10);
