@@ -1,5 +1,6 @@
 use advent::prelude::*;
 use parse::parse_input;
+use std::ops::RangeInclusive;
 
 mod parse;
 
@@ -21,13 +22,17 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn count_intersections_to_row(input: Vec<(Sensor, Beacon)>, check_row: i32) -> i32 {
+fn get_intersections_to_row(
+    input: &Vec<(Sensor, Beacon)>,
+    check_row: i32,
+) -> Vec<RangeInclusive<i32>> {
     // Note that the 'row' in question is for the 'x' coordinate in x,y
     // So the row is (check_row, y) where y is any value
     let mut intersections = Vec::new();
 
     for (Sensor((s_row, s_col)), Beacon((b_row, b_col))) in input {
-        let dist = manhattan_distance((s_row, s_col), (b_row, b_col));
+        // TODO: This can be cached
+        let dist = manhattan_distance((*s_row, *s_col), (*b_row, *b_col));
         let dist_to_check_row = (check_row - s_row).abs();
 
         // Calculate if we intersect the check_row
@@ -37,16 +42,22 @@ fn count_intersections_to_row(input: Vec<(Sensor, Beacon)>, check_row: i32) -> i
         // 3. Intersection in a range of points (less than dist away)
         match dist - dist_to_check_row {
             // 2. Intersection in a single point
-            0 => intersections.push(s_col..=s_col),
+            0 => intersections.push(*s_col..=*s_col),
             // 3. Intersection in a range of points
-            diff if diff > 0 => intersections.push((s_col - diff)..=(s_col + diff)),
+            diff if diff > 0 => intersections.push((*s_col - diff)..=(*s_col + diff)),
             // 1. No intersection
             _ => {}
         }
     }
 
-    // Let's sort the ranges, then combine the overlaps
+    // Let's sort the ranges, so that we can combine the overlaps
     intersections.sort_by(|a, b| a.start().cmp(b.start()));
+
+    intersections
+}
+
+fn count_intersections_to_row(input: Vec<(Sensor, Beacon)>, check_row: i32) -> i32 {
+    let intersections = get_intersections_to_row(&input, check_row);
 
     let mut total_length = 0;
     let mut current_range = intersections[0].clone();
@@ -66,13 +77,39 @@ fn count_intersections_to_row(input: Vec<(Sensor, Beacon)>, check_row: i32) -> i
     total_length
 }
 
+fn search_open_spot(min_coord: i32, max_coord: i32, input: Vec<(Sensor, Beacon)>) -> i64 {
+    for row in min_coord..=max_coord {
+        let intersections = get_intersections_to_row(&input, row);
+
+        let r = intersections[0].clone();
+        let mut current_range = (*r.start()).max(min_coord)..=(*r.end()).min(max_coord);
+        for range in &intersections[1..] {
+            if range.start() <= current_range.end() {
+                if range.end() > current_range.end() {
+                    current_range =
+                        (*current_range.start()).max(min_coord)..=(*range.end()).min(max_coord);
+                }
+            } else {
+                // We've found a gap!
+                let col = current_range.end() + 1;
+                return (col as i64) * 4_000_000 + (row as i64);
+            }
+        }
+    }
+
+    panic!("No open spot found");
+}
+
 fn part1(input: &str) -> Result<i32> {
     let parsed_input = parse_input(input)?;
     Ok(count_intersections_to_row(parsed_input, 2_000_000))
 }
 
-fn part2(input: &str) -> Result<u32> {
-    Ok(0)
+fn part2(input: &str) -> Result<i64> {
+    let parsed_input = parse_input(input)?;
+    // NOTE: There's heaps of optimisations to be done here.. but hey, it runs in couple of
+    // seconds in release mode, good enough for me!
+    Ok(search_open_spot(0, 4_000_000, parsed_input))
 }
 
 #[cfg(test)]
@@ -89,6 +126,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        let parsed_input = parse_input(TEST_INPUT).unwrap();
+        assert_eq!(search_open_spot(0, 20, parsed_input), 56_000_011);
     }
 }

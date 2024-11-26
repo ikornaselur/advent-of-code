@@ -44,15 +44,15 @@ mod tests {
 
     #[test]
     fn test_nom_coordinate() {
-        assert_eq!(nom_coordinate("x=2, y=18").unwrap().1, (2, 18));
-        assert_eq!(nom_coordinate("x=-2, y=15").unwrap().1, (-2, 15));
+        assert_eq!(nom_coordinate("x=2, y=18").unwrap().1, (18, 2));
+        assert_eq!(nom_coordinate("x=-2, y=15").unwrap().1, (15, -2));
     }
 
     #[test]
     fn test_nom_sensor() {
         assert_eq!(
             nom_sensor("Sensor at x=2, y=18").unwrap().1,
-            Sensor((2, 18))
+            Sensor((18, 2))
         );
     }
 
@@ -60,7 +60,7 @@ mod tests {
     fn test_nom_beacon() {
         assert_eq!(
             nom_beacon(": closest beacon is at x=-2, y=15").unwrap().1,
-            Beacon((-2, 15))
+            Beacon((15, -2))
         );
     }
 
@@ -68,8 +68,8 @@ mod tests {
     fn test_nom_sensor_beacon_pair() {
         let input = "Sensor at x=2, y=18: closest beacon is at x=-2, y=15";
         let (_, (sensor, beacon)) = nom_sensor_beacon_pair(input).unwrap();
-        assert_eq!(sensor, Sensor((2, 18)));
-        assert_eq!(beacon, Beacon((-2, 15)));
+        assert_eq!(sensor, Sensor((18, 2)));
+        assert_eq!(beacon, Beacon((15, -2)));
     }
 
     #[test]
@@ -82,8 +82,8 @@ mod tests {
 
         let result = parse_input(&input).unwrap();
         assert_eq!(result.len(), 2);
-        assert_eq!(result[0], (Sensor((2, 18)), Beacon((-2, 15))));
-        assert_eq!(result[1], (Sensor((9, 16)), Beacon((10, 16))));
+        assert_eq!(result[0], (Sensor((18, 2)), Beacon((15, -2))));
+        assert_eq!(result[1], (Sensor((16, 9)), Beacon((16, 10))));
     }
 
     #[test]
