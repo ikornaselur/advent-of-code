@@ -1,5 +1,6 @@
 use advent::prelude::*;
 use parse::parse_input;
+use rayon::prelude::*;
 use std::ops::RangeInclusive;
 
 mod parse;
@@ -78,26 +79,29 @@ fn count_intersections_to_row(input: Vec<(Sensor, Beacon)>, check_row: i32) -> i
 }
 
 fn search_open_spot(min_coord: i32, max_coord: i32, input: Vec<(Sensor, Beacon)>) -> i64 {
-    for row in min_coord..=max_coord {
-        let intersections = get_intersections_to_row(&input, row);
+    (min_coord..=max_coord)
+        .into_par_iter()
+        .find_map_any(|row| {
+            let intersections = get_intersections_to_row(&input, row);
+            let current_end = (*intersections[0].end()).min(max_coord);
 
-        let r = intersections[0].clone();
-        let mut current_range = (*r.start()).max(min_coord)..=(*r.end()).min(max_coord);
-        for range in &intersections[1..] {
-            if range.start() <= current_range.end() {
-                if range.end() > current_range.end() {
-                    current_range =
-                        (*current_range.start()).max(min_coord)..=(*range.end()).min(max_coord);
-                }
-            } else {
-                // We've found a gap!
-                let col = current_range.end() + 1;
-                return (col as i64) * 4_000_000 + (row as i64);
-            }
-        }
-    }
-
-    panic!("No open spot found");
+            intersections
+                .iter()
+                .scan(current_end, |current_end, range| {
+                    if *range.start() <= *current_end {
+                        if *range.end() > *current_end {
+                            *current_end = (*range.end()).min(max_coord);
+                        }
+                        Some(None)
+                    } else {
+                        // We've found a gap!
+                        let col = *current_end + 1;
+                        Some(Some((col as i64) * 4_000_000 + (row as i64)))
+                    }
+                })
+                .find_map(|x| x)
+        })
+        .unwrap()
 }
 
 fn part1(input: &str) -> Result<i32> {
