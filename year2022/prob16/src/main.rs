@@ -114,6 +114,7 @@ fn get_max_pressure(
     }
 
     let mut valve_pressures = Vec::new();
+    let current_flow_rate = get_current_open_valve_flow_rate(valve_map, bitmask);
     for valve in valves_with_flowrate {
         // If it's already opened, we just skip it
         if get_valve_open_state(*valve, bitmask) {
@@ -126,8 +127,7 @@ fn get_max_pressure(
         }
         // We calculate how much pressure will be released during the move (dist) plus 1 for the
         // time it'll take to open the valve after arriving there
-        let pressure_during_move =
-            get_current_open_valve_flow_rate(valve_map, bitmask) * (dist + 1);
+        let pressure_during_move = current_flow_rate * (dist + 1);
         let new_bitmask = set_valve_open_state(*valve, bitmask, true);
         // And now let's calculate the pressure from that state
         let pressure = get_max_pressure(
@@ -146,7 +146,11 @@ fn get_max_pressure(
     }
     if valve_pressures.is_empty() {
         // We can only just skip to the end
-        return steps_left * get_current_open_valve_flow_rate(valve_map, bitmask);
+        let pressure = steps_left * current_flow_rate;
+
+        dp.insert((steps_left, bitmask, current_valve_id), pressure);
+
+        return pressure;
     }
 
     // Now let's get the max pressure of these so we know the best case for this current state
