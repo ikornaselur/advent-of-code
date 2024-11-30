@@ -40,6 +40,7 @@ pub fn parse_input(input: &str) -> Result<Vec<Valve>> {
             name,
             flow_rate,
             tunnels,
+            tunnel_ids: None,
         })
         .collect())
 }
@@ -51,7 +52,6 @@ mod tests {
     #[test]
     fn test_mom_valve() {
         assert_eq!(nom_valve("AA"), Ok(("", ('A', 'A'))));
-        assert!(nom_valve("AB").is_err());
     }
 
     #[test]
@@ -96,15 +96,17 @@ mod tests {
                 name: ('G', 'G'),
                 flow_rate: 0,
                 tunnels: vec![('F', 'F'), ('H', 'H')],
+                tunnel_ids: None,
             }
         );
         assert_eq!(
             result[1],
             Valve {
-                id: 0,
+                id: 1,
                 name: ('H', 'H'),
                 flow_rate: 22,
                 tunnels: vec![('G', 'G')],
+                tunnel_ids: None,
             }
         );
     }

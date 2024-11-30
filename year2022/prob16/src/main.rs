@@ -9,6 +9,7 @@ struct Valve {
     name: (char, char),
     flow_rate: usize,
     tunnels: Vec<(char, char)>,
+    tunnel_ids: Option<Vec<usize>>,
 }
 
 const INPUT: &str = include_str!("../input.txt");
@@ -107,15 +108,8 @@ fn get_max_pressure(
         }
         distances.insert(valve_id, dist);
         let valve = valve_map.get(&valve_id).unwrap();
-        for tunnel in valve.tunnels.iter() {
-            // TODO: I need to drop the (char, char) stuff just for that ID.. or why did I need the
-            // ID again?
-            let tunnel_valve_id = valve_map
-                .iter()
-                .find(|(_, v)| v.name == *tunnel)
-                .map(|(id, _)| *id)
-                .unwrap();
-            queue.push_back((tunnel_valve_id, dist + 1));
+        for tunnel_id in valve.tunnel_ids.as_ref().unwrap() {
+            queue.push_back((*tunnel_id, dist + 1));
         }
     }
 
@@ -165,7 +159,22 @@ fn get_max_pressure(
 }
 
 fn part1(input: &str) -> Result<usize> {
-    let valves = parse_input(input)?;
+    let mut valves = parse_input(input)?;
+    let valve_name_to_id_map = valves
+        .iter()
+        .map(|v| (v.name, v.id))
+        .collect::<HashMap<_, _>>();
+
+    for valve in valves.iter_mut() {
+        valve.tunnel_ids = Some(
+            valve
+                .tunnels
+                .iter()
+                .map(|t| *valve_name_to_id_map.get(t).unwrap())
+                .collect(),
+        );
+    }
+
     let valve_map: HashMap<usize, Valve> = valves
         .into_iter()
         .map(|v| (v.id, v))
