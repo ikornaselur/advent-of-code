@@ -1,5 +1,7 @@
 use advent::prelude::*;
 
+mod parse;
+
 const INPUT: &str = include_str!("../input.txt");
 
 fn main() -> Result<()> {
@@ -12,11 +14,11 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<u32> {
+fn part1(_input: &str) -> Result<u32> {
     Ok(0)
 }
 
-fn part2(input: &str) -> Result<u32> {
+fn part2(_input: &str) -> Result<u32> {
     Ok(0)
 }
 
