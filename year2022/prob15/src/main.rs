@@ -81,7 +81,7 @@ fn count_intersections_to_row(input: Vec<(Sensor, Beacon)>, check_row: i32) -> i
 fn search_open_spot(min_coord: i32, max_coord: i32, input: Vec<(Sensor, Beacon)>) -> i64 {
     (min_coord..=max_coord)
         .into_par_iter()
-        .find_map_any(|row| {
+        .find_map_first(|row| {
             let intersections = get_intersections_to_row(&input, row);
             let current_end = (*intersections[0].end()).min(max_coord);
 
