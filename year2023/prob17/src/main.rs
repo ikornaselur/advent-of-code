@@ -25,7 +25,6 @@ type Key = (
 ///   time on paths that are really far away
 ///     - When we find a path this way, we will have to continue processing all other paths that
 ///       are still in the queue, but we can exit as soon as they go over the best known cost
-
 impl Layout {
     /// Find the cheapest path from one coordinate to another
     ///

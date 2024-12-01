@@ -2,6 +2,8 @@ use advent::prelude::*;
 
 use crate::Valve;
 
+type Line = ((char, char), usize, Vec<(char, char)>);
+
 fn nom_valve(input: &str) -> IResult<&str, (char, char)> {
     let is_uppercase = |c: char| c.is_ascii_uppercase();
 
@@ -18,7 +20,7 @@ fn nom_tunnels(input: &str) -> IResult<&str, Vec<(char, char)>> {
     )(input)
 }
 
-fn nom_full_line(input: &str) -> IResult<&str, ((char, char), usize, Vec<(char, char)>)> {
+fn nom_full_line(input: &str) -> IResult<&str, Line> {
     let (input, valve) = preceded(tag("Valve "), nom_valve)(input)?;
     let (input, _) = tag(" has flow rate=")(input)?;
     let (input, flow) = terminated(map_res(digit1, |s: &str| s.parse()), tag(";"))(input)?;
