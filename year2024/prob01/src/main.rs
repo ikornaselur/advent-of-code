@@ -31,8 +31,22 @@ fn part1(input: &str) -> Result<i32> {
     Ok(sum_of_diffs)
 }
 
-fn part2(_input: &str) -> Result<u32> {
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let pairs = parse_input(input)?;
+
+    let (left, right): (Vec<i32>, Vec<i32>) = pairs.into_iter().unzip();
+
+    // Count occurances of each number in the right list
+    let count: HashMap<i32, usize> = right.iter().fold(HashMap::new(), |mut acc, &n| {
+        *acc.entry(n).or_insert(0) += 1;
+        acc
+    });
+
+    let similarity_score = left.into_iter().fold(0, |acc, num| {
+        acc + (num as usize * count.get(&num).unwrap_or(&0))
+    });
+
+    Ok(similarity_score)
 }
 
 #[cfg(test)]
@@ -48,6 +62,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 31);
     }
 }

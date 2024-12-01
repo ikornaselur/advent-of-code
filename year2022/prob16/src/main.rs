@@ -215,7 +215,7 @@ fn part1(input: &str) -> Result<usize> {
     ))
 }
 
-fn part2(input: &str) -> Result<u32> {
+fn part2(_input: &str) -> Result<u32> {
     Ok(0)
 }
 
