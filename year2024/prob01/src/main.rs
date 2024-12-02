@@ -22,10 +22,9 @@ fn part1(input: &str) -> Result<i32> {
     left.sort_unstable();
     right.sort_unstable();
 
-    let sorted_pairs = left.into_iter().zip(right).collect::<Vec<_>>();
-
-    let sum_of_diffs = sorted_pairs
-        .iter()
+    let sum_of_diffs = left
+        .into_iter()
+        .zip(right)
         .fold(0, |acc, (left, right)| acc + (right - left).abs());
 
     Ok(sum_of_diffs)

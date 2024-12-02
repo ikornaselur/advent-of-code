@@ -1,5 +1,11 @@
 # Advent of Code
 
+The goal is to eventually solve all the AoC problems within this project. Below is the current progress.
+
+It's gonna be a while before it's all golden stars!
+
+![Stars](https://aoc-stars.fly.dev/stars/ikornaselur/advent-of-code/main/.stars.svg)
+
 Each year is in its own year folder, work from within there
 
 > [!NOTE]
