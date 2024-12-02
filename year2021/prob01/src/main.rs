@@ -21,7 +21,14 @@ fn part1(input: &str) -> Result<usize> {
 }
 
 fn part2(input: &str) -> Result<usize> {
-    Ok(0)
+    let values = parse_input(input)?;
+    Ok(values
+        .windows(3)
+        .map(|w| w.iter().sum::<usize>())
+        .collect::<Vec<_>>()
+        .windows(2)
+        .filter(|w| w[0] < w[1])
+        .count())
 }
 
 #[cfg(test)]
@@ -37,6 +44,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 5);
     }
 }
