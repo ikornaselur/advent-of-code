@@ -1,9 +1,6 @@
 use crate::Instruction;
+use advent::parsers::nom_unsigned_digit;
 use advent::prelude::*;
-
-fn nom_number(input: &str) -> IResult<&str, usize> {
-    map_res(digit1, |s: &str| s.parse::<usize>())(input)
-}
 
 fn nom_valid_mul(input: &str) -> IResult<&str, Instruction> {
     map(
@@ -11,7 +8,11 @@ fn nom_valid_mul(input: &str) -> IResult<&str, Instruction> {
             tag("mul"),
             delimited(
                 tag("("),
-                separated_pair(nom_number, tag(","), nom_number),
+                separated_pair(
+                    nom_unsigned_digit::<usize>,
+                    tag(","),
+                    nom_unsigned_digit::<usize>,
+                ),
                 tag(")"),
             ),
         ),
@@ -47,11 +48,6 @@ pub fn parse_input(input: &str) -> Result<Vec<Instruction>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_nom_number() {
-        assert_eq!(nom_number("1243"), Ok(("", 1243)));
-    }
 
     #[test]
     fn test_nom_valid_mul() {

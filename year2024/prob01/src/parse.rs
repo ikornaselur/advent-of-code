@@ -1,9 +1,11 @@
+use advent::parsers::nom_signed_digit;
 use advent::prelude::*;
 
 fn nom_line(input: &str) -> IResult<&str, (i32, i32)> {
-    map_res(
-        separated_pair(digit1, multispace1, digit1),
-        |(a, b): (&str, &str)| -> Result<(i32, i32)> { Ok((a.parse::<i32>()?, b.parse::<i32>()?)) },
+    separated_pair(
+        nom_signed_digit::<i32>,
+        multispace1,
+        nom_signed_digit::<i32>,
     )(input)
 }
 

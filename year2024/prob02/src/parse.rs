@@ -1,11 +1,8 @@
+use advent::parsers::nom_signed_digit;
 use advent::prelude::*;
 
-fn nom_digit(input: &str) -> IResult<&str, i32> {
-    map(digit1, |d: &str| -> i32 { d.parse::<i32>().unwrap() })(input)
-}
-
 fn nom_line(input: &str) -> IResult<&str, Vec<i32>> {
-    separated_list1(space1, nom_digit)(input)
+    separated_list1(space1, nom_signed_digit::<i32>)(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<Vec<i32>>> {
