@@ -1,3 +1,4 @@
+use advent::parsers::nom_unsigned_digit;
 use advent::prelude::*;
 
 use crate::{Instruction, Stack};
@@ -44,31 +45,27 @@ fn nom_all_crate_rows(input: &str) -> IResult<&str, Vec<Vec<Option<&str>>>> {
 }
 
 fn nom_column_count(input: &str) -> IResult<&str, usize> {
-    let mut count_parser = preceded(multispace0, separated_list1(multispace0, digit1));
+    let mut count_parser = preceded(
+        multispace0,
+        separated_list1(multispace0, nom_unsigned_digit::<usize>),
+    );
 
     let (input, counts) = count_parser(input)?;
     let (input, _) = preceded(space0, line_ending)(input)?; // Get rid of that final line
 
     // Get the last element of counts
-    Ok((input, counts.last().unwrap().parse().unwrap()))
+    Ok((input, *counts.last().unwrap()))
 }
 
 fn nom_instruction(input: &str) -> IResult<&str, (usize, usize, usize)> {
     let (input, _) = tag("move ")(input)?;
-    let (input, crate_count) = digit1(input)?;
+    let (input, crate_count) = nom_unsigned_digit::<usize>(input)?;
     let (input, _) = tag(" from ")(input)?;
-    let (input, from_stack) = digit1(input)?;
+    let (input, from_stack) = nom_unsigned_digit::<usize>(input)?;
     let (input, _) = tag(" to ")(input)?;
-    let (input, to_stack) = digit1(input)?;
+    let (input, to_stack) = nom_unsigned_digit::<usize>(input)?;
 
-    Ok((
-        input,
-        (
-            crate_count.parse().unwrap(),
-            from_stack.parse().unwrap(),
-            to_stack.parse().unwrap(),
-        ),
-    ))
+    Ok((input, (crate_count, from_stack, to_stack)))
 }
 
 fn nom_instructions(input: &str) -> IResult<&str, Vec<(usize, usize, usize)>> {

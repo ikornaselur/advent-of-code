@@ -1,17 +1,17 @@
 use crate::{Beacon, Sensor};
+use advent::parsers::nom_signed_digit;
 use advent::prelude::*;
 
 fn nom_coordinate(input: &str) -> IResult<&str, Coordinate<i32>> {
+    let (input, (x, y)) = separated_pair(
+        preceded(tag("x="), nom_signed_digit::<i32>),
+        tag(", "),
+        preceded(tag("y="), nom_signed_digit::<i32>),
+    )(input)?;
+
     // NOTE: We swap x and y here so that it's simpler to work with as row and columns in a
     // matrix, while matching the example graphics in the problem
-    map(
-        separated_pair(
-            preceded(tag("x="), recognize(preceded(opt(char('-')), digit1))),
-            tag(", "),
-            preceded(tag("y="), recognize(preceded(opt(char('-')), digit1))),
-        ),
-        |(column, row): (&str, &str)| (row.parse().unwrap(), column.parse().unwrap()),
-    )(input)
+    Ok((input, (y, x)))
 }
 
 fn nom_sensor(input: &str) -> IResult<&str, Sensor> {

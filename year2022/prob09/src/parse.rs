@@ -1,11 +1,13 @@
+use advent::parsers::nom_unsigned_digit;
 use advent::prelude::*;
 
 fn nom_instruction(input: &str) -> IResult<&str, (OrdinalDirection, usize)> {
-    let (input, (direction, steps)) = separated_pair(alpha1, space1, digit1)(input)?;
+    let (input, (direction, steps)) =
+        separated_pair(alpha1, space1, nom_unsigned_digit::<usize>)(input)?;
 
     let direction = OrdinalDirection::from_udlr(direction).unwrap();
 
-    Ok((input, (direction, steps.parse().unwrap())))
+    Ok((input, (direction, steps)))
 }
 
 pub fn parse_instructions(input: &str) -> Result<Vec<(OrdinalDirection, usize)>> {

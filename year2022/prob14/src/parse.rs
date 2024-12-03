@@ -1,13 +1,11 @@
+use advent::parsers::nom_unsigned_digit;
 use advent::prelude::*;
 
 fn nom_coordinate(input: &str) -> IResult<&str, Coordinate<usize>> {
-    map_res(
-        separated_pair(
-            digit1,
-            delimited(multispace0, char(','), multispace0),
-            digit1,
-        ),
-        |(x, y): (&str, &str)| -> Result<Coordinate<usize>> { Ok((x.parse()?, y.parse()?)) },
+    separated_pair(
+        nom_unsigned_digit::<usize>,
+        delimited(multispace0, char(','), multispace0),
+        nom_unsigned_digit::<usize>,
     )(input)
 }
 

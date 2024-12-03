@@ -1,17 +1,16 @@
+use advent::parsers::nom_unsigned_digit;
 use advent::prelude::*;
 
 use crate::Range;
 
 fn nom_range(input: &str) -> IResult<&str, Range> {
-    let (input, (start, end)) = separated_pair(digit1, char('-'), digit1)(input)?;
+    let (input, (start, end)) = separated_pair(
+        nom_unsigned_digit::<u32>,
+        char('-'),
+        nom_unsigned_digit::<u32>,
+    )(input)?;
 
-    Ok((
-        input,
-        Range {
-            start: start.parse().unwrap(),
-            end: end.parse().unwrap(),
-        },
-    ))
+    Ok((input, Range { start, end }))
 }
 
 fn nom_range_pair(input: &str) -> IResult<&str, (Range, Range)> {

@@ -1,3 +1,4 @@
+use advent::parsers::nom_unsigned_digit;
 use advent::prelude::*;
 
 use crate::Packet;
@@ -13,7 +14,7 @@ use crate::Packet;
 ///     * [[[]]]
 fn nom_packets(input: &str) -> IResult<&str, Packet> {
     alt((
-        map(map_res(digit1, |s: &str| s.parse::<usize>()), Packet::Value),
+        map(nom_unsigned_digit::<usize>, Packet::Value),
         map(
             delimited(
                 char('['),

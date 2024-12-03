@@ -1,3 +1,4 @@
+use advent::parsers::nom_unsigned_digit;
 use advent::prelude::*;
 
 use crate::Valve;
@@ -23,7 +24,7 @@ fn nom_tunnels(input: &str) -> IResult<&str, Vec<(char, char)>> {
 fn nom_full_line(input: &str) -> IResult<&str, Line> {
     let (input, valve) = preceded(tag("Valve "), nom_valve)(input)?;
     let (input, _) = tag(" has flow rate=")(input)?;
-    let (input, flow) = terminated(map_res(digit1, |s: &str| s.parse()), tag(";"))(input)?;
+    let (input, flow) = terminated(nom_unsigned_digit::<usize>, tag(";"))(input)?;
     let (input, _) = multispace1(input)?;
     let (input, tunnels) = nom_tunnels(input)?;
 

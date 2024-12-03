@@ -1,14 +1,11 @@
 use crate::{Monkey, Operation, OperationValue};
+use advent::parsers::nom_unsigned_digit;
 use advent::prelude::*;
 
 /// Parse the input header in the form:
 /// `Monkey <usize>`
 fn nom_monkey_header(input: &str) -> IResult<&str, usize> {
-    delimited(
-        tag("Monkey "),
-        map_res(digit1, |s: &str| s.parse::<usize>()),
-        tag(":"),
-    )(input)
+    delimited(tag("Monkey "), nom_unsigned_digit::<usize>, tag(":"))(input)
 }
 
 /// Parse the starting items in the form:
@@ -18,16 +15,14 @@ fn nom_monkey_header(input: &str) -> IResult<&str, usize> {
 fn nom_starting_items(input: &str) -> IResult<&str, Vec<usize>> {
     preceded(
         tag("Starting items: "),
-        separated_list1(tag(", "), map_res(digit1, |s: &str| s.parse::<usize>())),
+        separated_list1(tag(", "), nom_unsigned_digit::<usize>),
     )(input)
 }
 
 /// Helper parser for `nom_operation` below
 fn nom_op_value(input: &str) -> IResult<&str, OperationValue> {
     alt((
-        map_res(digit1, |s: &str| {
-            s.parse::<usize>().map(OperationValue::Number)
-        }),
+        map(nom_unsigned_digit::<usize>, OperationValue::Number),
         value(OperationValue::Old, tag("old")),
     ))(input)
 }
@@ -51,26 +46,24 @@ fn nom_operation(input: &str) -> IResult<&str, Operation> {
 /// Parse the test in the form:
 /// `Test: divisible by <usize>`
 fn nom_test(input: &str) -> IResult<&str, usize> {
-    map_res(preceded(tag("Test: divisible by "), digit1), |s: &str| {
-        s.parse::<usize>()
-    })(input)
+    preceded(tag("Test: divisible by "), nom_unsigned_digit::<usize>)(input)
 }
 
 /// Parse the 'if true' branch in the form:
 /// `If true: throw to monkey <usize>`
 fn nom_if_true(input: &str) -> IResult<&str, usize> {
-    map_res(
-        preceded(tag("If true: throw to monkey "), digit1),
-        |s: &str| s.parse::<usize>(),
+    preceded(
+        tag("If true: throw to monkey "),
+        nom_unsigned_digit::<usize>,
     )(input)
 }
 
 /// Parse the 'if false' branch in the form:
 /// `If false: throw to monkey <usize>`
 fn nom_if_false(input: &str) -> IResult<&str, usize> {
-    map_res(
-        preceded(tag("If false: throw to monkey "), digit1),
-        |s: &str| s.parse::<usize>(),
+    preceded(
+        tag("If false: throw to monkey "),
+        nom_unsigned_digit::<usize>,
     )(input)
 }
 

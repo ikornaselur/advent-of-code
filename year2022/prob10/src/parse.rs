@@ -1,10 +1,11 @@
 use crate::cpu::Instruction;
+use advent::parsers::nom_signed_digit;
 use advent::prelude::*;
 
 fn nom_instruction(input: &str) -> IResult<&str, Instruction> {
     let addx_parser = map(
-        preceded(tag("addx "), recognize(pair(opt(char('-')), digit1))),
-        |x: &str| Instruction::AddX(x.parse().unwrap()),
+        preceded(tag("addx "), nom_signed_digit::<i32>),
+        Instruction::AddX,
     );
     let noop_parser = value(Instruction::Noop, tag("noop"));
 

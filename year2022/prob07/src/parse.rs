@@ -1,3 +1,4 @@
+use advent::parsers::nom_unsigned_digit;
 use advent::prelude::*;
 
 use crate::ParsedLine;
@@ -21,8 +22,8 @@ fn nom_directory(input: &str) -> IResult<&str, ParsedLine> {
 }
 
 fn nom_file(input: &str) -> IResult<&str, ParsedLine> {
-    let (input, (size_str, name)) = separated_pair(digit1, space1, not_line_ending)(input)?;
-    let size = size_str.parse::<usize>().unwrap();
+    let (input, (size, name)) =
+        separated_pair(nom_unsigned_digit::<usize>, space1, not_line_ending)(input)?;
 
     Ok((input, ParsedLine::File { size, name }))
 }
