@@ -1,4 +1,4 @@
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Clone)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Copy, Clone)]
 pub enum CompassDirection {
     North,
     NorthWest,
@@ -10,7 +10,7 @@ pub enum CompassDirection {
     East,
 }
 
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Clone)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Copy, Clone)]
 pub enum GridDirection {
     Up,
     UpLeft,
@@ -49,6 +49,40 @@ impl GridDirection {
             GridDirection::DownLeft => GridDirection::UpRight,
             GridDirection::UpRight => GridDirection::DownLeft,
         }
+    }
+
+    /// Turn the direction into a "unit vector"
+    ///
+    /// If we assume the grid system is (y, x) and the grid grows down and to the right, then "up"
+    /// is (0, -1) and "left" is (-1, 0) for example.
+    ///
+    /// Why (y, x)? Because when working with a grid of Vec<Vec<_>> the first value will be the
+    /// height (y) and the second value is the width (x) and it's simpler to think of it as
+    /// grid[y][x] to access a cell.
+    pub fn as_vector(&self) -> (i32, i32) {
+        match self {
+            GridDirection::Up => (0, -1),
+            GridDirection::Down => (0, 1),
+            GridDirection::Left => (-1, 0),
+            GridDirection::Right => (1, 0),
+            GridDirection::UpLeft => (-1, -1),
+            GridDirection::DownRight => (1, 1),
+            GridDirection::DownLeft => (-1, 1),
+            GridDirection::UpRight => (1, -1),
+        }
+    }
+
+    pub fn directions() -> Vec<Self> {
+        vec![
+            GridDirection::Up,
+            GridDirection::Down,
+            GridDirection::Left,
+            GridDirection::Right,
+            GridDirection::UpLeft,
+            GridDirection::DownRight,
+            GridDirection::DownLeft,
+            GridDirection::UpRight,
+        ]
     }
 
     /// From a single character, U/D/L/R
