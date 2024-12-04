@@ -11,7 +11,7 @@ type StraightDistance = i32;
 type Key = (
     HeatLoss,
     Coordinate<usize>,
-    CardinalDirection,
+    CompassDirection,
     StraightDistance,
 );
 
@@ -39,7 +39,7 @@ impl Layout {
         min_straight_line: i32,
         max_straight_line: i32,
     ) -> Result<i32> {
-        let mut seen: HashSet<(Coordinate<usize>, CardinalDirection, StraightDistance)> =
+        let mut seen: HashSet<(Coordinate<usize>, CompassDirection, StraightDistance)> =
             HashSet::new();
 
         // This is a max heap, so we store the scores negative to turn it into a min heap
@@ -57,8 +57,8 @@ impl Layout {
         // we start in the upper right corner at (0, 0) we can either so South of East. Since we
         // don't count the heat from the start node, the initial heat will be the first node we
         // step on
-        heap.push((-self.node_heat((1, 0)), (1, 0), CardinalDirection::South, 0));
-        heap.push((-self.node_heat((0, 1)), (0, 1), CardinalDirection::East, 0));
+        heap.push((-self.node_heat((1, 0)), (1, 0), CompassDirection::South, 0));
+        heap.push((-self.node_heat((0, 1)), (0, 1), CompassDirection::East, 0));
 
         while !heap.is_empty() {
             let (heat_loss, coord, direction, straight_distance) =
@@ -71,7 +71,7 @@ impl Layout {
                 return Ok(heat_loss);
             }
 
-            if !seen.insert((coord, direction.clone(), straight_distance)) {
+            if !seen.insert((coord, direction, straight_distance)) {
                 // We had already seen this node, so we can skip it
                 continue;
             }
@@ -81,10 +81,10 @@ impl Layout {
             //  * Forwards if we exceed the max distance
             //  * If we go off the grid
             for next_direction in &[
-                CardinalDirection::North,
-                CardinalDirection::South,
-                CardinalDirection::East,
-                CardinalDirection::West,
+                CompassDirection::North,
+                CompassDirection::South,
+                CompassDirection::East,
+                CompassDirection::West,
             ] {
                 // Can't go backwards
                 if next_direction == &direction.opposite() {
@@ -99,7 +99,7 @@ impl Layout {
                             heap.push((
                                 -(heat_loss + next_node_heat),
                                 next_coord,
-                                direction.clone(),
+                                direction,
                                 straight_distance + 1,
                             ));
                         }
@@ -112,7 +112,7 @@ impl Layout {
                         heap.push((
                             -(heat_loss + self.node_heat(next_coord)),
                             next_coord,
-                            next_direction.clone(),
+                            *next_direction,
                             0,
                         ));
                     }
@@ -125,37 +125,38 @@ impl Layout {
     fn shift_coordinate(
         &self,
         coord: Coordinate<usize>,
-        direction: &CardinalDirection,
+        direction: &CompassDirection,
     ) -> Option<Coordinate<usize>> {
         match direction {
-            CardinalDirection::North => {
+            CompassDirection::North => {
                 if coord.0 == 0 {
                     None
                 } else {
                     Some((coord.0 - 1, coord.1))
                 }
             }
-            CardinalDirection::South => {
+            CompassDirection::South => {
                 if coord.0 == self.nodes.len() - 1 {
                     None
                 } else {
                     Some((coord.0 + 1, coord.1))
                 }
             }
-            CardinalDirection::East => {
+            CompassDirection::East => {
                 if coord.1 == self.nodes[0].len() - 1 {
                     None
                 } else {
                     Some((coord.0, coord.1 + 1))
                 }
             }
-            CardinalDirection::West => {
+            CompassDirection::West => {
                 if coord.1 == 0 {
                     None
                 } else {
                     Some((coord.0, coord.1 - 1))
                 }
             }
+            _ => panic!("Bad direction"),
         }
     }
 
@@ -251,25 +252,25 @@ mod tests {
 
         assert_eq!(
             layout
-                .shift_coordinate(coord, &CardinalDirection::North)
+                .shift_coordinate(coord, &CompassDirection::North)
                 .unwrap(),
             (0, 1)
         );
         assert_eq!(
             layout
-                .shift_coordinate(coord, &CardinalDirection::South)
+                .shift_coordinate(coord, &CompassDirection::South)
                 .unwrap(),
             (2, 1)
         );
         assert_eq!(
             layout
-                .shift_coordinate(coord, &CardinalDirection::West)
+                .shift_coordinate(coord, &CompassDirection::West)
                 .unwrap(),
             (1, 0)
         );
         assert_eq!(
             layout
-                .shift_coordinate(coord, &CardinalDirection::East)
+                .shift_coordinate(coord, &CompassDirection::East)
                 .unwrap(),
             (1, 2)
         );

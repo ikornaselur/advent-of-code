@@ -1,16 +1,16 @@
 use advent::parsers::nom_unsigned_digit;
 use advent::prelude::*;
 
-fn nom_instruction(input: &str) -> IResult<&str, (OrdinalDirection, usize)> {
+fn nom_instruction(input: &str) -> IResult<&str, (GridDirection, usize)> {
     let (input, (direction, steps)) =
         separated_pair(alpha1, space1, nom_unsigned_digit::<usize>)(input)?;
 
-    let direction = OrdinalDirection::from_udlr(direction).unwrap();
+    let direction = GridDirection::from_udlr(direction).unwrap();
 
     Ok((input, (direction, steps)))
 }
 
-pub fn parse_instructions(input: &str) -> Result<Vec<(OrdinalDirection, usize)>> {
+pub fn parse_instructions(input: &str) -> Result<Vec<(GridDirection, usize)>> {
     let mut parser = separated_list1(newline, nom_instruction);
 
     let (_, instructions) = parser(input).map_err(|e| error!("Unable to parse: {}", e))?;
@@ -24,10 +24,7 @@ mod tests {
 
     #[test]
     fn test_nom_instruction() {
-        assert_eq!(
-            nom_instruction("U 123"),
-            Ok(("", (OrdinalDirection::Up, 123)))
-        );
+        assert_eq!(nom_instruction("U 123"), Ok(("", (GridDirection::Up, 123))));
     }
 
     #[test]
@@ -36,8 +33,8 @@ mod tests {
         let instructions = parse_instructions(input).unwrap();
 
         assert_eq!(instructions.len(), 3);
-        assert_eq!(instructions[0], (OrdinalDirection::Up, 1));
-        assert_eq!(instructions[1], (OrdinalDirection::Down, 3));
-        assert_eq!(instructions[2], (OrdinalDirection::Left, 1));
+        assert_eq!(instructions[0], (GridDirection::Up, 1));
+        assert_eq!(instructions[1], (GridDirection::Down, 3));
+        assert_eq!(instructions[2], (GridDirection::Left, 1));
     }
 }

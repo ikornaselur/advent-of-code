@@ -11,7 +11,7 @@ const INPUT: &str = include_str!("../input.txt");
 /// the third part is the hex colour code
 #[derive(Debug)]
 struct Instruction {
-    direction: OrdinalDirection,
+    direction: GridDirection,
     distance: i64,
 }
 
@@ -19,7 +19,7 @@ impl Instruction {
     fn from_basic(s: &str) -> Result<Self> {
         let mut parts = s.split_whitespace();
         let direction =
-            OrdinalDirection::from_udlr(parts.next().ok_or(error!("Unable to parse direction"))?)
+            GridDirection::from_udlr(parts.next().ok_or(error!("Unable to parse direction"))?)
                 .ok_or(error!("Unable to parse direction"))?;
         let distance = parts
             .next()
@@ -52,10 +52,10 @@ impl Instruction {
         //  * 3 = U
         let distance = i64::from_str_radix(&colour[2..7], 16)?;
         let direction = match &colour[7..8] {
-            "0" => OrdinalDirection::Right,
-            "1" => OrdinalDirection::Down,
-            "2" => OrdinalDirection::Left,
-            "3" => OrdinalDirection::Up,
+            "0" => GridDirection::Right,
+            "1" => GridDirection::Down,
+            "2" => GridDirection::Left,
+            "3" => GridDirection::Up,
             _ => return Err(error!("Unable to parse direction")),
         };
 
@@ -74,10 +74,11 @@ fn get_nodes(instructions: &[Instruction]) -> Vec<Coordinate<i64>> {
         let dist = instruction.distance;
 
         current = match instruction.direction {
-            OrdinalDirection::Up => (current.0 - dist, current.1),
-            OrdinalDirection::Down => (current.0 + dist, current.1),
-            OrdinalDirection::Left => (current.0, current.1 - dist),
-            OrdinalDirection::Right => (current.0, current.1 + dist),
+            GridDirection::Up => (current.0 - dist, current.1),
+            GridDirection::Down => (current.0 + dist, current.1),
+            GridDirection::Left => (current.0, current.1 - dist),
+            GridDirection::Right => (current.0, current.1 + dist),
+            _ => panic!("Bad direction"),
         };
         nodes.push(current);
     }
@@ -164,7 +165,7 @@ mod tests {
     fn test_parse_instruction_basic() {
         let instruction = Instruction::from_basic("R 16 (#70c710)").unwrap();
 
-        assert_eq!(instruction.direction, OrdinalDirection::Right);
+        assert_eq!(instruction.direction, GridDirection::Right);
         assert_eq!(instruction.distance, 16);
     }
 
@@ -172,7 +173,7 @@ mod tests {
     fn test_parse_instruction_hex() {
         let instruction = Instruction::from_hex("R 16 (#0dc571)").unwrap();
 
-        assert_eq!(instruction.direction, OrdinalDirection::Down);
+        assert_eq!(instruction.direction, GridDirection::Down);
         assert_eq!(instruction.distance, 56407);
     }
 

@@ -31,17 +31,6 @@ impl Symbol for char {
     }
 }
 
-enum Direction {
-    Above,
-    Below,
-    Right,
-    Left,
-    AboveLeft,
-    AboveRight,
-    BelowLeft,
-    BelowRight,
-}
-
 impl FromStr for Schematic {
     type Err = AdventError;
 
@@ -106,14 +95,14 @@ impl Schematic {
                         number * 10 + col.to_digit(10).ok_or(AdventError::InvalidDigit(col))?;
                     // Check adjacent cells to see if there are symbols
                     for direction in [
-                        Direction::Above,
-                        Direction::Below,
-                        Direction::Right,
-                        Direction::Left,
-                        Direction::AboveLeft,
-                        Direction::AboveRight,
-                        Direction::BelowLeft,
-                        Direction::BelowRight,
+                        GridDirection::Up,
+                        GridDirection::Down,
+                        GridDirection::Right,
+                        GridDirection::Left,
+                        GridDirection::UpLeft,
+                        GridDirection::UpRight,
+                        GridDirection::DownLeft,
+                        GridDirection::DownRight,
                     ] {
                         let (x, y) = match self.shift_coordinate(direction, row_index, col_index) {
                             Some((x, y)) => (x, y),
@@ -140,24 +129,28 @@ impl Schematic {
 
     fn shift_coordinate(
         &self,
-        direction: Direction,
+        direction: GridDirection,
         row_index: usize,
         col_index: usize,
     ) -> Option<(usize, usize)> {
         // Guard against out of bounds
         match direction {
-            Direction::Above | Direction::AboveLeft | Direction::AboveRight if row_index == 0 => {
+            GridDirection::Up | GridDirection::UpLeft | GridDirection::UpRight
+                if row_index == 0 =>
+            {
                 return None;
             }
-            Direction::Below | Direction::BelowLeft | Direction::BelowRight
+            GridDirection::Down | GridDirection::DownLeft | GridDirection::DownRight
                 if row_index >= self.height - 1 =>
             {
                 return None;
             }
-            Direction::Left | Direction::AboveLeft | Direction::BelowLeft if col_index == 0 => {
+            GridDirection::Left | GridDirection::UpLeft | GridDirection::DownLeft
+                if col_index == 0 =>
+            {
                 return None;
             }
-            Direction::Right | Direction::AboveRight | Direction::BelowRight
+            GridDirection::Right | GridDirection::UpRight | GridDirection::DownRight
                 if col_index >= self.width - 1 =>
             {
                 return None;
@@ -166,14 +159,14 @@ impl Schematic {
         }
 
         Some(match direction {
-            Direction::Above => (row_index - 1, col_index),
-            Direction::Below => (row_index + 1, col_index),
-            Direction::Right => (row_index, col_index + 1),
-            Direction::Left => (row_index, col_index - 1),
-            Direction::AboveLeft => (row_index - 1, col_index - 1),
-            Direction::AboveRight => (row_index - 1, col_index + 1),
-            Direction::BelowLeft => (row_index + 1, col_index - 1),
-            Direction::BelowRight => (row_index + 1, col_index + 1),
+            GridDirection::Up => (row_index - 1, col_index),
+            GridDirection::Down => (row_index + 1, col_index),
+            GridDirection::Right => (row_index, col_index + 1),
+            GridDirection::Left => (row_index, col_index - 1),
+            GridDirection::UpLeft => (row_index - 1, col_index - 1),
+            GridDirection::UpRight => (row_index - 1, col_index + 1),
+            GridDirection::DownLeft => (row_index + 1, col_index - 1),
+            GridDirection::DownRight => (row_index + 1, col_index + 1),
         })
     }
 
@@ -185,14 +178,14 @@ impl Schematic {
     /// Return if there is a symbol at adjacent cells
     fn is_adjacent_to_symbol(&self, row_index: usize, col_index: usize) -> Result<bool> {
         for direction in [
-            Direction::Above,
-            Direction::Below,
-            Direction::Right,
-            Direction::Left,
-            Direction::AboveLeft,
-            Direction::AboveRight,
-            Direction::BelowLeft,
-            Direction::BelowRight,
+            GridDirection::Up,
+            GridDirection::Down,
+            GridDirection::Right,
+            GridDirection::Left,
+            GridDirection::UpLeft,
+            GridDirection::UpRight,
+            GridDirection::DownLeft,
+            GridDirection::DownRight,
         ] {
             let (x, y) = match self.shift_coordinate(direction, row_index, col_index) {
                 Some((x, y)) => (x, y),
@@ -268,35 +261,35 @@ mod tests {
     fn test_shift_coordinate() {
         let schematic: Schematic = ".#.\n123\n$*#".parse().unwrap();
 
-        assert_eq!(schematic.shift_coordinate(Direction::Above, 0, 1), None);
+        assert_eq!(schematic.shift_coordinate(GridDirection::Up, 0, 1), None);
         assert_eq!(
-            schematic.shift_coordinate(Direction::Above, 1, 1),
+            schematic.shift_coordinate(GridDirection::Up, 1, 1),
             Some((0, 1))
         );
         assert_eq!(
-            schematic.shift_coordinate(Direction::Below, 1, 1),
+            schematic.shift_coordinate(GridDirection::Down, 1, 1),
             Some((2, 1))
         );
         assert_eq!(
-            schematic.shift_coordinate(Direction::Right, 1, 1),
+            schematic.shift_coordinate(GridDirection::Right, 1, 1),
             Some((1, 2))
         );
         assert_eq!(
-            schematic.shift_coordinate(Direction::Left, 1, 1),
+            schematic.shift_coordinate(GridDirection::Left, 1, 1),
             Some((1, 0))
         );
-        assert_eq!(schematic.shift_coordinate(Direction::Right, 2, 2), None);
-        assert_eq!(schematic.shift_coordinate(Direction::Below, 2, 2), None);
+        assert_eq!(schematic.shift_coordinate(GridDirection::Right, 2, 2), None);
+        assert_eq!(schematic.shift_coordinate(GridDirection::Down, 2, 2), None);
         assert_eq!(
-            schematic.shift_coordinate(Direction::AboveLeft, 1, 1),
+            schematic.shift_coordinate(GridDirection::UpLeft, 1, 1),
             Some((0, 0))
         );
         assert_eq!(
-            schematic.shift_coordinate(Direction::BelowLeft, 1, 1),
+            schematic.shift_coordinate(GridDirection::DownLeft, 1, 1),
             Some((2, 0))
         );
         assert_eq!(
-            schematic.shift_coordinate(Direction::BelowRight, 1, 1),
+            schematic.shift_coordinate(GridDirection::DownRight, 1, 1),
             Some((2, 2,))
         );
     }

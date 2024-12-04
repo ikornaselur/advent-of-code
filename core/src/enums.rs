@@ -1,47 +1,63 @@
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Clone)]
-pub enum CardinalDirection {
+pub enum CompassDirection {
     North,
+    NorthWest,
+    NorthEast,
     South,
+    SouthWest,
+    SouthEast,
     West,
     East,
 }
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Clone)]
-pub enum OrdinalDirection {
+pub enum GridDirection {
     Up,
+    UpLeft,
+    UpRight,
     Down,
+    DownLeft,
+    DownRight,
     Left,
     Right,
 }
 
-impl CardinalDirection {
+impl CompassDirection {
     pub fn opposite(&self) -> Self {
         match self {
-            CardinalDirection::North => CardinalDirection::South,
-            CardinalDirection::South => CardinalDirection::North,
-            CardinalDirection::West => CardinalDirection::East,
-            CardinalDirection::East => CardinalDirection::West,
+            CompassDirection::North => CompassDirection::South,
+            CompassDirection::South => CompassDirection::North,
+            CompassDirection::West => CompassDirection::East,
+            CompassDirection::East => CompassDirection::West,
+            CompassDirection::NorthWest => CompassDirection::SouthEast,
+            CompassDirection::SouthEast => CompassDirection::NorthWest,
+            CompassDirection::SouthWest => CompassDirection::NorthEast,
+            CompassDirection::NorthEast => CompassDirection::SouthWest,
         }
     }
 }
 
-impl OrdinalDirection {
+impl GridDirection {
     pub fn opposite(&self) -> Self {
         match self {
-            OrdinalDirection::Up => OrdinalDirection::Down,
-            OrdinalDirection::Down => OrdinalDirection::Up,
-            OrdinalDirection::Left => OrdinalDirection::Right,
-            OrdinalDirection::Right => OrdinalDirection::Left,
+            GridDirection::Up => GridDirection::Down,
+            GridDirection::Down => GridDirection::Up,
+            GridDirection::Left => GridDirection::Right,
+            GridDirection::Right => GridDirection::Left,
+            GridDirection::UpLeft => GridDirection::DownRight,
+            GridDirection::DownRight => GridDirection::UpLeft,
+            GridDirection::DownLeft => GridDirection::UpRight,
+            GridDirection::UpRight => GridDirection::DownLeft,
         }
     }
 
     /// From a single character, U/D/L/R
     pub fn from_udlr(c: &str) -> Option<Self> {
         match c {
-            "U" => Some(OrdinalDirection::Up),
-            "D" => Some(OrdinalDirection::Down),
-            "L" => Some(OrdinalDirection::Left),
-            "R" => Some(OrdinalDirection::Right),
+            "U" => Some(GridDirection::Up),
+            "D" => Some(GridDirection::Down),
+            "L" => Some(GridDirection::Left),
+            "R" => Some(GridDirection::Right),
             _ => None,
         }
     }
@@ -49,10 +65,10 @@ impl OrdinalDirection {
     /// From a single symbol, ^/v/</>
     pub fn from_symbol(s: &str) -> Option<Self> {
         match s {
-            "^" => Some(OrdinalDirection::Up),
-            "v" => Some(OrdinalDirection::Down),
-            "<" => Some(OrdinalDirection::Left),
-            ">" => Some(OrdinalDirection::Right),
+            "^" => Some(GridDirection::Up),
+            "v" => Some(GridDirection::Down),
+            "<" => Some(GridDirection::Left),
+            ">" => Some(GridDirection::Right),
             _ => None,
         }
     }

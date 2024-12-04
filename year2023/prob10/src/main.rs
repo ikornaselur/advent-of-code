@@ -33,14 +33,14 @@ impl FromStr for Pipe {
 }
 
 impl Pipe {
-    fn connects_to(&self) -> HashSet<CardinalDirection> {
+    fn connects_to(&self) -> HashSet<CompassDirection> {
         match self {
-            Pipe::Horizontal => vec![CardinalDirection::East, CardinalDirection::West],
-            Pipe::Vertical => vec![CardinalDirection::North, CardinalDirection::South],
-            Pipe::CornerNorthEast => vec![CardinalDirection::North, CardinalDirection::East],
-            Pipe::CornerNorthWest => vec![CardinalDirection::North, CardinalDirection::West],
-            Pipe::CornerSouthEast => vec![CardinalDirection::South, CardinalDirection::East],
-            Pipe::CornerSouthWest => vec![CardinalDirection::South, CardinalDirection::West],
+            Pipe::Horizontal => vec![CompassDirection::East, CompassDirection::West],
+            Pipe::Vertical => vec![CompassDirection::North, CompassDirection::South],
+            Pipe::CornerNorthEast => vec![CompassDirection::North, CompassDirection::East],
+            Pipe::CornerNorthWest => vec![CompassDirection::North, CompassDirection::West],
+            Pipe::CornerSouthEast => vec![CompassDirection::South, CompassDirection::East],
+            Pipe::CornerSouthWest => vec![CompassDirection::South, CompassDirection::West],
             _ => vec![],
         }
         .into_iter()
@@ -106,8 +106,8 @@ impl PipeMap {
     fn get_next_node(
         &self,
         current_node_coord: Coordinate<usize>,
-        came_from_direction: CardinalDirection,
-    ) -> Result<(Coordinate<usize>, CardinalDirection)> {
+        came_from_direction: CompassDirection,
+    ) -> Result<(Coordinate<usize>, CompassDirection)> {
         let current_node = self.get_node(current_node_coord)?;
         if *current_node == Pipe::None || *current_node == Pipe::Start {
             return Err(error!("Invalid node: {:?}", current_node));
@@ -123,10 +123,11 @@ impl PipeMap {
 
         // Check if that next direction is valid
         let next_node_coord = match next_direction {
-            CardinalDirection::North => (current_node_coord.0 - 1, current_node_coord.1),
-            CardinalDirection::South => (current_node_coord.0 + 1, current_node_coord.1),
-            CardinalDirection::West => (current_node_coord.0, current_node_coord.1 - 1),
-            CardinalDirection::East => (current_node_coord.0, current_node_coord.1 + 1),
+            CompassDirection::North => (current_node_coord.0 - 1, current_node_coord.1),
+            CompassDirection::South => (current_node_coord.0 + 1, current_node_coord.1),
+            CompassDirection::West => (current_node_coord.0, current_node_coord.1 - 1),
+            CompassDirection::East => (current_node_coord.0, current_node_coord.1 + 1),
+            _ => panic!("Bad direction"),
         };
 
         if next_node_coord.0 >= self.height || next_node_coord.1 >= self.width {
@@ -145,41 +146,41 @@ impl PipeMap {
     }
 
     // Get the two directions that connect to the start
-    fn get_start_directions(&self) -> Result<Vec<CardinalDirection>> {
+    fn get_start_directions(&self) -> Result<Vec<CompassDirection>> {
         let start_coord = self.find_start()?;
         let mut directions = vec![];
 
         // Check the four nodes around to see if any of them connect back
 
         // North node
-        if let Some(north_coord) = self.shift_coord(start_coord, CardinalDirection::North) {
+        if let Some(north_coord) = self.shift_coord(start_coord, CompassDirection::North) {
             let north_node = self.get_node(north_coord)?;
-            if north_node.connects_to().contains(&CardinalDirection::South) {
-                directions.push(CardinalDirection::North);
+            if north_node.connects_to().contains(&CompassDirection::South) {
+                directions.push(CompassDirection::North);
             }
         }
 
         // South node
-        if let Some(south_coord) = self.shift_coord(start_coord, CardinalDirection::South) {
+        if let Some(south_coord) = self.shift_coord(start_coord, CompassDirection::South) {
             let south_node = self.get_node(south_coord)?;
-            if south_node.connects_to().contains(&CardinalDirection::North) {
-                directions.push(CardinalDirection::South);
+            if south_node.connects_to().contains(&CompassDirection::North) {
+                directions.push(CompassDirection::South);
             }
         }
 
         // West node
-        if let Some(west_coord) = self.shift_coord(start_coord, CardinalDirection::West) {
+        if let Some(west_coord) = self.shift_coord(start_coord, CompassDirection::West) {
             let west_node = self.get_node(west_coord)?;
-            if west_node.connects_to().contains(&CardinalDirection::East) {
-                directions.push(CardinalDirection::West);
+            if west_node.connects_to().contains(&CompassDirection::East) {
+                directions.push(CompassDirection::West);
             }
         }
 
         // East node
-        if let Some(east_coord) = self.shift_coord(start_coord, CardinalDirection::East) {
+        if let Some(east_coord) = self.shift_coord(start_coord, CompassDirection::East) {
             let east_node = self.get_node(east_coord)?;
-            if east_node.connects_to().contains(&CardinalDirection::West) {
-                directions.push(CardinalDirection::East);
+            if east_node.connects_to().contains(&CompassDirection::West) {
+                directions.push(CompassDirection::East);
             }
         }
 
@@ -196,39 +197,40 @@ impl PipeMap {
     fn shift_coord(
         &self,
         coord: Coordinate<usize>,
-        direction: CardinalDirection,
+        direction: CompassDirection,
     ) -> Option<Coordinate<usize>> {
         let (row, col) = coord;
 
         match direction {
-            CardinalDirection::North => {
+            CompassDirection::North => {
                 if row == 0 {
                     None
                 } else {
                     Some((row - 1, col))
                 }
             }
-            CardinalDirection::South => {
+            CompassDirection::South => {
                 if row == self.height - 1 {
                     None
                 } else {
                     Some((row + 1, col))
                 }
             }
-            CardinalDirection::West => {
+            CompassDirection::West => {
                 if col == 0 {
                     None
                 } else {
                     Some((row, col - 1))
                 }
             }
-            CardinalDirection::East => {
+            CompassDirection::East => {
                 if col == self.width - 1 {
                     None
                 } else {
                     Some((row, col + 1))
                 }
             }
+            _ => panic!("Bad direction"),
         }
     }
 
@@ -299,19 +301,19 @@ fn part1(input: &str) -> Result<u32> {
     let mut steps = 1;
 
     let mut a_coord = map
-        .shift_coord(start_coord, start_directions[0].clone())
+        .shift_coord(start_coord, start_directions[0])
         .ok_or(error!("Invalid start coordinate: {:?}", start_coord))?;
     let mut a_from_direction = start_directions[0].opposite();
 
     let mut b_coord = map
-        .shift_coord(start_coord, start_directions[1].clone())
+        .shift_coord(start_coord, start_directions[1])
         .ok_or(error!("Invalid start coordinate: {:?}", start_coord))?;
     let mut b_from_direction = start_directions[1].opposite();
 
     // We'll continue stepping in each direction until they converge
     while a_coord != b_coord {
-        (a_coord, a_from_direction) = map.get_next_node(a_coord, a_from_direction.clone())?;
-        (b_coord, b_from_direction) = map.get_next_node(b_coord, b_from_direction.clone())?;
+        (a_coord, a_from_direction) = map.get_next_node(a_coord, a_from_direction)?;
+        (b_coord, b_from_direction) = map.get_next_node(b_coord, b_from_direction)?;
 
         steps += 1;
     }
@@ -333,10 +335,10 @@ fn part2(input: &str) -> Result<usize> {
     clean_map.nodes[start_coord.0][start_coord.1] = Pipe::Start;
 
     let start_directions = map.get_start_directions()?;
-    let direction = start_directions[0].clone(); // We'll just pick one direction
+    let direction = start_directions[0]; // We'll just pick one direction
 
     let mut current_coord = map
-        .shift_coord(start_coord, direction.clone())
+        .shift_coord(start_coord, direction)
         .ok_or(error!("Invalid start coordinate: {:?}", start_coord))?;
     let mut from_direction = direction.opposite();
 
@@ -380,13 +382,13 @@ mod tests {
 
         let node = (1, 1);
 
-        let (next_node, came_from) = map.get_next_node(node, CardinalDirection::South).unwrap();
+        let (next_node, came_from) = map.get_next_node(node, CompassDirection::South).unwrap();
         assert_eq!(next_node, (1, 2));
-        assert_eq!(came_from, CardinalDirection::West);
+        assert_eq!(came_from, CompassDirection::West);
 
-        let (next_node, came_from) = map.get_next_node(node, CardinalDirection::East).unwrap();
+        let (next_node, came_from) = map.get_next_node(node, CompassDirection::East).unwrap();
         assert_eq!(next_node, (2, 1));
-        assert_eq!(came_from, CardinalDirection::North);
+        assert_eq!(came_from, CompassDirection::North);
     }
 
     #[test]
@@ -397,7 +399,7 @@ mod tests {
 
         assert_eq!(
             directions,
-            vec![CardinalDirection::South, CardinalDirection::East]
+            vec![CompassDirection::South, CompassDirection::East]
         );
     }
 }

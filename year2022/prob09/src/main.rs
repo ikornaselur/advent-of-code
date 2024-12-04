@@ -15,7 +15,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn count_spots_tail_touched(instructions: Vec<(OrdinalDirection, usize)>) -> Result<usize> {
+fn count_spots_tail_touched(instructions: Vec<(GridDirection, usize)>) -> Result<usize> {
     let mut touched_spots: HashSet<Coordinate<i32>> = HashSet::from([(0, 0)]);
 
     let mut head: Coordinate<i32> = (0, 0);
@@ -24,10 +24,11 @@ fn count_spots_tail_touched(instructions: Vec<(OrdinalDirection, usize)>) -> Res
     for (direction, steps) in instructions {
         for _ in 0..steps {
             match direction {
-                OrdinalDirection::Up => head.0 += 1,
-                OrdinalDirection::Down => head.0 -= 1,
-                OrdinalDirection::Left => head.1 -= 1,
-                OrdinalDirection::Right => head.1 += 1,
+                GridDirection::Up => head.0 += 1,
+                GridDirection::Down => head.0 -= 1,
+                GridDirection::Left => head.1 -= 1,
+                GridDirection::Right => head.1 += 1,
+                _ => panic!("Bad direction"),
             }
             let (dx, dy) = get_movement(head, tail);
             tail.0 += dx;
@@ -81,9 +82,7 @@ fn get_movement(h: Coordinate<i32>, t: Coordinate<i32>) -> Coordinate<i32> {
 /// The movement of each tail part is the same, until no more parts need to move.
 ///
 /// We are counting how many spots the _last_ part visits
-fn count_spots_with_long_tail_touched(
-    instructions: Vec<(OrdinalDirection, usize)>,
-) -> Result<usize> {
+fn count_spots_with_long_tail_touched(instructions: Vec<(GridDirection, usize)>) -> Result<usize> {
     let mut touched_spots: HashSet<Coordinate<i32>> = HashSet::from([(0, 0)]);
 
     let mut head: Coordinate<i32> = (0, 0);
@@ -92,10 +91,11 @@ fn count_spots_with_long_tail_touched(
     for (direction, steps) in instructions {
         for _ in 0..steps {
             match direction {
-                OrdinalDirection::Up => head.0 += 1,
-                OrdinalDirection::Down => head.0 -= 1,
-                OrdinalDirection::Left => head.1 -= 1,
-                OrdinalDirection::Right => head.1 += 1,
+                GridDirection::Up => head.0 += 1,
+                GridDirection::Down => head.0 -= 1,
+                GridDirection::Left => head.1 -= 1,
+                GridDirection::Right => head.1 += 1,
+                _ => panic!("Bad direcion"),
             }
 
             let (dx, dy) = get_movement(head, tail[0]);
