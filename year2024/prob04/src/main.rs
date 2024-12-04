@@ -49,6 +49,33 @@ fn search_xmas(grid: &[&[char]], y: usize, x: usize, direction: GridDirection) -
     true
 }
 
+fn search_x_mas(grid: &[&[char]], y: usize, x: usize) -> bool {
+    if y == 0 || x == 0 || y + 1 == grid.len() || x + 1 == grid[0].len() {
+        return false;
+    }
+
+    // Get current node
+    let current = grid[y][x];
+    if current != 'A' {
+        return false;
+    }
+
+    // Get the nodes
+    let up_left = grid[y - 1][x - 1];
+    let up_right = grid[y - 1][x + 1];
+    let down_left = grid[y + 1][x - 1];
+    let down_right = grid[y + 1][x + 1];
+
+    match (up_left, down_right) {
+        ('M', 'S') | ('S', 'M') => {}
+        _ => {
+            return false;
+        }
+    }
+
+    matches!((up_right, down_left), ('M', 'S') | ('S', 'M'))
+}
+
 fn part1(input: &str) -> Result<usize> {
     let grid = parse_input(input)?;
     let grid_slices: Vec<&[char]> = grid.iter().map(|v| v.as_slice()).collect();
@@ -72,8 +99,24 @@ fn part1(input: &str) -> Result<usize> {
     Ok(xmas_count)
 }
 
-fn part2(_input: &str) -> Result<u32> {
-    Ok(0)
+fn part2(input: &str) -> Result<u32> {
+    let grid = parse_input(input)?;
+    let grid_slices: Vec<&[char]> = grid.iter().map(|v| v.as_slice()).collect();
+
+    let grid_height = grid.len();
+    let grid_width = grid[0].len();
+
+    let mut x_mas_count = 0;
+
+    for y in 0..grid_height {
+        for x in 0..grid_width {
+            if search_x_mas(&grid_slices, y, x) {
+                x_mas_count += 1;
+            }
+        }
+    }
+
+    Ok(x_mas_count)
 }
 
 #[cfg(test)]
@@ -89,7 +132,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 9);
     }
 
     #[test]
