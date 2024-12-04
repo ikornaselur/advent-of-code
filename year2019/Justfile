@@ -6,5 +6,5 @@ prob num:
     echo "Creating prob{{num}}"; \
     cp -r ../.template prob{{num}}; \
     cargo init prob{{num}}; \
-    cat prob01/Cargo.toml | tail -1 >> prob{{num}}/Cargo.toml; \
+    cat prob01/Cargo.toml | tail -2 >> prob{{num}}/Cargo.toml; \
   fi
