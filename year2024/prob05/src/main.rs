@@ -1,5 +1,6 @@
 use advent::prelude::*;
-use parse::{parse_input, PageList, PageOrder};
+use parse::{parse_input, PageOrder};
+use std::cmp::Ordering;
 
 mod parse;
 
@@ -55,8 +56,51 @@ fn part1(input: &str) -> Result<usize> {
     Ok(return_val)
 }
 
-fn part2(_input: &str) -> Result<u32> {
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let (page_orders, page_lists) = parse_input(input)?;
+    let before_map = page_before_map(page_orders);
+
+    let mut invalid_page_lists = Vec::new();
+    'pages: for page_list in page_lists {
+        let mut seen = HashSet::new();
+        for digit in &page_list {
+            // Check if any of the 'seen' digits are in the 'after' values
+            if let Some(after) = before_map.get(digit) {
+                if after.intersection(&seen).count() > 0 {
+                    invalid_page_lists.push(page_list);
+                    continue 'pages;
+                }
+            }
+            seen.insert(*digit);
+        }
+    }
+
+    // Go through the invalid pages and sort them based on the before_map
+    let sum = invalid_page_lists
+        .iter()
+        .map(|page_list| {
+            let mut sorted = page_list.clone();
+            sorted.sort_by(|a, b| {
+                // Check if a needs to be before b
+                if let Some(after) = before_map.get(a) {
+                    if after.contains(b) {
+                        return Ordering::Less;
+                    }
+                }
+                // Check the other way
+                if let Some(after) = before_map.get(b) {
+                    if after.contains(a) {
+                        return Ordering::Greater;
+                    }
+                }
+                // Otherwise they're the same and it doesn't matter
+                Ordering::Equal
+            });
+            // Then we return the middle value
+            *sorted.get(sorted.len() / 2).unwrap()
+        })
+        .sum();
+    Ok(sum)
 }
 
 #[cfg(test)]
@@ -72,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 123);
     }
 
     #[test]
