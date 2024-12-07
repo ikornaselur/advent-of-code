@@ -15,39 +15,39 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn search_for_sum(sum: usize, acc: usize, digits: &[usize], with_concat: bool) -> bool {
-    // Base case, we ran out of digits to use, have we found the sum?
-    if digits.is_empty() {
-        return sum == acc;
+fn search_for_sum(sum: usize, digits: &[usize], with_concat: bool) -> bool {
+    if digits.len() == 1 {
+        return sum == digits[0];
     }
 
-    // Second case, has the accumulator grown beyond the sum?
-    if acc > sum {
-        return false;
-    }
+    let last_digit = digits.last().unwrap();
 
-    let next_digit = digits[0];
-
-    // Try adding next digit
-    if search_for_sum(sum, acc + next_digit, &digits[1..], with_concat) {
-        return true;
-    }
-
-    // Try multiplying next digit
-    if search_for_sum(sum, acc * next_digit, &digits[1..], with_concat) {
-        return true;
-    }
-
-    // If we are in part 2, we just concatenate the next number to the current accumulator
-    if with_concat {
-        let next_acc =
-            acc * 10_usize.pow(next_digit.checked_ilog10().unwrap_or(0) + 1) + next_digit;
-        if search_for_sum(sum, next_acc, &digits[1..], with_concat) {
+    // Check if we can divide (for the multiply case)
+    if sum % last_digit == 0 {
+        let new_sum = sum / last_digit;
+        if search_for_sum(new_sum, &digits[..digits.len() - 1], with_concat) {
             return true;
         }
     }
 
-    // Couldn't find any!
+    // Check if we can subtract (for the addition case)
+    if sum >= *last_digit {
+        let new_sum = sum - last_digit;
+        if search_for_sum(new_sum, &digits[..digits.len() - 1], with_concat) {
+            return true;
+        }
+
+        if with_concat {
+            let last_digit_size = 10_usize.pow(last_digit.checked_ilog10().unwrap_or(0) + 1);
+            if (sum - last_digit) % last_digit_size == 0 {
+                let new_sum = (sum - last_digit) / last_digit_size;
+                if search_for_sum(new_sum, &digits[..digits.len() - 1], with_concat) {
+                    return true;
+                }
+            }
+        }
+    }
+
     false
 }
 
@@ -56,7 +56,7 @@ fn part1(input: &str) -> Result<usize> {
 
     Ok(rows
         .iter()
-        .filter(|(sum, digits)| search_for_sum(*sum, 0, digits, false))
+        .filter(|(sum, digits)| search_for_sum(*sum, digits, false))
         .map(|(sum, _)| *sum)
         .sum())
 }
@@ -66,7 +66,7 @@ fn part2(input: &str) -> Result<usize> {
 
     Ok(rows
         .iter()
-        .filter(|(sum, digits)| search_for_sum(*sum, 0, digits, true))
+        .filter(|(sum, digits)| search_for_sum(*sum, digits, true))
         .map(|(sum, _)| *sum)
         .sum())
 }
@@ -84,30 +84,30 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 11387);
     }
 
     #[test]
-    fn test_search_for_sum() {
+    fn test_search_for_sum_without_concat() {
         // Valid
-        assert!(search_for_sum(190, 0, &[10, 19], false));
-        assert!(search_for_sum(3267, 0, &[81, 40, 27], false));
-        assert!(search_for_sum(292, 0, &[11, 6, 16, 20], false));
+        assert!(search_for_sum(190, &[10, 19], false));
+        assert!(search_for_sum(3267, &[81, 40, 27], false));
+        assert!(search_for_sum(292, &[11, 6, 16, 20], false));
 
         // Invalid
-        assert!(!search_for_sum(83, 0, &[17, 5], false));
-        assert!(!search_for_sum(156, 0, &[15, 6], false));
-        assert!(!search_for_sum(7290, 0, &[6, 8, 6, 15], false));
-        assert!(!search_for_sum(161011, 0, &[16, 10, 13], false));
-        assert!(!search_for_sum(192, 0, &[17, 8, 14], false));
-        assert!(!search_for_sum(21037, 0, &[9, 7, 18, 13], false));
+        assert!(!search_for_sum(83, &[17, 5], false));
+        assert!(!search_for_sum(156, &[15, 6], false));
+        assert!(!search_for_sum(7290, &[6, 8, 6, 15], false));
+        assert!(!search_for_sum(161011, &[16, 10, 13], false));
+        assert!(!search_for_sum(192, &[17, 8, 14], false));
+        assert!(!search_for_sum(21037, &[9, 7, 18, 13], false));
     }
 
     #[test]
     fn test_search_for_sum_with_concat() {
         // Valid
-        assert!(search_for_sum(156, 0, &[15, 6], true));
-        assert!(search_for_sum(7290, 0, &[6, 8, 6, 15], true));
-        assert!(search_for_sum(192, 0, &[17, 8, 14], true));
+        assert!(search_for_sum(156, &[15, 6], true));
+        assert!(search_for_sum(7290, &[6, 8, 6, 15], true));
+        assert!(search_for_sum(192, &[17, 8, 14], true));
     }
 }
