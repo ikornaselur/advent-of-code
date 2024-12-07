@@ -1,4 +1,5 @@
 use advent::prelude::*;
+use parse::parse_input;
 
 mod parse;
 
@@ -14,11 +15,11 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn part1(_input: &str) -> Result<u32> {
+fn part1(_input: &str) -> Result<usize> {
     Ok(0)
 }
 
-fn part2(_input: &str) -> Result<u32> {
+fn part2(_input: &str) -> Result<usize> {
     Ok(0)
 }
 
