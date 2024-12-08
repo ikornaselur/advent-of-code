@@ -21,11 +21,9 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn part1(input: &str) -> Result<usize> {
-    let antenna_map = parse_input(input)?;
-    let height = antenna_map.len();
-    let width = antenna_map[0].len();
-
+fn get_antenna_coordinates(
+    antenna_map: &[Vec<Node>],
+) -> Result<HashMap<&char, Vec<Coordinate<isize>>>> {
     let mut antenna_coordinates = HashMap::new();
 
     // Store a list of coordinates for each antenna type
@@ -43,6 +41,15 @@ fn part1(input: &str) -> Result<usize> {
         }
     }
 
+    Ok(antenna_coordinates)
+}
+
+fn get_antinodes(
+    height: isize,
+    width: isize,
+    antenna_coordinates: HashMap<&char, Vec<Coordinate<isize>>>,
+    with_harmonics: bool,
+) -> HashSet<Coordinate<isize>> {
     let mut antinodes = HashSet::new();
     // Calculate distance between all antennas of the same
     for (_antenna_id, coordinates) in antenna_coordinates.iter() {
@@ -51,29 +58,55 @@ fn part1(input: &str) -> Result<usize> {
                 if (y1, x1) == (y2, x2) {
                     continue;
                 }
-                // Calculate the vector between them, doubled up, and add it to the coordinate.
-                // This will be an 'antinode'.
-                let antinode = (y1 + (y2 - y1) * 2, x1 + (x2 - x1) * 2);
+                let vector = (y2 - y1, x2 - x1);
+                let mut start_node = if with_harmonics {
+                    (*y1, *x1)
+                } else {
+                    (y1 + vector.0, x1 + vector.1)
+                };
+                loop {
+                    let antinode = (start_node.0 + vector.0, start_node.1 + vector.1);
 
-                // Skip antinodes outside of the map
-                if antinode.0 < 0
-                    || antinode.0 >= height as isize
-                    || antinode.1 < 0
-                    || antinode.1 >= width as isize
-                {
-                    continue;
+                    if antinode.0 < 0
+                        || antinode.0 >= height
+                        || antinode.1 < 0
+                        || antinode.1 >= width
+                    {
+                        break;
+                    }
+                    antinodes.insert(antinode);
+                    if !with_harmonics {
+                        break;
+                    }
+
+                    start_node = antinode;
                 }
-
-                antinodes.insert(antinode);
             }
         }
     }
+    antinodes
+}
+
+fn part1(input: &str) -> Result<usize> {
+    let antenna_map = parse_input(input)?;
+    let height = antenna_map.len();
+    let width = antenna_map[0].len();
+
+    let antenna_coordinates = get_antenna_coordinates(&antenna_map)?;
+    let antinodes = get_antinodes(height as isize, width as isize, antenna_coordinates, false);
 
     Ok(antinodes.len())
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let antenna_map = parse_input(input)?;
+    let height = antenna_map.len();
+    let width = antenna_map[0].len();
+
+    let antenna_coordinates = get_antenna_coordinates(&antenna_map)?;
+    let antinodes = get_antinodes(height as isize, width as isize, antenna_coordinates, true);
+
+    Ok(antinodes.len())
 }
 
 #[cfg(test)]
@@ -89,6 +122,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 34);
     }
 }
