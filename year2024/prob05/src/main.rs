@@ -8,10 +8,12 @@ const INPUT: &str = include_str!("../input.txt");
 
 fn main() -> Result<()> {
     println!("## Part 1");
-    println!(" > {}", part1(INPUT)?);
+    let result = run_with_timeout("Part 1", part1, INPUT)?;
+    println!(" > {}", result);
 
     println!("## Part 2");
-    println!(" > {}", part2(INPUT)?);
+    let result = run_with_timeout("Part 2", part2, INPUT)?;
+    println!(" > {}", result);
 
     benchmark_parts(
         |input| {

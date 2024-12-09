@@ -1,6 +1,7 @@
 pub use crate::benchmark::benchmark_parts;
 pub use crate::enums::{CompassDirection, GridDirection};
 pub use crate::error_handling::AdventError;
+pub use crate::timeouts::run_with_timeout;
 pub use crate::types::Coordinate;
 pub use crate::utils::manhattan_distance;
 pub use crate::{error, invalid_coordinate, parse_error};
