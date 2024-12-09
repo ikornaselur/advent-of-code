@@ -1,3 +1,4 @@
+pub use crate::benchmark::benchmark_parts;
 pub use crate::enums::{CompassDirection, GridDirection};
 pub use crate::error_handling::AdventError;
 pub use crate::types::Coordinate;

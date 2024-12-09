@@ -80,6 +80,16 @@ fn main() -> Result<()> {
     println!("## Part 2");
     println!(" > {}", part2(INPUT)?);
 
+    benchmark_parts(
+        |input| {
+            part1(input).unwrap();
+        },
+        |input| {
+            part2(input).unwrap();
+        },
+        INPUT,
+    );
+
     Ok(())
 }
 
