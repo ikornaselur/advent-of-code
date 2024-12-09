@@ -63,49 +63,111 @@ fn expand_disk_map(compressed_disk_map: Vec<CompressedNode>) -> Vec<Node> {
         .collect()
 }
 
-fn defrag_disk(disk_map: &mut Vec<Node>) {
-    let mut idx = 0;
+fn defrag_disk(disk_map: &mut Vec<Node>, split_files: bool) {
+    let mut left_idx = 0;
+    let mut right_idx = disk_map.len() - 1;
 
-    while idx < disk_map.len() {
-        //print_disk_map(disk_map.to_vec());
-        if let Node::File(_) = disk_map[idx] {
-            idx += 1;
+    while left_idx < right_idx {
+        if let Node::File(_) = disk_map[left_idx] {
+            left_idx += 1;
             continue;
         }
 
-        if let Node::Free(free_space) = disk_map[idx] {
+        if let Node::Free(free_space) = disk_map[left_idx] {
             // Get the last item
-            let last_item = disk_map.pop().unwrap();
+            let last_item = disk_map[right_idx];
 
-            if let Node::File(file) = &last_item {
-                if file.size < free_space {
-                    // W+e move the whole file, there will still be some free space
-                    disk_map.insert(idx, Node::File(*file));
+            match &last_item {
+                Node::Free(_) => {
+                    // We just ignore it
+                    right_idx -= 1;
+                }
+                Node::File(file) if file.size < free_space => {
+                    // We move the whole file, there will still be some free space
+                    disk_map.insert(left_idx, Node::File(*file));
 
-                    idx += 1;
+                    // Need to bump right_idx back because of the new node
+                    right_idx += 1;
+                    // We keep track of the free space at the end
+                    disk_map[right_idx] = Node::Free(file.size);
+
+                    // We just bump the left idx, the next file will have shifted into the
+                    // right_idx
+                    left_idx += 1;
+
                     // Need to update the free space
-                    disk_map[idx] = Node::Free(free_space - file.size);
-                } else if file.size == free_space {
+                    disk_map[left_idx] = Node::Free(free_space - file.size);
+                }
+                Node::File(file) if file.size == free_space => {
                     // Same as before, except it replaces the free space completely
-                    disk_map[idx] = Node::File(*file);
+                    disk_map[left_idx] = Node::File(*file);
 
-                    idx += 1;
-                } else {
+                    // And keep track of the empty space
+                    disk_map[right_idx] = Node::Free(file.size);
+
+                    // Then we bump both sides
+                    left_idx += 1;
+                    right_idx -= 1;
+                }
+                Node::File(file) if split_files => {
                     // We've got to split the file, so we'll replace the free space with a chunk of
                     // the file, leaving the rest at the end for the next loop
-                    disk_map[idx] = Node::File(File {
+                    disk_map[left_idx] = Node::File(File {
                         id: file.id,
                         size: free_space,
                     });
 
-                    // Push the rest back to the end
-                    // TODO: Could be optimised by just storing this?
-                    disk_map.push(Node::File(File {
+                    disk_map[right_idx] = Node::File(File {
                         id: file.id,
                         size: file.size - free_space,
-                    }));
+                    });
 
-                    idx += 1;
+                    // We only bump the left idx, as the right idx is pointing at the rest of the
+                    // file
+                    left_idx += 1;
+                }
+                Node::File(file) => {
+                    // We're not splitting files, so we have to look for a space big enough
+                    let mut sub_idx = left_idx;
+                    while sub_idx < right_idx {
+                        let sub_item = disk_map[sub_idx];
+                        match sub_item {
+                            Node::File(_) => {
+                                sub_idx += 1;
+                            }
+                            Node::Free(free_space) if free_space == file.size => {
+                                // We can fit it here!
+                                disk_map[sub_idx] = Node::File(*file);
+
+                                // We have to keep track of the empty space at the end too
+                                disk_map[right_idx] = Node::Free(free_space);
+
+                                break; // Done with this file
+                            }
+                            Node::Free(free_space) if free_space > file.size => {
+                                // We move the whole file, there will still be some free space
+                                disk_map.insert(sub_idx, Node::File(*file));
+
+                                // Need to bump right_idx back because of the new node
+                                right_idx += 1;
+                                // We keep track of the free space at the end
+                                disk_map[right_idx] = Node::Free(file.size);
+
+                                // We just bump the left idx, the next file will have shifted into the
+                                // right_idx
+                                sub_idx += 1;
+
+                                // Need to update the free space
+                                disk_map[sub_idx] = Node::Free(free_space - file.size);
+                                break; // Done with this file
+                            }
+                            Node::Free(_) => {
+                                // Size is too small
+                                sub_idx += 1;
+                            }
+                        }
+                    }
+                    right_idx -= 1;
                 }
             }
         } else {
@@ -115,14 +177,34 @@ fn defrag_disk(disk_map: &mut Vec<Node>) {
 }
 
 #[allow(dead_code)]
-fn print_disk_map(disk_map: Vec<Node>) {
-    for node in disk_map {
+fn print_disk_map(disk_map: Vec<Node>, left_idx: usize, right_idx: usize) {
+    for node in &disk_map {
         match node {
-            Node::Free(size) => print!("{}", ".".repeat(size as usize)),
+            Node::Free(size) => print!("{}", ".".repeat(*size as usize)),
             Node::File(file) => print!("{}", format!("{}", file.id).repeat(file.size as usize)),
         }
     }
     println!();
+    let left_idx_str = " ".repeat(
+        disk_map[..left_idx]
+            .iter()
+            .map(|n| match n {
+                Node::Free(size) => *size,
+                Node::File(file) => file.size,
+            })
+            .sum::<u32>() as usize,
+    );
+    let right_idx_str = " ".repeat(
+        disk_map[left_idx..right_idx]
+            .iter()
+            .map(|n| match n {
+                Node::Free(size) => *size,
+                Node::File(file) => file.size,
+            })
+            .sum::<u32>() as usize
+            - 1,
+    );
+    println!("{}L{}R", left_idx_str, right_idx_str);
 }
 
 fn calculate_checksum(disk_map: Vec<Node>) -> u64 {
@@ -131,9 +213,9 @@ fn calculate_checksum(disk_map: Vec<Node>) -> u64 {
 
     for node in disk_map {
         match node {
-            Node::Free(_) => {
-                // Since we just left free space probably at the end, we can just break here
-                break;
+            Node::Free(size) => {
+                // Free space isn't counted, but progresses the idx
+                idx += size as u64;
             }
             Node::File(File { id, size }) => {
                 for i in idx..(idx + size as u64) {
@@ -150,13 +232,17 @@ fn calculate_checksum(disk_map: Vec<Node>) -> u64 {
 fn part1(input: &str) -> Result<u64> {
     let compressed_disk_map = parse_input(input)?;
     let mut disk_map = expand_disk_map(compressed_disk_map);
-    defrag_disk(&mut disk_map);
+    defrag_disk(&mut disk_map, true);
 
     Ok(calculate_checksum(disk_map))
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    Ok(0)
+fn part2(input: &str) -> Result<u64> {
+    let compressed_disk_map = parse_input(input)?;
+    let mut disk_map = expand_disk_map(compressed_disk_map);
+    defrag_disk(&mut disk_map, false);
+
+    Ok(calculate_checksum(disk_map))
 }
 
 #[cfg(test)]
@@ -172,7 +258,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 2858);
     }
 
     #[test]
