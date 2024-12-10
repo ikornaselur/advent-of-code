@@ -34,15 +34,15 @@ fn get_node_diff(first: char, second: char) -> i8 {
     second as i8 - first as i8
 }
 
-fn get_path_trailheads(map: &[Vec<char>], pos: Coordinate<usize>) -> HashSet<Coordinate<usize>> {
-    let mut trailheads = HashSet::new();
+fn get_path_trailheads(map: &[Vec<char>], pos: Coordinate<usize>) -> Vec<Coordinate<usize>> {
+    let mut trailheads = Vec::new();
     let node = map[pos.0][pos.1];
 
     let height = map.len();
     let width = map[0].len();
 
     if node == '9' {
-        trailheads.insert(pos);
+        trailheads.push(pos);
     } else {
         if pos.0 > 0 && get_node_diff(node, map[pos.0 - 1][pos.1]) == 1 {
             trailheads.extend(get_path_trailheads(map, (pos.0 - 1, pos.1)));
@@ -60,9 +60,15 @@ fn get_path_trailheads(map: &[Vec<char>], pos: Coordinate<usize>) -> HashSet<Coo
     trailheads
 }
 
-fn get_path_score(map: &[Vec<char>], pos: Coordinate<usize>) -> usize {
+fn get_path_score(map: &[Vec<char>], pos: Coordinate<usize>, unique_paths: bool) -> usize {
     match map[pos.0][pos.1] {
-        '0' => get_path_trailheads(map, pos).len(),
+        '0' => {
+            if unique_paths {
+                get_path_trailheads(map, pos).len()
+            } else {
+                HashSet::<_>::from_iter(get_path_trailheads(map, pos)).len()
+            }
+        }
         _ => 0,
     }
 }
@@ -73,12 +79,18 @@ fn part1(input: &str) -> Result<usize> {
         acc + row
             .iter()
             .enumerate()
-            .fold(0, |acc, (x, _)| acc + get_path_score(&map, (y, x)))
+            .fold(0, |acc, (x, _)| acc + get_path_score(&map, (y, x), false))
     }))
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let map = parse_input(input)?;
+    Ok(map.iter().enumerate().fold(0, |acc, (y, row)| {
+        acc + row
+            .iter()
+            .enumerate()
+            .fold(0, |acc, (x, _)| acc + get_path_score(&map, (y, x), true))
+    }))
 }
 
 #[cfg(test)]
@@ -94,6 +106,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 81);
     }
 }
