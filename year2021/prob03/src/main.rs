@@ -51,9 +51,52 @@ fn part1(input: &str) -> Result<usize> {
     Ok(gamma_rate * epsilon_rate)
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let bit_list = parse_input(input)?;
+
+    // Oxygen generator rating
+    let mut oxygen_rate_bits = bit_list.clone();
+    let mut idx = 0;
+    while oxygen_rate_bits.len() > 1 {
+        let one_count = oxygen_rate_bits.iter().filter(|x| x[idx]).count();
+        let zero_count = oxygen_rate_bits.len() - one_count;
+
+        if one_count >= zero_count {
+            oxygen_rate_bits.retain(|x| x[idx]);
+        } else {
+            oxygen_rate_bits.retain(|x| !x[idx]);
+        }
+
+        idx += 1;
+    }
+
+    // CO2 scrubber rating
+    let mut co2_rate_bits = bit_list.clone();
+    let mut idx = 0;
+    while co2_rate_bits.len() > 1 {
+        let one_count = co2_rate_bits.iter().filter(|x| x[idx]).count();
+        let zero_count = co2_rate_bits.len() - one_count;
+
+        if one_count >= zero_count {
+            co2_rate_bits.retain(|x| !x[idx]);
+        } else {
+            co2_rate_bits.retain(|x| x[idx]);
+        }
+
+        idx += 1;
+    }
+
+    // Turn the bits into values
+    let oxygen_rate = oxygen_rate_bits[0]
+        .iter()
+        .map(|x| if *x { 1 } else { 0 })
+        .fold(0, |acc, x| acc * 2 + x);
+    let co2_rate = co2_rate_bits[0]
+        .iter()
+        .map(|x| if *x { 1 } else { 0 })
+        .fold(0, |acc, x| acc * 2 + x);
+
+    Ok(oxygen_rate * co2_rate)
 }
 
 #[cfg(test)]
@@ -69,6 +112,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 230);
     }
 }
