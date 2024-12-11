@@ -43,8 +43,25 @@ fn part1(input: &str) -> Result<usize> {
     Ok(depth * horizontal)
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let instructions = parse_input(input)?;
+
+    let (depth, horizontal, _) =
+        instructions
+            .iter()
+            .fold(
+                (0, 0, 0),
+                |(depth, horizontal, aim), instruction| match instruction {
+                    (GridDirection::Up, amount) => (depth, horizontal, aim - amount),
+                    (GridDirection::Down, amount) => (depth, horizontal, aim + amount),
+                    (GridDirection::Right, amount) => {
+                        (depth + aim * amount, horizontal + amount, aim)
+                    }
+                    _ => panic!("Invalid direction"),
+                },
+            );
+
+    Ok(depth * horizontal)
 }
 
 #[cfg(test)]
@@ -60,6 +77,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 900);
     }
 }
