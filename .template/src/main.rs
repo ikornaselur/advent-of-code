@@ -28,10 +28,12 @@ fn main() -> Result<()> {
 }
 
 fn part1(_input: &str) -> Result<usize> {
+    // let thing = parse_input(input)?;
     Ok(0)
 }
 
 fn part2(_input: &str) -> Result<usize> {
+    // let thing = parse_input(input)?;
     Ok(0)
 }
 
