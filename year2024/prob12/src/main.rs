@@ -96,6 +96,108 @@ fn count_plot_edges(plot: &HashSet<Coordinate<usize>>, plot_map: &[Vec<char>]) -
     edges
 }
 
+/// Count the plot edges where straight lines count as a single line
+///
+/// We'll count the horizontal lines first, by basically marking all spots that have an edge above
+/// and then separately all that have one below
+/// We can then join up consequitive nodes.
+/// We'll repeat this for vertical lines
+fn count_plot_edges_straights(plot: &HashSet<Coordinate<usize>>, plot_map: &[Vec<char>]) -> usize {
+    let mut edges = 0;
+
+    let mut vertical_left: HashMap<usize, Vec<usize>> = HashMap::new();
+    let mut vertical_right: HashMap<usize, Vec<usize>> = HashMap::new();
+    let mut horizontal_above: HashMap<usize, Vec<usize>> = HashMap::new();
+    let mut horizontal_below: HashMap<usize, Vec<usize>> = HashMap::new();
+
+    // Horizontal lines
+    for (y, x) in plot {
+        if *y > 0 && !plot.contains(&(*y - 1, *x)) || *y == 0 {
+            if !horizontal_above.contains_key(y) {
+                horizontal_above.insert(*y, Vec::new());
+            }
+            horizontal_above.get_mut(y).unwrap().push(*x);
+        }
+        if *y < plot_map.len() - 1 && !plot.contains(&(*y + 1, *x)) || *y == plot_map.len() - 1 {
+            if !horizontal_below.contains_key(y) {
+                horizontal_below.insert(*y, Vec::new());
+            }
+            horizontal_below.get_mut(y).unwrap().push(*x);
+        }
+        if *x > 0 && !plot.contains(&(*y, *x - 1)) || *x == 0 {
+            if !vertical_left.contains_key(x) {
+                vertical_left.insert(*x, Vec::new());
+            }
+            vertical_left.get_mut(x).unwrap().push(*y);
+        }
+        if *x < plot_map[0].len() - 1 && !plot.contains(&(*y, *x + 1))
+            || *x == plot_map[0].len() - 1
+        {
+            if !vertical_right.contains_key(x) {
+                vertical_right.insert(*x, Vec::new());
+            }
+            vertical_right.get_mut(x).unwrap().push(*y);
+        }
+    }
+    // Now count the joined lines
+    for (_key, val) in horizontal_above.iter_mut() {
+        // Sort the x values
+        val.sort();
+        let mut count = 0;
+        let mut last = val[0];
+        for x in val.iter().skip(1) {
+            if x - last > 1 {
+                count += 1;
+            }
+            last = *x;
+        }
+        edges += count + 1;
+    }
+
+    for (_key, val) in horizontal_below.iter_mut() {
+        // Sort the x values
+        val.sort();
+        let mut count = 0;
+        let mut last = val[0];
+        for x in val.iter().skip(1) {
+            if x - last > 1 {
+                count += 1;
+            }
+            last = *x;
+        }
+        edges += count + 1;
+    }
+
+    for (_key, val) in vertical_left.iter_mut() {
+        // Sort the x values
+        val.sort();
+        let mut count = 0;
+        let mut last = val[0];
+        for x in val.iter().skip(1) {
+            if x - last > 1 {
+                count += 1;
+            }
+            last = *x;
+        }
+        edges += count + 1;
+    }
+    for (_key, val) in vertical_right.iter_mut() {
+        // Sort the x values
+        val.sort();
+        let mut count = 0;
+        let mut last = val[0];
+        for x in val.iter().skip(1) {
+            if x - last > 1 {
+                count += 1;
+            }
+            last = *x;
+        }
+        edges += count + 1;
+    }
+
+    edges
+}
+
 fn part1(input: &str) -> Result<usize> {
     let plot_map = parse_input(input)?;
 
@@ -120,9 +222,28 @@ fn part1(input: &str) -> Result<usize> {
     }))
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let plot_map = parse_input(input)?;
+
+    // Go through the characters in the plots, growing out each plot as we find it
+    let mut plots: Vec<HashSet<Coordinate<usize>>> = Vec::new();
+    let mut seen_spots: HashSet<Coordinate<usize>> = HashSet::new();
+
+    for y in 0..plot_map.len() {
+        for x in 0..plot_map[0].len() {
+            if seen_spots.contains(&(y, x)) {
+                continue;
+            }
+
+            let plot = map_out_plot(&plot_map, (y, x));
+            seen_spots.extend(&plot);
+            plots.push(plot);
+        }
+    }
+
+    Ok(plots.iter().fold(0, |acc, plot| {
+        acc + plot.len() * count_plot_edges_straights(plot, &plot_map)
+    }))
 }
 
 #[cfg(test)]
@@ -144,7 +265,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 80);
     }
 
     #[test]
