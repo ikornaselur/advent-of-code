@@ -77,14 +77,44 @@ fn get_safety_rating(
     upper_left_quadrant * upper_right_quadrant * lower_left_quadrant * lower_right_quadrant
 }
 
+fn get_iterations_for_unique_pos(
+    width: i32,
+    height: i32,
+    states: &[(Coordinate<i32>, Coordinate<i32>)],
+) -> usize {
+    let mut iterations = 0;
+    let mut states = states.to_vec();
+
+    loop {
+        iterations += 1;
+        states = states
+            .iter()
+            .map(|(pos, vector)| {
+                (
+                    get_pos_after_iterations(width, height, 1, *pos, *vector),
+                    *vector,
+                )
+            })
+            .collect();
+        // Check if all positions are unique?
+        let unique =
+            HashSet::<Coordinate<i32>>::from_iter(states.iter().map(|(pos, _)| *pos)).len();
+        if unique == states.len() {
+            break;
+        }
+    }
+
+    iterations
+}
+
 fn part1(input: &str) -> Result<usize> {
     let states = parse_input(input)?;
     Ok(get_safety_rating(101, 103, 100, &states))
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let states = parse_input(input)?;
+    Ok(get_iterations_for_unique_pos(101, 103, &states))
 }
 
 #[cfg(test)]
@@ -98,10 +128,5 @@ mod tests {
         let states = parse_input(TEST_INPUT).unwrap();
         let safety_rating = get_safety_rating(11, 7, 100, &states);
         assert_eq!(safety_rating, 12);
-    }
-
-    #[test]
-    fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
     }
 }
