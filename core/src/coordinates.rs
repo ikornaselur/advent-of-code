@@ -60,12 +60,6 @@ where
     }
 }
 
-impl<T: PrimInt> GridCoordinate<T> {
-    fn zero() -> Self {
-        Self::new(T::zero(), T::zero())
-    }
-}
-
 impl<T: PrimInt> Add<(T, T)> for GridCoordinate<T> {
     type Output = Self;
 
@@ -97,17 +91,6 @@ mod tests {
         let coord_i32: GridCoordinate<i32> = GridCoordinate::new(-1, 2);
         assert_eq!(coord_i32.row, -1);
         assert_eq!(coord_i32.column, 2);
-    }
-
-    #[test]
-    fn test_zero() {
-        let coord_u32: GridCoordinate<u32> = GridCoordinate::zero();
-        assert_eq!(coord_u32.row, 0);
-        assert_eq!(coord_u32.column, 0);
-
-        let coord_i32: GridCoordinate<i32> = GridCoordinate::zero();
-        assert_eq!(coord_i32.row, 0);
-        assert_eq!(coord_i32.column, 0);
     }
 
     #[test]

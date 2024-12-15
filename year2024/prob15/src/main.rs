@@ -13,6 +13,8 @@ type Instructions = Vec<GridDirection>;
 enum Node {
     Wall,
     Box,
+    BoxLeft,
+    BoxRight,
     Floor,
     Robot,
 }
@@ -22,6 +24,8 @@ impl fmt::Display for Node {
         let c = match self {
             Node::Wall => '#',
             Node::Box => 'O',
+            Node::BoxLeft => '[',
+            Node::BoxRight => ']',
             Node::Floor => '.',
             Node::Robot => '@',
         };
@@ -96,6 +100,34 @@ impl Grid {
         }
     }
 
+    fn widen_grid(&mut self) {
+        // We'll need to replace each row with a row that is twice as long, the number of rows stay
+        // the same.
+        // We replace each node by the following rules:
+        //
+        //   Wall -> Wall, Wall
+        //   Box -> BoxLeft, BoxRight
+        //   Floor -> Floor, Floor
+        self.nodes = self
+            .nodes
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .flat_map(|&node| match node {
+                        Node::Wall => vec![Node::Wall, Node::Wall],
+                        Node::Box => vec![Node::BoxLeft, Node::BoxRight],
+                        Node::Floor => vec![Node::Floor, Node::Floor],
+                        _ => unreachable!(),
+                    })
+                    .collect()
+            })
+            .collect();
+
+        // We'll then have to keep in mind that the robot will shift to the right, which we can
+        // achieve by just doubling the column coordinate
+        self.robot.column *= 2;
+    }
+
     fn tick(&mut self) -> Result<()> {
         if self.idx >= self.instructions.len() {
             return Err(error!("End of instructions"));
@@ -109,48 +141,117 @@ impl Grid {
             _ => unreachable!(),
         };
 
-        // We'll look in this direction until we find a wall or floor, keeping track of how many
-        // boxes are along the way
-        let mut box_count = 0;
-        let mut next_pos = self.robot;
-
-        loop {
-            next_pos += vector;
-
-            match next_pos.get(&self.nodes) {
-                Some(Node::Wall) => {
-                    // We've hit a wall, we can't move, we just abort
-                    break;
-                }
-                Some(Node::Floor) => {
-                    // We've found a floor, we can move
-                    if box_count == 0 {
-                        // We just move the robot, don't have to worry about boxes
-                        self.robot += vector;
-                    } else {
-                        // We basically just have to swap the first box with the floor we found
-                        self.nodes[next_pos.row as usize][next_pos.column as usize] = Node::Box;
-                        self.robot += vector;
-                        self.nodes[self.robot.row as usize][self.robot.column as usize] =
-                            Node::Floor;
-                    }
-                    break;
-                }
-                Some(Node::Box) => {
-                    // We've hit a box, we'll continue moving
-                    box_count += 1;
-                }
-                Some(Node::Robot) | None => {
-                    // We know the robot isn't on the grid (as we remove it in 'new') and the
-                    // problem grid has a wall surrounding the edge, so we can't get here!
-                    unreachable!();
-                }
-            }
+        if self.move_node(self.robot, vector, true) {
+            self.robot += vector;
         }
 
         self.idx += 1;
 
         Ok(())
+    }
+
+    fn move_node(
+        &mut self,
+        coordinate: GridCoordinate<i32>,
+        vector: (i32, i32),
+        apply_move: bool,
+    ) -> bool {
+        let current_node = match coordinate.get(&self.nodes) {
+            Some(node) => *node,
+            None => panic!("Coordinate out of bounds"),
+        };
+
+        let next_pos = coordinate + vector;
+
+        match next_pos.get(&self.nodes) {
+            Some(Node::Wall) => {
+                // We've hit a wall, we can't move
+                false
+            }
+            Some(Node::Floor) => {
+                // We've found a floor, we can move
+                if apply_move {
+                    self.nodes[next_pos.row as usize][next_pos.column as usize] = current_node;
+                    self.nodes[coordinate.row as usize][coordinate.column as usize] = Node::Floor;
+                }
+
+                true
+            }
+            Some(Node::Box) => {
+                // We've hit a box, let's see if it would move
+                if self.move_node(next_pos, vector, apply_move) {
+                    // It moved, we can move the current node
+                    if apply_move {
+                        self.nodes[next_pos.row as usize][next_pos.column as usize] = current_node;
+                        self.nodes[coordinate.row as usize][coordinate.column as usize] =
+                            Node::Floor;
+                    }
+
+                    true
+                } else {
+                    // It didn't move, we can't move
+                    false
+                }
+            }
+            Some(Node::BoxLeft) | Some(Node::BoxRight) if vector.0 == 0 => {
+                // We're moving a wide box horizontally, which is just like moving any other box
+                // really. The first part of the box hit will move the other half of the box, which
+                // will move if there's free space.. so we just continue like normal narrow boxes
+                if self.move_node(next_pos, vector, apply_move) {
+                    // Then we move the left side as well
+                    if apply_move {
+                        self.nodes[next_pos.row as usize][next_pos.column as usize] = current_node;
+                        self.nodes[coordinate.row as usize][coordinate.column as usize] =
+                            Node::Floor;
+                    }
+
+                    true
+                } else {
+                    false
+                }
+            }
+            Some(node @ (Node::BoxLeft | Node::BoxRight)) if vector.1 == 0 => {
+                // Now we're cooking.. moving vertically, that's going to require some
+                // backtracking! We'll achieve that with this this 'apply_move' flag, so that we
+                // can see if *all* touched boxes would move, only then will we apply the move..
+                // this _should_ prevent the issue of pushing two boxes vertically where the left
+                // box can't move but the right can (if we apply the move immediately we'll be in a
+                // bad state)
+
+                // We also have to keep in mind that we're covering _two_ nodes at a time here
+                let box_vector = match node {
+                    Node::BoxLeft => (0, 1),
+                    Node::BoxRight => (0, -1),
+                    _ => unreachable!(),
+                };
+                let next_pos_other = next_pos + box_vector;
+
+                if self.move_node(next_pos, vector, false)
+                    && self.move_node(next_pos_other, vector, false)
+                {
+                    if apply_move {
+                        self.move_node(next_pos, vector, true);
+                        self.move_node(next_pos_other, vector, true);
+
+                        // We then have to move both the original node
+                        // I also thought I had to move the 'other half', but, somehow.. this
+                        // works? If I comment this out, the tests fail, and similarly if I
+                        // explicitly move the other part.. it doesn't work
+                        // Sooooo..
+                        self.nodes[next_pos.row as usize][next_pos.column as usize] = current_node;
+                        self.nodes[coordinate.row as usize][coordinate.column as usize] =
+                            Node::Floor;
+                    }
+
+                    // And we know it could move, so we can just return true!
+                    true
+                } else {
+                    false
+                }
+            }
+            Some(Node::Robot) | None => unreachable!(),
+            _ => todo!(),
+        }
     }
 }
 
@@ -196,9 +297,26 @@ fn part1(input: &str) -> Result<usize> {
         }))
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let mut grid = parse_input(input)?;
+
+    grid.widen_grid();
+
+    while grid.tick().is_ok() {}
+
+    Ok(grid
+        .nodes
+        .iter()
+        .enumerate()
+        .fold(0, |acc, (row_num, row)| {
+            acc + row.iter().enumerate().fold(0, |acc, (column, &node)| {
+                if node == Node::BoxLeft {
+                    acc + column + (row_num * 100)
+                } else {
+                    acc
+                }
+            })
+        }))
 }
 
 #[cfg(test)]
@@ -220,6 +338,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(BIG_TEST_INPUT).unwrap(), 9021);
     }
 }
