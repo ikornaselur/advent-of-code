@@ -35,6 +35,49 @@ impl CompassDirection {
             CompassDirection::NorthEast => CompassDirection::SouthWest,
         }
     }
+
+    pub fn right_90(&self) -> Self {
+        match self {
+            CompassDirection::North => CompassDirection::East,
+            CompassDirection::East => CompassDirection::South,
+            CompassDirection::South => CompassDirection::West,
+            CompassDirection::West => CompassDirection::North,
+            CompassDirection::NorthWest => CompassDirection::NorthEast,
+            CompassDirection::NorthEast => CompassDirection::SouthEast,
+            CompassDirection::SouthEast => CompassDirection::SouthWest,
+            CompassDirection::SouthWest => CompassDirection::NorthWest,
+        }
+    }
+
+    pub fn left_90(&self) -> Self {
+        match self {
+            CompassDirection::North => CompassDirection::West,
+            CompassDirection::West => CompassDirection::South,
+            CompassDirection::South => CompassDirection::East,
+            CompassDirection::East => CompassDirection::North,
+            CompassDirection::NorthWest => CompassDirection::SouthWest,
+            CompassDirection::SouthWest => CompassDirection::SouthEast,
+            CompassDirection::SouthEast => CompassDirection::NorthEast,
+            CompassDirection::NorthEast => CompassDirection::NorthWest,
+        }
+    }
+
+    pub fn as_vector(&self) -> (i32, i32) {
+        // TODO: This doesn't match as_vector in GridDirection.. so need to make sure it's
+        // refactored to match!
+        // This is the right way, if we think of it as (row, column) and we start in upper-right
+        // corner
+        match self {
+            CompassDirection::North => (-1, 0),
+            CompassDirection::South => (1, 0),
+            CompassDirection::West => (0, -1),
+            CompassDirection::East => (0, 1),
+            CompassDirection::NorthWest => (-1, -1),
+            CompassDirection::NorthEast => (-1, 1),
+            CompassDirection::SouthWest => (1, -1),
+            CompassDirection::SouthEast => (1, 1),
+        }
+    }
 }
 
 impl GridDirection {

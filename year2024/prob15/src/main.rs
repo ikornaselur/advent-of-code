@@ -1,4 +1,3 @@
-use advent::coordinates::GridCoordinate;
 use advent::prelude::*;
 use parse::parse_input;
 use std::fmt;

@@ -2,10 +2,10 @@ use num_traits::{FromPrimitive, PrimInt, Zero};
 use std::cmp::PartialOrd;
 use std::ops::{Add, AddAssign};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct GridCoordinate<T> {
-    pub row: T,
     pub column: T,
+    pub row: T,
 }
 
 impl<T> GridCoordinate<T>
@@ -25,6 +25,20 @@ where
             && self.column >= Zero::zero()
             && self.row < height
             && self.column < width
+    }
+
+    pub fn manhattan_distance(&self, other: &Self) -> T {
+        let row_diff = if self.row >= other.row {
+            self.row - other.row
+        } else {
+            other.row - self.row
+        };
+        let col_diff = if self.column >= other.column {
+            self.column - other.column
+        } else {
+            other.column - self.column
+        };
+        row_diff + col_diff
     }
 }
 

@@ -1,4 +1,5 @@
 pub use crate::benchmark::benchmark_parts;
+pub use crate::coordinates::GridCoordinate;
 pub use crate::enums::{CompassDirection, GridDirection};
 pub use crate::error_handling::AdventError;
 pub use crate::timeouts::run_with_timeout;
