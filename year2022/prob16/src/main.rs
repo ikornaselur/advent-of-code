@@ -12,14 +12,26 @@ struct Valve {
     tunnel_ids: Option<Vec<usize>>,
 }
 
-const INPUT: &str = include_str!("../input.txt");
-
 fn main() -> Result<()> {
+    let input = get_input(2022, 16)?;
+
     println!("## Part 1");
-    println!(" > {}", part1(INPUT)?);
+    let result = run_with_timeout("Part 1", part1, &input)?;
+    println!(" > {}", result);
 
     println!("## Part 2");
-    println!(" > {}", part2(INPUT)?);
+    let result = run_with_timeout("Part 2", part2, &input)?;
+    println!(" > {}", result);
+
+    benchmark_parts(
+        |input| {
+            part1(input).unwrap();
+        },
+        |input| {
+            part2(input).unwrap();
+        },
+        &input,
+    );
 
     Ok(())
 }

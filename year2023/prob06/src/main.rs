@@ -1,7 +1,5 @@
 use advent::prelude::*;
 
-const INPUT: &str = include_str!("../input.txt");
-
 fn parse_input(input: &str) -> Result<Vec<(i64, i64)>> {
     let mut lines = input.lines();
 
@@ -40,11 +38,25 @@ fn solve(y: i64, d: i64) -> (f64, f64) {
 }
 
 fn main() -> Result<()> {
+    let input = get_input(2023, 6)?;
+
     println!("## Part 1");
-    println!(" > {}", part1(INPUT)?);
+    let result = run_with_timeout("Part 1", part1, &input)?;
+    println!(" > {}", result);
 
     println!("## Part 2");
-    println!(" > {}", part2(INPUT)?);
+    let result = run_with_timeout("Part 2", part2, &input)?;
+    println!(" > {}", result);
+
+    benchmark_parts(
+        |input| {
+            part1(input).unwrap();
+        },
+        |input| {
+            part2(input).unwrap();
+        },
+        &input,
+    );
 
     Ok(())
 }

@@ -3,8 +3,6 @@ use parse::parse_input;
 
 mod parse;
 
-const INPUT: &str = include_str!("../input.txt");
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Node {
     Open,
@@ -74,12 +72,14 @@ impl Grid {
 }
 
 fn main() -> Result<()> {
+    let input = get_input(2024, 6)?;
+
     println!("## Part 1");
-    let result = run_with_timeout("Part 1", part1, INPUT)?;
+    let result = run_with_timeout("Part 1", part1, &input)?;
     println!(" > {}", result);
 
     println!("## Part 2");
-    let result = run_with_timeout("Part 2", part2, INPUT)?;
+    let result = run_with_timeout("Part 2", part2, &input)?;
     println!(" > {}", result);
 
     benchmark_parts(
@@ -89,7 +89,7 @@ fn main() -> Result<()> {
         |input| {
             part2(input).unwrap();
         },
-        INPUT,
+        &input,
     );
 
     Ok(())

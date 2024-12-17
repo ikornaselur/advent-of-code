@@ -1,7 +1,5 @@
 use advent::prelude::*;
 
-const INPUT: &str = include_str!("../input.txt");
-
 #[derive(Debug, PartialEq, Eq, Hash)]
 struct Node(String);
 
@@ -113,11 +111,25 @@ fn calculate_lcm(numbers: &[u64]) -> u64 {
 }
 
 fn main() -> Result<()> {
+    let input = get_input(2023, 8)?;
+
     println!("## Part 1");
-    println!(" > {}", part1(INPUT)?);
+    let result = run_with_timeout("Part 1", part1, &input)?;
+    println!(" > {}", result);
 
     println!("## Part 2");
-    println!(" > {}", part2(INPUT)?);
+    let result = run_with_timeout("Part 2", part2, &input)?;
+    println!(" > {}", result);
+
+    benchmark_parts(
+        |input| {
+            part1(input).unwrap();
+        },
+        |input| {
+            part2(input).unwrap();
+        },
+        &input,
+    );
 
     Ok(())
 }
