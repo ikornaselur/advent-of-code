@@ -57,8 +57,8 @@ impl Map {
                 row.iter()
                     .enumerate()
                     .fold((start, end), |(start, end), (x, node)| match node {
-                        Node::Start => (GridCoordinate::new(x as i32, y as i32), end),
-                        Node::End => (start, GridCoordinate::new(x as i32, y as i32)),
+                        Node::Start => (GridCoordinate::new(y as i32, x as i32), end),
+                        Node::End => (start, GridCoordinate::new(y as i32, x as i32)),
                         _ => (start, end),
                     })
             },
@@ -72,27 +72,34 @@ impl Map {
     }
 }
 
-fn solve_maze(map: &Map) -> u32 {
+type State = (
+    i32,                      // Score (negative)
+    GridCoordinate<i32>,      // Current position
+    CompassDirection,         // Current direction
+    Vec<GridCoordinate<i32>>, // Path taken to get here
+);
+
+fn solve_maze(map: &Map, explore_duplicate_best: bool) -> (u32, HashSet<GridCoordinate<i32>>) {
     // Let's do a BFS with a queue, trying lowest scores first
     // Since BinaryHeap is a max-heap, we'll store the score as negative numbers!
-    let mut queue: BinaryHeap<(i32, GridCoordinate<i32>, CompassDirection)> =
-        BinaryHeap::from(vec![(0, map.start, map.direction)]);
+    let mut queue: BinaryHeap<State> =
+        BinaryHeap::from(vec![(0, map.start, map.direction, vec![map.start])]);
     // We'll keep track of seen nodes _with_ the direction, as turning around is expensive, but is
     // a 'different state' for us to try
-    let mut seen_nodes: HashSet<(GridCoordinate<i32>, CompassDirection)> = HashSet::new();
+    let mut seen_nodes: HashMap<GridCoordinate<i32>, i32> = HashMap::new();
     let mut min_score = None;
 
-    while let Some((score, coord, direction)) = queue.pop() {
-        if seen_nodes.contains(&(coord, direction)) {
-            continue;
-        }
-        seen_nodes.insert((coord, direction));
+    let mut optimal_path_nodes = HashSet::new();
 
+    while let Some((score, coord, direction, path)) = queue.pop() {
         if coord == map.end {
             let score = score.unsigned_abs();
+            optimal_path_nodes.extend(path);
             if let Some(min) = min_score {
                 if score < min {
-                    min_score = Some(score);
+                    // We shouldn't be able to get here! Since we're doing BFS, first time we get
+                    // to the end, is the fastest
+                    unreachable!();
                 }
             } else {
                 min_score = Some(score);
@@ -102,35 +109,41 @@ fn solve_maze(map: &Map) -> u32 {
 
         // If we already have min_score and have a higher current score, we prune
         if let Some(min_score) = min_score {
-            if score.unsigned_abs() >= min_score {
+            if score.unsigned_abs() > min_score {
                 continue;
             }
         }
 
         // If there's not a wall in front of us, let's queue that up
         let forward = coord + direction.as_vector();
-        if let Some(node) = forward.get(&map.nodes) {
-            if *node != Node::Wall {
-                queue.push((score - MOVE_COST, forward, direction));
+        if !seen_nodes.contains_key(&forward)
+            || (explore_duplicate_best && seen_nodes.get(&forward) >= Some(&score))
+        {
+            seen_nodes.insert(forward, score);
+            if let Some(node) = forward.get(&map.nodes) {
+                if *node != Node::Wall {
+                    let new_path = path.iter().cloned().chain(Some(forward)).collect();
+                    queue.push((score - MOVE_COST, forward, direction, new_path));
+                }
             }
         }
         // Let's also queue up turning left or right, if there's an opening
         let left = coord + direction.left_90().as_vector();
         if let Some(node) = left.get(&map.nodes) {
-            if *node != Node::Wall {
-                queue.push((score - TURN_COST, coord, direction.left_90()));
+            if *node != Node::Wall && !seen_nodes.contains_key(&left) {
+                queue.push((score - TURN_COST, coord, direction.left_90(), path.clone()));
             }
         }
 
         let right = coord + direction.right_90().as_vector();
         if let Some(node) = right.get(&map.nodes) {
-            if *node != Node::Wall {
-                queue.push((score - TURN_COST, coord, direction.right_90()));
+            if *node != Node::Wall && !seen_nodes.contains_key(&right) {
+                queue.push((score - TURN_COST, coord, direction.right_90(), path.clone()));
             }
         }
     }
 
-    min_score.unwrap()
+    (min_score.unwrap(), optimal_path_nodes)
 }
 
 const INPUT: &str = include_str!("../input.txt");
@@ -160,16 +173,17 @@ fn main() -> Result<()> {
 fn part1(input: &str) -> Result<u32> {
     let map = parse_input(input)?;
 
-    // println!("{}", map);
-
-    let result = solve_maze(&map);
+    let (result, _) = solve_maze(&map, false);
 
     Ok(result)
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let map = parse_input(input)?;
+
+    let (_, optimal_path) = solve_maze(&map, true);
+
+    Ok(optimal_path.len())
 }
 
 #[cfg(test)]
@@ -190,7 +204,12 @@ mod tests {
     }
 
     #[test]
-    fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+    fn test_part2_test1() {
+        assert_eq!(part2(TEST_INPUT).unwrap(), 45);
+    }
+
+    #[test]
+    fn test_part2_test2() {
+        assert_eq!(part2(TEST2_INPUT).unwrap(), 64);
     }
 }

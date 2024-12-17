@@ -192,7 +192,7 @@ impl Grid {
                     false
                 }
             }
-            Some(Node::BoxLeft) | Some(Node::BoxRight) if vector.0 == 0 => {
+            Some(Node::BoxLeft | Node::BoxRight) if vector.0 == 0 => {
                 // We're moving a wide box horizontally, which is just like moving any other box
                 // really. The first part of the box hit will move the other half of the box, which
                 // will move if there's free space.. so we just continue like normal narrow boxes
