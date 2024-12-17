@@ -14,12 +14,12 @@ struct CPU {
 
     ip: usize,
 
-    program: Vec<u8>,
+    program: Vec<u64>,
     output: Vec<u64>,
 }
 
 impl CPU {
-    fn new(a: u64, b: u64, c: u64, program: Vec<u8>) -> Self {
+    fn new(a: u64, b: u64, c: u64, program: Vec<u64>) -> Self {
         Self {
             a,
             b,
@@ -30,7 +30,7 @@ impl CPU {
         }
     }
 
-    fn fetch_opcode(&mut self) -> Result<u8> {
+    fn fetch_opcode(&mut self) -> Result<u64> {
         let value = self
             .program
             .get(self.ip)
@@ -51,7 +51,7 @@ impl CPU {
 
         self.ip += 1;
 
-        Ok(value as u64)
+        Ok(value)
     }
 
     fn fetch_combo_operand(&mut self) -> Result<u64> {
@@ -64,7 +64,7 @@ impl CPU {
         self.ip += 1;
 
         match value {
-            0..=3 => Ok(value as u64),
+            0..=3 => Ok(value),
             4 => Ok(self.a),
             5 => Ok(self.b),
             6 => Ok(self.c),
@@ -80,7 +80,7 @@ impl CPU {
             0 => self.adv()?,
             1 => self.bxl()?,
             2 => self.bst()?,
-            3 => self.jnz()?, // TODO: Verify?
+            3 => self.jnz()?,
             4 => self.bxc()?,
             5 => self.out()?,
             6 => self.bdv()?,
@@ -178,9 +178,75 @@ fn part1(input: &str) -> Result<String> {
     Ok(output)
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+/// How many values match, in a row, from the back
+///
+/// For example, [1,2,3,4,5] and [3,4,5] would return 3
+/// If the second value is a full match, we return a 'full' flag
+fn reverse_match_count(a: &[u64], b: &[u64]) -> (usize, bool) {
+    let rev_match_count = a
+        .iter()
+        .rev()
+        .zip(b.iter().rev())
+        .take_while(|(a, b)| a == b)
+        .count();
+
+    (rev_match_count, rev_match_count == b.len())
+}
+
+fn part2(input: &str) -> Result<u64> {
+    let cpu = parse_input(input)?;
+
+    // By just playing around with values, I've noticed the following:
+    //
+    // 1. The output length seems to be the power of the initial A
+    //
+    // That is:
+    //   - When A is '1', the output length is 1
+    //   - When A is '10', the output length is 2
+    //   - When A is '100', the output length is 3
+    //   And so on.. though it's not exact, it gives an idea of the range where A will be, it's
+    //   somehwere around 10^(program.len()) to 10^(program.len() + 1) ish
+    //
+    //  With the input program length of 16, we're looking around values that look like
+    //  100_000_000_000_000 - So brute forcing is pretty much out of the question
+    //
+    //
+    // 2. The number of steps the program takes increases with increasing A, which I guess makes
+    //    sense. The final opcodes in the program are `3, 3, 0`, so it's jumping to the start while
+    //    A has values greater than 0
+    //
+    // With the values mentioned above, it seems the program takes ~128 steps to run to completion
+    //
+    // 3. Given that we keep jumping to the start and repeat the program essentially, can we figure
+    //    out a much lower A that will have the same *end* output? Then work from there?
+    //    Are there patterns that loop?
+    //
+    // 4. Looking at the ends of the programs and outputs, the overlap seems to grow at a rate of
+    //    8, that is, a new number will match when a is multiplied with 8
+    //
+    //
+    // At this point.. trying to multiply a by 8 each time we have a match, seems to do the job!
+
+    let mut a = 0;
+    let mut max_end_match = 0;
+
+    loop {
+        let mut cpu = cpu.clone();
+        cpu.a = a;
+
+        while cpu.execute_step().is_ok() {}
+
+        let (rev_match_count, full_match) = reverse_match_count(&cpu.output, &cpu.program);
+        if full_match {
+            return Ok(a);
+        } else if !full_match && rev_match_count > max_end_match {
+            max_end_match = rev_match_count;
+
+            a *= 8;
+        } else {
+            a += 1;
+        }
+    }
 }
 
 #[cfg(test)]
@@ -188,6 +254,7 @@ mod tests {
     use super::*;
 
     const TEST_INPUT: &str = include_str!("../test.txt");
+    const TEST2_INPUT: &str = include_str!("../test2.txt");
 
     #[test]
     fn test_part1() {
@@ -199,6 +266,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST2_INPUT).unwrap(), 117_440);
     }
 }

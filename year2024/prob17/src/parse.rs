@@ -10,7 +10,7 @@ fn nom_register(input: &str) -> IResult<&str, (char, u64)> {
     )(input)
 }
 
-fn nom_program(input: &str) -> IResult<&str, Vec<u8>> {
+fn nom_program(input: &str) -> IResult<&str, Vec<u64>> {
     preceded(
         tag("Program: "),
         separated_list1(char(','), nom_unsigned_digit),

@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     name: Build and cache project
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         base-dir:
@@ -49,7 +49,7 @@ jobs:
 
   check:
     name: Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         base-dir:
@@ -85,7 +85,7 @@ jobs:
 
   test:
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         base-dir:
@@ -121,7 +121,7 @@ jobs:
 
   lints:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         base-dir:
