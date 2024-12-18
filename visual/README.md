@@ -27,5 +27,17 @@ let height = 50;
 let mut renderer = GridRenderer::new(width, height, 10, colour_mapper);
 
 // Then in a loop somewhere
-renderer.render(&nodes);
+renderer.render(&nodes, None);
+
+// You can write basic text (digits only for now) as well
+let number = 123;
+let x = 10;
+let y = 10;
+let font_colour = 0xFF0000;
+let font_scale = 4;
+
+renderer.render(
+    &nodes,
+    Some((&format!("{}", number), x, y, font_colour, font_scale))
+);
 ```
