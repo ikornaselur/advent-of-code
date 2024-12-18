@@ -1,10 +1,18 @@
 use advent::prelude::*;
 use parse::parse_input;
+use std::env;
+use std::fs;
 
 mod parse;
 
 fn main() -> Result<()> {
-    let input = get_input(2024, 1)?;
+    let args: Vec<String> = env::args().collect();
+    let input = if args.len() > 1 {
+        let file_name = &args[1];
+        fs::read_to_string(file_name).map_err(|e| error!("Failed to read file {}: {}", file_name, e))?
+    } else {
+        get_input(2024, 1)?
+    };
 
     println!("## Part 1");
     let result = run_with_timeout("Part 1", part1, &input)?;
