@@ -25,3 +25,13 @@ cargo run -p prob<int>  # run a problem, from prob01 to (hopefully) prob24
 1. Add "prob<int>" to members of the workspace
 2. `cp -r .template prob<int>`
 3. `cargo init prob<int>`
+
+## Running with a file name argument
+
+To run the app with a file name argument, use the following command:
+
+```bash
+cargo run -p prob<int> -- <file_name>
+```
+
+Replace `<file_name>` with the path to the file containing the input.
