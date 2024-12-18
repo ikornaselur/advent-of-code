@@ -107,31 +107,12 @@ impl Grid {
             }
 
             // Check all the neighbours, if they're empty and we haven't been there, let's go there
-            let left = coord + (0, -1);
-            if let Some(node) = self.get_node(&left) {
-                if !seen_nodes.contains(&left) && node == 0 {
-                    queue.push((dist - 1, left));
-                }
-            }
-
-            let right = coord + (0, 1);
-            if let Some(node) = self.get_node(&right) {
-                if !seen_nodes.contains(&right) && node == 0 {
-                    queue.push((dist - 1, right));
-                }
-            }
-
-            let up = coord + (-1, 0);
-            if let Some(node) = self.get_node(&up) {
-                if !seen_nodes.contains(&up) && node == 0 {
-                    queue.push((dist - 1, up));
-                }
-            }
-
-            let down = coord + (1, 0);
-            if let Some(node) = self.get_node(&down) {
-                if !seen_nodes.contains(&down) && node == 0 {
-                    queue.push((dist - 1, down));
+            for vector in &[(0, -1), (0, 1), (-1, 0), (1, 0)] {
+                let neighbour = coord + *vector;
+                if let Some(node) = self.get_node(&neighbour) {
+                    if !seen_nodes.contains(&neighbour) && node == 0 {
+                        queue.push((dist - 1, neighbour));
+                    }
                 }
             }
         }
