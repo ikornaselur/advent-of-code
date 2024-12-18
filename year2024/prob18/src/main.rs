@@ -76,7 +76,11 @@ impl Grid {
         Some(self.nodes[coordinate.row as usize][coordinate.column as usize])
     }
 
-    fn get_shortest_distance(&mut self, from: GridCoordinate<i32>, to: GridCoordinate<i32>) -> u32 {
+    fn get_shortest_distance(
+        &mut self,
+        from: GridCoordinate<i32>,
+        to: GridCoordinate<i32>,
+    ) -> Result<u32> {
         // Time to solve a maze again!
         // The queue is a binary heap of tuples, first element is the distance so far (negative),
         // followed by the manhattan distance between the nodes, and then followed by the
@@ -91,13 +95,12 @@ impl Grid {
 
         while let Some((dist, coord)) = queue.pop() {
             if coord == to {
-                return dist.unsigned_abs();
+                return Ok(dist.unsigned_abs());
             }
             if seen_nodes.contains(&coord) {
                 continue;
             }
             seen_nodes.insert(coord);
-            self.nodes[coord.row as usize][coord.column as usize] = dist;
 
             if dist < dist_so_far {
                 dist_so_far = dist;
@@ -133,7 +136,7 @@ impl Grid {
             }
         }
 
-        panic!("No path found!");
+        Err(error!("No path found!"))
     }
 }
 
@@ -163,18 +166,43 @@ fn part1(input: &str) -> Result<u32> {
         grid.drop_byte(coordinate).unwrap();
     }
 
-    Ok(grid.get_shortest_distance(
+    grid.get_shortest_distance(
         GridCoordinate { row: 0, column: 0 },
         GridCoordinate {
             row: 70,
             column: 70,
         },
-    ))
+    )
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<String> {
+    let coordinates = parse_input(input)?;
+    let mut grid = Grid::new(71, 71);
+
+    for coordinate in &coordinates[..1024] {
+        grid.drop_byte(coordinate).unwrap();
+    }
+
+    // NOTE: I could always try the last known path, which should optimise
+    // But.. this runs in 830ms on average, which is under a second, so that's good enough for me
+    for coordinate in &coordinates[1024..] {
+        grid.drop_byte(coordinate).unwrap();
+
+        if grid
+            .get_shortest_distance(
+                GridCoordinate { row: 0, column: 0 },
+                GridCoordinate {
+                    row: 70,
+                    column: 70,
+                },
+            )
+            .is_err()
+        {
+            return Ok(format!("{},{}", coordinate.column, coordinate.row));
+        }
+    }
+
+    panic!("No solution found");
 }
 
 #[cfg(test)]
@@ -198,11 +226,33 @@ mod tests {
             GridCoordinate { row: 6, column: 6 },
         );
 
-        assert_eq!(dist, 22);
+        assert_eq!(dist.unwrap(), 22);
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        let coordinates = parse_input(TEST_INPUT).unwrap();
+
+        let mut grid = Grid::new(7, 7);
+
+        for coordinate in &coordinates[..12] {
+            grid.drop_byte(coordinate).unwrap();
+        }
+
+        for coordinate in &coordinates[12..] {
+            grid.drop_byte(coordinate).unwrap();
+
+            if grid
+                .get_shortest_distance(
+                    GridCoordinate { row: 0, column: 0 },
+                    GridCoordinate { row: 6, column: 6 },
+                )
+                .is_err()
+            {
+                assert_eq!(coordinate.column, 6);
+                assert_eq!(coordinate.row, 1);
+                break;
+            }
+        }
     }
 }
