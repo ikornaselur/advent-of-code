@@ -16,6 +16,18 @@ enum Colour {
     Green,
 }
 
+impl Colour {
+    fn to_char(&self) -> char {
+        match self {
+            Colour::White => 'w',
+            Colour::Blue => 'u',
+            Colour::Black => 'b',
+            Colour::Red => 'r',
+            Colour::Green => 'g',
+        }
+    }
+}
+
 #[derive(Debug)]
 struct PatternTrie {
     children: HashMap<Colour, Box<PatternTrie>>,
@@ -41,6 +53,43 @@ impl PatternTrie {
         }
 
         current.end = true;
+    }
+
+    /// How many ways can a pattern be constructed?
+    fn options_count(&self, pattern: &[Colour], cache: &mut HashMap<String, usize>) -> usize {
+        // Check if we've seen this pattern before
+        let key = pattern.iter().map(Colour::to_char).collect::<String>();
+        if let Some(count) = cache.get(&key) {
+            return *count;
+        }
+
+        let mut count = 0;
+        let mut options = vec![self];
+        for (idx, colour) in pattern.iter().enumerate() {
+            options = options
+                .iter()
+                .flat_map(|trie| {
+                    trie.children
+                        .get(colour)
+                        .map(|child| vec![child.as_ref()])
+                        .unwrap_or_default()
+                })
+                .collect();
+
+            // If we reach the end, we'll have to check how many ways we can construct the rest..
+            // we'll just recurse here
+            // I think we'll need to multiply by the number of ways we got here.. right? Because
+            // that's all options to _get here_
+            let ends_count = options.iter().filter(|trie| trie.end).count();
+            let sub_pattern = &pattern[idx + 1..];
+            if !sub_pattern.is_empty() {
+                count += self.options_count(sub_pattern, cache) * ends_count;
+            }
+        }
+
+        let total_count = count + options.iter().filter(|trie| trie.end).count();
+        cache.insert(key, total_count);
+        total_count
     }
 }
 
@@ -82,38 +131,29 @@ fn part1(input: &str) -> Result<usize> {
     for towel in towels {
         towel_trie.insert(&towel);
     }
+    let mut cache: HashMap<String, usize> = HashMap::new();
 
-    let mut valid = 0;
-    for pattern in patterns {
-        let mut options = vec![&towel_trie];
-        for colour in pattern {
-            options = options
-                .iter()
-                .flat_map(|trie| {
-                    trie.children
-                        .get(&colour)
-                        .map(|child| vec![child.as_ref()])
-                        .unwrap_or_default()
-                })
-                .collect();
-            // If we reach an end, we wrap around to the start, by just adding `towel_trie` to the
-            // options
-            // NOTE: If part 2 is about counting options, this might be an issue?
-            if options.iter().any(|trie| trie.end) {
-                options.push(&towel_trie);
-            }
+    Ok(patterns.iter().fold(0, |acc, pattern| {
+        if towel_trie.options_count(pattern, &mut cache) > 0 {
+            acc + 1
+        } else {
+            acc
         }
-        if options.iter().any(|trie| trie.end) {
-            valid += 1;
-        }
-    }
-
-    Ok(valid)
+    }))
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let (towels, patterns) = parse_input(input)?;
+
+    let mut towel_trie = PatternTrie::new();
+    for towel in towels {
+        towel_trie.insert(&towel);
+    }
+    let mut cache: HashMap<String, usize> = HashMap::new();
+
+    Ok(patterns.iter().fold(0, |acc, pattern| {
+        acc + towel_trie.options_count(pattern, &mut cache)
+    }))
 }
 
 #[cfg(test)]
@@ -129,6 +169,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 16);
     }
 }
