@@ -17,10 +17,6 @@ where
         Self { row, column }
     }
 
-    pub fn from_tuple((row, column): (T, T)) -> Self {
-        Self { row, column }
-    }
-
     fn within_unsigned(&self, height: T, width: T) -> bool {
         self.row < height && self.column < width
     }
@@ -66,16 +62,16 @@ where
         }
     }
 
-    pub fn get<'a, U>(&self, grid: &'a [Vec<U>]) -> Option<&'a U> {
+    pub fn get<'a, U>(&self, grid: &'a [Vec<U>]) -> Result<&'a U> {
         if !self.within_grid(grid) {
-            return None;
+            return Err(error!("Out of bounds"));
         }
 
         // Safe to unwrap since we already checked bounds with within_grid
         let row = self.row.to_usize().unwrap();
         let col = self.column.to_usize().unwrap();
 
-        Some(&grid[row][col])
+        Ok(&grid[row][col])
     }
 
     pub fn set<U>(&self, grid: &mut [Vec<U>], value: U) -> Result<()> {

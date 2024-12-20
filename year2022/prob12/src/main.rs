@@ -22,11 +22,9 @@ impl Point {
 }
 
 struct Heightmap {
-    width: usize,
-    height: usize,
     map: Vec<Vec<Point>>,
     steps: Vec<Vec<Option<usize>>>,
-    end: Coordinate<usize>,
+    end: GridCoordinate<usize>,
 }
 
 impl Heightmap {
@@ -37,22 +35,21 @@ impl Heightmap {
             .flat_map(|(x, row)| {
                 row.iter().enumerate().filter_map(move |(y, point)| {
                     if point == &Point::End {
-                        Some((x, y))
+                        Some(GridCoordinate { row: x, column: y })
                     } else {
                         None
                     }
                 })
             })
-            .next();
+            .next()
+            .unwrap();
 
         let width = map[0].len();
         let height = map.len();
         Self {
-            width,
-            height,
             map,
             steps: vec![vec![None; width]; height],
-            end: end.expect("No end point found"),
+            end,
         }
     }
 
@@ -60,50 +57,35 @@ impl Heightmap {
     ///
     /// We'll traverse backwards from 'end' so that we can either find the shortest path to
     /// 'Start' or any of the lowest height points.
-    fn find_shortest_path_to_end(&mut self, only_start: bool) -> usize {
+    fn find_shortest_path_to_end(&mut self, only_start: bool) -> Result<usize> {
         let mut queue = VecDeque::new();
         queue.push_back((self.end, 0));
 
-        while let Some(((x, y), steps)) = queue.pop_front() {
-            match (only_start, self.map[x][y]) {
-                (true, Point::Start) => return steps,
-                (false, p) if p.elevation() == 0 => return steps,
+        while let Some((coord, steps)) = queue.pop_front() {
+            match (only_start, coord.get(&self.map)?) {
+                (true, &Point::Start) => return Ok(steps),
+                (false, p) if p.elevation() == 0 => return Ok(steps),
                 _ => {}
             }
-            let current_elevation = self.map[x][y].elevation();
+            let current_elevation = coord.get(&self.map).unwrap().elevation();
 
             // Check if we've already been here
-            if let Some(prev_steps) = self.steps[x][y] {
+            if let Some(prev_steps) = coord.get(&self.steps)? {
                 // We can just continue
-                if prev_steps <= steps {
+                if prev_steps <= &steps {
                     continue;
                 }
             }
-            self.steps[x][y] = Some(steps);
+            coord.set(&mut self.steps, Some(steps)).unwrap();
 
             // Then we check if we can traverse in any of the four directions
-            if x > 0 {
-                let left_elevation = self.map[x - 1][y].elevation();
-                if current_elevation - left_elevation <= 1 {
-                    queue.push_back(((x - 1, y), steps + 1));
-                }
-            }
-            if x < self.height - 1 {
-                let right_elevation = self.map[x + 1][y].elevation();
-                if current_elevation - right_elevation <= 1 {
-                    queue.push_back(((x + 1, y), steps + 1));
-                }
-            }
-            if y > 0 {
-                let up_elevation = self.map[x][y - 1].elevation();
-                if current_elevation - up_elevation <= 1 {
-                    queue.push_back(((x, y - 1), steps + 1));
-                }
-            }
-            if y < self.width - 1 {
-                let down_elevation = self.map[x][y + 1].elevation();
-                if current_elevation - down_elevation <= 1 {
-                    queue.push_back(((x, y + 1), steps + 1));
+            for next in coord.edge_coordinates(1) {
+                if next.within_grid(&self.map) {
+                    let node = next.get(&self.map)?;
+                    let next_elevation = node.elevation();
+                    if current_elevation - next_elevation <= 1 {
+                        queue.push_back((next, steps + 1));
+                    }
                 }
             }
         }
@@ -138,12 +120,12 @@ fn main() -> Result<()> {
 
 fn part1(input: &str) -> Result<usize> {
     let mut heightmap = parse_heightmap(input)?;
-    Ok(heightmap.find_shortest_path_to_end(true))
+    heightmap.find_shortest_path_to_end(true)
 }
 
 fn part2(input: &str) -> Result<usize> {
     let mut heightmap = parse_heightmap(input)?;
-    Ok(heightmap.find_shortest_path_to_end(false))
+    heightmap.find_shortest_path_to_end(false)
 }
 
 #[cfg(test)]

@@ -1,6 +1,5 @@
 use advent::prelude::*;
 use parse::parse_coordinate_lists;
-use std::{thread, time};
 
 mod parse;
 
@@ -59,7 +58,7 @@ impl std::fmt::Display for Cell {
 struct Map {
     map: Vec<Vec<Cell>>,
     // Used to calculate how much to shift the x coordinates
-    source: Coordinate<usize>,
+    source: GridCoordinate<usize>,
 }
 
 /// A map based on coordinates
@@ -68,7 +67,7 @@ struct Map {
 /// the right
 impl Map {
     fn from_coordinates_lists(
-        coordinates_lists: Vec<Vec<Coordinate<usize>>>,
+        coordinates_lists: Vec<Vec<GridCoordinate<usize>>>,
         with_floor: bool,
     ) -> Self {
         // Find the edges of the coordinates. We know that sand will start pouring in at 500,0, so
@@ -78,15 +77,15 @@ impl Map {
         let mut bottom_edge = 0;
 
         for coordinates in coordinates_lists.iter() {
-            for (x, y) in coordinates {
-                if *x < left_edge {
-                    left_edge = *x;
+            for GridCoordinate { row, column } in coordinates {
+                if *column < left_edge {
+                    left_edge = *column;
                 }
-                if *x > right_edge {
-                    right_edge = *x;
+                if *column > right_edge {
+                    right_edge = *column;
                 }
-                if *y > bottom_edge {
-                    bottom_edge = *y;
+                if *row > bottom_edge {
+                    bottom_edge = *row;
                 }
             }
         }
@@ -115,28 +114,68 @@ impl Map {
             let points = coordinates.len();
             for i in 0..(points - 1) {
                 match (coordinates[i], coordinates[i + 1]) {
-                    ((x1, y1), (x2, y2)) if x1 == x2 && y1 < y2 =>
+                    (
+                        GridCoordinate {
+                            row: row1,
+                            column: col1,
+                        },
+                        GridCoordinate {
+                            row: row2,
+                            column: col2,
+                        },
+                    ) if row1 == row2 && col1 < col2 =>
                     {
                         #[allow(clippy::needless_range_loop)]
-                        for y in y1..=y2 {
-                            map[y][x1 - left_edge] = Cell::Stone;
+                        for column in col1..=col2 {
+                            map[row1][column - left_edge] = Cell::Stone;
                         }
                     }
-                    ((x1, y1), (x2, y2)) if x1 == x2 && y1 > y2 =>
+                    (
+                        GridCoordinate {
+                            row: row1,
+                            column: col1,
+                        },
+                        GridCoordinate {
+                            row: row2,
+                            column: col2,
+                        },
+                    ) if row1 == row2 && col1 > col2 =>
                     {
                         #[allow(clippy::needless_range_loop)]
-                        for y in y2..=y1 {
-                            map[y][x1 - left_edge] = Cell::Stone;
+                        for column in col2..=col1 {
+                            map[row1][column - left_edge] = Cell::Stone;
                         }
                     }
-                    ((x1, y1), (x2, y2)) if y1 == y2 && x1 < x2 => {
-                        for x in x1..=x2 {
-                            map[y1][x - left_edge] = Cell::Stone;
+                    (
+                        GridCoordinate {
+                            row: row1,
+                            column: col1,
+                        },
+                        GridCoordinate {
+                            row: row2,
+                            column: col2,
+                        },
+                    ) if col1 == col2 && row1 < row2 =>
+                    {
+                        #[allow(clippy::needless_range_loop)]
+                        for row in row1..=row2 {
+                            map[row][col1 - left_edge] = Cell::Stone;
                         }
                     }
-                    ((x1, y1), (x2, y2)) if y1 == y2 && x1 > x2 => {
-                        for x in x2..=x1 {
-                            map[y1][x - left_edge] = Cell::Stone;
+                    (
+                        GridCoordinate {
+                            row: row1,
+                            column: col1,
+                        },
+                        GridCoordinate {
+                            row: row2,
+                            column: col2,
+                        },
+                    ) if col1 == col2 && row1 > row2 =>
+                    {
+                        #[allow(clippy::needless_range_loop)]
+                        for row in row2..=row1 {
+                            map[row][col1 - left_edge] = Cell::Stone;
                         }
                     }
                     (_, _) => panic!("Invalid coordinates"),
@@ -147,8 +186,8 @@ impl Map {
         // Paint in the floor if included
         if with_floor {
             let floor_height = bottom_edge + 2;
-            for x in left_edge..=right_edge {
-                map[floor_height][x - left_edge] = Cell::Floor;
+            for row in left_edge..=right_edge {
+                map[floor_height][row - left_edge] = Cell::Floor;
             }
         }
 
@@ -157,55 +196,45 @@ impl Map {
 
         Map {
             map,
-            source: (500 - left_edge, 0),
+            source: GridCoordinate {
+                row: 0,
+                column: 500 - left_edge,
+            },
         }
     }
 
-    fn spawn_sand(&mut self, animate: bool) -> bool {
-        let (mut x, mut y) = self.source;
-
+    fn spawn_sand(&mut self) -> bool {
         // We now move the sand until it comes to a rest
         // NOTE: There are optimisations to be made, but for now we just move the sand one step at
         // a time
+        let mut row = self.source.row;
+        let mut column = self.source.column;
         loop {
-            if animate {
-                thread::sleep(time::Duration::from_millis(20));
-                let prv = self.map[y][x];
-                self.map[y][x] = Cell::Sand;
-                print!("{}[2J", 27 as char);
-                for row in &self.map {
-                    for cell in row {
-                        print!("{}", cell);
-                    }
-                    println!();
-                }
-                self.map[y][x] = prv;
-            }
-            if y == self.map.len() - 1 {
+            if row == self.map.len() - 1 {
                 // We've reached the bottom of the map, so we can't add more sand!
                 return true;
-            } else if self.map[y + 1][x].is_air() {
+            } else if self.map[row + 1][column].is_air() {
                 // We move down
-                y += 1;
-            } else if x == 0 {
+                row += 1;
+            } else if column == 0 {
                 // We've reached the left edge, can't add more sand
                 return true;
-            } else if self.map[y + 1][x - 1].is_air() {
+            } else if self.map[row + 1][column - 1].is_air() {
                 // We move down and left
-                x -= 1;
-                y += 1;
-            } else if x == self.map[0].len() - 1 {
+                column -= 1;
+                row += 1;
+            } else if column == self.map[0].len() - 1 {
                 // We've reached the right edge, can't add more sand
                 return true;
-            } else if self.map[y + 1][x + 1].is_air() {
+            } else if self.map[row + 1][column + 1].is_air() {
                 // We move down and right
-                x += 1;
-                y += 1;
+                column += 1;
+                row += 1;
             } else {
                 // We're stuck, so we have come to a rest
-                self.map[y][x] = Cell::Sand;
+                self.map[row][column] = Cell::Sand;
                 // If we're just at source, we're done!
-                return (x, y) == self.source;
+                return self.source.row == row && self.source.column == column;
             }
         }
     }
@@ -217,7 +246,7 @@ fn part1(input: &str) -> Result<u32> {
 
     let mut grains = 0;
 
-    while !map.spawn_sand(false) {
+    while !map.spawn_sand() {
         grains += 1;
     }
 
@@ -230,7 +259,7 @@ fn part2(input: &str) -> Result<u32> {
 
     let mut grains = 0;
 
-    while !map.spawn_sand(false) {
+    while !map.spawn_sand() {
         grains += 1;
     }
 
@@ -262,6 +291,6 @@ mod tests {
         assert_eq!(map.map.len(), 10);
         assert_eq!(map.map[0].len(), 10);
 
-        assert_eq!(map.source, (6, 0));
+        assert_eq!(map.source, GridCoordinate { row: 0, column: 6 });
     }
 }

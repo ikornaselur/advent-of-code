@@ -6,10 +6,10 @@ use std::ops::RangeInclusive;
 mod parse;
 
 #[derive(Debug, PartialEq, Eq)]
-struct Sensor(Coordinate<i32>);
+struct Sensor(GridCoordinate<i32>);
 
 #[derive(Debug, PartialEq, Eq)]
-struct Beacon(Coordinate<i32>);
+struct Beacon(GridCoordinate<i32>);
 
 fn main() -> Result<()> {
     let input = get_input(2022, 15)?;
@@ -43,10 +43,10 @@ fn get_intersections_to_row(
     // So the row is (check_row, y) where y is any value
     let mut intersections = Vec::new();
 
-    for (Sensor((s_row, s_col)), Beacon((b_row, b_col))) in input {
+    for (Sensor(s_coord), Beacon(b_coord)) in input {
         // TODO: This can be cached
-        let dist = manhattan_distance((*s_row, *s_col), (*b_row, *b_col));
-        let dist_to_check_row = (check_row - s_row).abs();
+        let dist = s_coord.manhattan_distance(b_coord);
+        let dist_to_check_row = (check_row - s_coord.row).abs();
 
         // Calculate if we intersect the check_row
         // There are three cases:
@@ -55,9 +55,11 @@ fn get_intersections_to_row(
         // 3. Intersection in a range of points (less than dist away)
         match dist - dist_to_check_row {
             // 2. Intersection in a single point
-            0 => intersections.push(*s_col..=*s_col),
+            0 => intersections.push(s_coord.column..=s_coord.column),
             // 3. Intersection in a range of points
-            diff if diff > 0 => intersections.push((*s_col - diff)..=(*s_col + diff)),
+            diff if diff > 0 => {
+                intersections.push((s_coord.column - diff)..=(s_coord.column + diff))
+            }
             // 1. No intersection
             _ => {}
         }
