@@ -88,22 +88,13 @@ impl Map {
         }
     }
 
-    /// We search for cheats by just checking how many nodes are within a manhattan distance of 2,
-    /// then check if the value of those nodes is more than 2 higher than the current node. That
-    /// means cheating saves time.
-    fn find_cheats(&self) -> Vec<usize> {
+    /// We search for cheats by just checking how many nodes are within a manhattan distance of
+    /// <dist>, then check if the value of those nodes is more than <dist> higher than the current
+    /// node. That means cheating saves time.
+    fn find_cheats(&self, dist: i32) -> Vec<usize> {
         let mut cheats = Vec::new();
 
-        let cheating_vectors = &[
-            (1, 1),
-            (1, -1),
-            (-1, 1),
-            (-1, -1),
-            (2, 0),
-            (-2, 0),
-            (0, 2),
-            (0, -2),
-        ];
+        let cheating_vectors = generate_cheating_vectors(dist);
 
         for row in 0..(self.nodes.len() as i32) {
             for column in 0..(self.nodes[0].len() as i32) {
@@ -112,14 +103,11 @@ impl Map {
                     let cheating_options = cheating_vectors.iter().map(|v| current + *v);
 
                     for option in cheating_options {
+                        let option_dist = option.manhattan_distance(&current);
                         if let Some(Node::Path(cheating_dist)) = self.get_node(option) {
-                            let time_saved = cheating_dist as i32 - current_dist as i32 - 2;
+                            let time_saved =
+                                cheating_dist as i32 - current_dist as i32 - option_dist;
                             if time_saved > 1 {
-                                // self.cheating = Some(next_cheating);
-                                // println!("Cheating saves {} picoseconds", time_saved);
-                                // println!("{}", self);
-                                // self.cheating = None;
-                                // std::thread::sleep(std::time::Duration::from_millis(1000));
                                 cheats.push(time_saved as usize);
                             }
                         };
@@ -145,8 +133,7 @@ impl fmt::Display for Map {
                     {
                         write!(f, "C")?
                     }
-                    //Node::Path(dist) => write!(f, "{}", dist % 10)?,
-                    Node::Path(dist) => write!(f, " ")?,
+                    Node::Path(_) => write!(f, " ")?,
                     node => write!(f, "{}", node)?,
                 }
             }
@@ -154,6 +141,21 @@ impl fmt::Display for Map {
         }
         Ok(())
     }
+}
+
+fn generate_cheating_vectors(max_distance: i32) -> Vec<(i32, i32)> {
+    let mut vectors = Vec::new();
+
+    for x in -max_distance..=max_distance {
+        for y in -max_distance..=max_distance {
+            let distance = x.abs() + y.abs();
+            if distance > 0 && distance <= max_distance {
+                vectors.push((x, y));
+            }
+        }
+    }
+
+    vectors
 }
 
 fn main() -> Result<()> {
@@ -192,16 +194,19 @@ fn part1(input: &str) -> Result<usize> {
 
     map.solve_maze(map.start, 0);
 
-    // Trace through the race, returning all the 'savings' that can be made by cheating along the
-    // way
-    let savings = map.find_cheats();
+    let savings = map.find_cheats(2);
 
     Ok(savings.iter().filter(|c| **c >= 100).count())
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let mut map = parse_input(input)?;
+
+    map.solve_maze(map.start, 0);
+
+    let savings = map.find_cheats(20);
+
+    Ok(savings.iter().filter(|c| **c >= 100).count())
 }
 
 #[cfg(test)]
@@ -218,5 +223,26 @@ mod tests {
     #[test]
     fn test_part2() {
         assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+    }
+
+    #[test]
+    fn test_generate_cheating_vectors() {
+        assert_eq!(
+            generate_cheating_vectors(2),
+            vec![
+                (-2, 0),
+                (-1, -1),
+                (-1, 0),
+                (-1, 1),
+                (0, -2),
+                (0, -1),
+                (0, 1),
+                (0, 2),
+                (1, -1),
+                (1, 0),
+                (1, 1),
+                (2, 0)
+            ]
+        );
     }
 }
