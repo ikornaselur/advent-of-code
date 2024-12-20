@@ -2,11 +2,11 @@ use advent::prelude::*;
 
 #[derive(Debug, Default)]
 struct DistanceMap {
-    map: HashMap<(Coordinate<usize>, Coordinate<usize>), usize>,
+    map: HashMap<(GridCoordinate<usize>, GridCoordinate<usize>), usize>,
 }
 
 impl DistanceMap {
-    fn insert(&mut self, from: Coordinate<usize>, to: Coordinate<usize>, distance: usize) {
+    fn insert(&mut self, from: GridCoordinate<usize>, to: GridCoordinate<usize>, distance: usize) {
         if from > to {
             self.map.insert((to, from), distance);
         } else {
@@ -45,11 +45,11 @@ impl Image {
         let mut distance_map = DistanceMap::default();
 
         // Find all the galaxies
-        let mut galaxy_coords: Vec<Coordinate<usize>> = vec![];
+        let mut galaxy_coords: Vec<GridCoordinate<usize>> = vec![];
         for (y, row) in self.map.iter().enumerate() {
             for (x, &galaxy) in row.iter().enumerate() {
                 if galaxy {
-                    galaxy_coords.push((x, y));
+                    galaxy_coords.push(GridCoordinate { row: x, column: y });
                 }
             }
         }
@@ -67,20 +67,20 @@ impl Image {
                 // Check if we would cross any nodes that are scaled
                 let mut distance = 0;
 
-                let (mut x, x_end) = if left_coord.0 < right_coord.0 {
-                    (left_coord.0, right_coord.0)
+                let (mut x, x_end) = if left_coord.row < right_coord.row {
+                    (left_coord.row, right_coord.row)
                 } else {
-                    (right_coord.0, left_coord.0)
+                    (right_coord.row, left_coord.row)
                 };
                 while x < x_end {
                     distance += self.column_scale[x];
                     x += 1;
                 }
 
-                let (mut y, y_end) = if left_coord.1 < right_coord.1 {
-                    (left_coord.1, right_coord.1)
+                let (mut y, y_end) = if left_coord.column < right_coord.column {
+                    (left_coord.column, right_coord.column)
                 } else {
-                    (right_coord.1, left_coord.1)
+                    (right_coord.column, left_coord.column)
                 };
                 while y < y_end {
                     distance += self.row_scale[y];
@@ -222,8 +222,16 @@ mod tests {
     fn test_distance_map_inserts_by_sorted_tuple() {
         let mut distance_map = DistanceMap::default();
 
-        distance_map.insert((0, 0), (1, 0), 1);
-        distance_map.insert((1, 0), (0, 0), 1);
+        distance_map.insert(
+            GridCoordinate { row: 0, column: 0 },
+            GridCoordinate { row: 1, column: 0 },
+            1,
+        );
+        distance_map.insert(
+            GridCoordinate { row: 1, column: 0 },
+            GridCoordinate { row: 0, column: 0 },
+            1,
+        );
 
         assert_eq!(distance_map.map.len(), 1);
     }
