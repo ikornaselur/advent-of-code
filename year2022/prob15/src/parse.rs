@@ -2,16 +2,15 @@ use crate::{Beacon, Sensor};
 use advent::parsers::nom_signed_digit;
 use advent::prelude::*;
 
-fn nom_coordinate(input: &str) -> IResult<&str, Coordinate<i32>> {
-    let (input, (x, y)) = separated_pair(
-        preceded(tag("x="), nom_signed_digit::<i32>),
-        tag(", "),
-        preceded(tag("y="), nom_signed_digit::<i32>),
-    )(input)?;
-
-    // NOTE: We swap x and y here so that it's simpler to work with as row and columns in a
-    // matrix, while matching the example graphics in the problem
-    Ok((input, (y, x)))
+fn nom_coordinate(input: &str) -> IResult<&str, GridCoordinate<i32>> {
+    map(
+        separated_pair(
+            preceded(tag("x="), nom_signed_digit::<i32>),
+            tag(", "),
+            preceded(tag("y="), nom_signed_digit::<i32>),
+        ),
+        |(x, y)| GridCoordinate { column: x, row: y },
+    )(input)
 }
 
 fn nom_sensor(input: &str) -> IResult<&str, Sensor> {
@@ -44,15 +43,24 @@ mod tests {
 
     #[test]
     fn test_nom_coordinate() {
-        assert_eq!(nom_coordinate("x=2, y=18").unwrap().1, (18, 2));
-        assert_eq!(nom_coordinate("x=-2, y=15").unwrap().1, (15, -2));
+        assert_eq!(
+            nom_coordinate("x=2, y=18").unwrap().1,
+            GridCoordinate { row: 18, column: 2 }
+        );
+        assert_eq!(
+            nom_coordinate("x=-2, y=15").unwrap().1,
+            GridCoordinate {
+                row: 15,
+                column: -2
+            }
+        );
     }
 
     #[test]
     fn test_nom_sensor() {
         assert_eq!(
             nom_sensor("Sensor at x=2, y=18").unwrap().1,
-            Sensor((18, 2))
+            Sensor(GridCoordinate { row: 18, column: 2 })
         );
     }
 
@@ -60,7 +68,10 @@ mod tests {
     fn test_nom_beacon() {
         assert_eq!(
             nom_beacon(": closest beacon is at x=-2, y=15").unwrap().1,
-            Beacon((15, -2))
+            Beacon(GridCoordinate {
+                row: 15,
+                column: -2
+            })
         );
     }
 
@@ -68,8 +79,14 @@ mod tests {
     fn test_nom_sensor_beacon_pair() {
         let input = "Sensor at x=2, y=18: closest beacon is at x=-2, y=15";
         let (_, (sensor, beacon)) = nom_sensor_beacon_pair(input).unwrap();
-        assert_eq!(sensor, Sensor((18, 2)));
-        assert_eq!(beacon, Beacon((15, -2)));
+        assert_eq!(sensor, Sensor(GridCoordinate { row: 18, column: 2 }));
+        assert_eq!(
+            beacon,
+            Beacon(GridCoordinate {
+                row: 15,
+                column: -2
+            })
+        );
     }
 
     #[test]
@@ -82,8 +99,26 @@ mod tests {
 
         let result = parse_input(&input).unwrap();
         assert_eq!(result.len(), 2);
-        assert_eq!(result[0], (Sensor((18, 2)), Beacon((15, -2))));
-        assert_eq!(result[1], (Sensor((16, 9)), Beacon((16, 10))));
+        assert_eq!(
+            result[0],
+            (
+                Sensor(GridCoordinate { row: 18, column: 2 }),
+                Beacon(GridCoordinate {
+                    row: 15,
+                    column: -2
+                })
+            )
+        );
+        assert_eq!(
+            result[1],
+            (
+                Sensor(GridCoordinate { row: 16, column: 9 }),
+                Beacon(GridCoordinate {
+                    row: 16,
+                    column: 10
+                })
+            )
+        );
     }
 
     #[test]

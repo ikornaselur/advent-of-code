@@ -80,33 +80,25 @@ impl PipeMap {
     /// Find the start node and return the coordinate
     ///
     /// The start node is the 'S' node
-    fn find_start(&self) -> Result<Coordinate<usize>> {
+    fn find_start(&self) -> Result<GridCoordinate<usize>> {
         for (x, row) in self.nodes.iter().enumerate() {
             for (y, node) in row.iter().enumerate() {
                 if *node == Pipe::Start {
-                    return Ok((x, y));
+                    return Ok(GridCoordinate { row: x, column: y });
                 }
             }
         }
         Err(error!("Start node not found"))
     }
 
-    /// Get the node at the given coordinate
-    fn get_node(&self, coord: Coordinate<usize>) -> Result<&Pipe> {
-        let (row, col) = coord;
-        if row >= self.height || col >= self.width {
-            return Err(error!("Invalid coordinate: {:?}", coord));
-        }
-        Ok(&self.nodes[row][col])
-    }
-
     /// Look at the nodes around to see which node is the next one
     fn get_next_node(
         &self,
-        current_node_coord: Coordinate<usize>,
+        current_node_coord: GridCoordinate<usize>,
         came_from_direction: CompassDirection,
-    ) -> Result<(Coordinate<usize>, CompassDirection)> {
-        let current_node = self.get_node(current_node_coord)?;
+    ) -> Result<(GridCoordinate<usize>, CompassDirection)> {
+        let current_node = current_node_coord.get(&self.nodes)?;
+
         if *current_node == Pipe::None || *current_node == Pipe::Start {
             return Err(error!("Invalid node: {:?}", current_node));
         }
@@ -121,21 +113,33 @@ impl PipeMap {
 
         // Check if that next direction is valid
         let next_node_coord = match next_direction {
-            CompassDirection::North => (current_node_coord.0 - 1, current_node_coord.1),
-            CompassDirection::South => (current_node_coord.0 + 1, current_node_coord.1),
-            CompassDirection::West => (current_node_coord.0, current_node_coord.1 - 1),
-            CompassDirection::East => (current_node_coord.0, current_node_coord.1 + 1),
+            CompassDirection::North => GridCoordinate {
+                row: current_node_coord.row - 1,
+                column: current_node_coord.column,
+            },
+            CompassDirection::South => GridCoordinate {
+                row: current_node_coord.row + 1,
+                column: current_node_coord.column,
+            },
+            CompassDirection::West => GridCoordinate {
+                row: current_node_coord.row,
+                column: current_node_coord.column - 1,
+            },
+            CompassDirection::East => GridCoordinate {
+                row: current_node_coord.row,
+                column: current_node_coord.column + 1,
+            },
             _ => panic!("Bad direction"),
         };
 
-        if next_node_coord.0 >= self.height || next_node_coord.1 >= self.width {
+        if next_node_coord.row >= self.height || next_node_coord.column >= self.width {
             return Err(error!(
                 "Invalid next node coordinate: {:?}",
                 next_node_coord
             ));
         }
 
-        let next_node = self.get_node(next_node_coord)?;
+        let next_node = next_node_coord.get(&self.nodes)?;
         if *next_node == Pipe::None {
             return Err(error!("Invalid next node: {:?}", next_node));
         }
@@ -152,7 +156,7 @@ impl PipeMap {
 
         // North node
         if let Some(north_coord) = self.shift_coord(start_coord, CompassDirection::North) {
-            let north_node = self.get_node(north_coord)?;
+            let north_node = north_coord.get(&self.nodes).unwrap();
             if north_node.connects_to().contains(&CompassDirection::South) {
                 directions.push(CompassDirection::North);
             }
@@ -160,7 +164,7 @@ impl PipeMap {
 
         // South node
         if let Some(south_coord) = self.shift_coord(start_coord, CompassDirection::South) {
-            let south_node = self.get_node(south_coord)?;
+            let south_node = south_coord.get(&self.nodes).unwrap();
             if south_node.connects_to().contains(&CompassDirection::North) {
                 directions.push(CompassDirection::South);
             }
@@ -168,7 +172,7 @@ impl PipeMap {
 
         // West node
         if let Some(west_coord) = self.shift_coord(start_coord, CompassDirection::West) {
-            let west_node = self.get_node(west_coord)?;
+            let west_node = west_coord.get(&self.nodes).unwrap();
             if west_node.connects_to().contains(&CompassDirection::East) {
                 directions.push(CompassDirection::West);
             }
@@ -176,7 +180,7 @@ impl PipeMap {
 
         // East node
         if let Some(east_coord) = self.shift_coord(start_coord, CompassDirection::East) {
-            let east_node = self.get_node(east_coord)?;
+            let east_node = east_coord.get(&self.nodes).unwrap();
             if east_node.connects_to().contains(&CompassDirection::West) {
                 directions.push(CompassDirection::East);
             }
@@ -194,38 +198,48 @@ impl PipeMap {
 
     fn shift_coord(
         &self,
-        coord: Coordinate<usize>,
+        coord: GridCoordinate<usize>,
         direction: CompassDirection,
-    ) -> Option<Coordinate<usize>> {
-        let (row, col) = coord;
-
+    ) -> Option<GridCoordinate<usize>> {
         match direction {
             CompassDirection::North => {
-                if row == 0 {
+                if coord.row == 0 {
                     None
                 } else {
-                    Some((row - 1, col))
+                    Some(GridCoordinate {
+                        row: coord.row - 1,
+                        column: coord.column,
+                    })
                 }
             }
             CompassDirection::South => {
-                if row == self.height - 1 {
+                if coord.row == self.height - 1 {
                     None
                 } else {
-                    Some((row + 1, col))
+                    Some(GridCoordinate {
+                        row: coord.row + 1,
+                        column: coord.column,
+                    })
                 }
             }
             CompassDirection::West => {
-                if col == 0 {
+                if coord.column == 0 {
                     None
                 } else {
-                    Some((row, col - 1))
+                    Some(GridCoordinate {
+                        row: coord.row,
+                        column: coord.column - 1,
+                    })
                 }
             }
             CompassDirection::East => {
-                if col == self.width - 1 {
+                if coord.column == self.width - 1 {
                     None
                 } else {
-                    Some((row, col + 1))
+                    Some(GridCoordinate {
+                        row: coord.row,
+                        column: coord.column + 1,
+                    })
                 }
             }
             _ => panic!("Bad direction"),
@@ -247,7 +261,8 @@ impl PipeMap {
 
         for x in 0..self.height {
             for y in 0..self.width {
-                let node = self.get_node((x, y))?;
+                let node = GridCoordinate { row: x, column: y }.get(&self.nodes)?;
+
                 match node {
                     // Note: I know that the start in my input is a vertical pipe
                     Pipe::Vertical | Pipe::Start => in_loop = !in_loop,
@@ -344,7 +359,7 @@ fn part2(input: &str) -> Result<usize> {
 
     // Thread the map until we reach the start again
     let start_coord = map.find_start()?;
-    clean_map.nodes[start_coord.0][start_coord.1] = Pipe::Start;
+    start_coord.set(&mut clean_map.nodes, Pipe::Start)?;
 
     let start_directions = map.get_start_directions()?;
     let direction = start_directions[0]; // We'll just pick one direction
@@ -355,8 +370,8 @@ fn part2(input: &str) -> Result<usize> {
     let mut from_direction = direction.opposite();
 
     while current_coord != start_coord {
-        let current_node = map.get_node(current_coord)?;
-        clean_map.nodes[current_coord.0][current_coord.1] = current_node.clone();
+        let current_node = current_coord.get(&map.nodes).unwrap();
+        current_coord.set(&mut clean_map.nodes, current_node.clone())?;
 
         (current_coord, from_direction) = map.get_next_node(current_coord, from_direction)?;
     }
@@ -385,21 +400,24 @@ mod tests {
     fn test_pipemap_find_start() {
         let map: PipeMap = PART_1_TEST_INPUT.parse().unwrap();
 
-        assert_eq!(map.find_start().unwrap(), (2, 0));
+        assert_eq!(
+            map.find_start().unwrap(),
+            GridCoordinate { row: 2, column: 0 }
+        );
     }
 
     #[test]
     fn test_pipemap_get_next_node() {
         let map: PipeMap = PART_1_TEST_INPUT.parse().unwrap();
 
-        let node = (1, 1);
+        let node = GridCoordinate { row: 1, column: 1 };
 
         let (next_node, came_from) = map.get_next_node(node, CompassDirection::South).unwrap();
-        assert_eq!(next_node, (1, 2));
+        assert_eq!(next_node, GridCoordinate { row: 1, column: 2 });
         assert_eq!(came_from, CompassDirection::West);
 
         let (next_node, came_from) = map.get_next_node(node, CompassDirection::East).unwrap();
-        assert_eq!(next_node, (2, 1));
+        assert_eq!(next_node, GridCoordinate { row: 2, column: 1 });
         assert_eq!(came_from, CompassDirection::North);
     }
 

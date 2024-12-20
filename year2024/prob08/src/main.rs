@@ -9,6 +9,9 @@ enum Node {
     Antenna(char),
 }
 
+// Legacy..
+type Coordinate<T> = (T, T);
+
 fn main() -> Result<()> {
     let input = get_input(2024, 8)?;
 

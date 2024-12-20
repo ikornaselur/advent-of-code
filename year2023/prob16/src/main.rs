@@ -1,19 +1,31 @@
 use advent::prelude::*;
 use rayon::prelude::*;
 
-type Beam = (Coordinate<usize>, Direction);
+type Beam = (GridCoordinate<usize>, Direction);
 
 #[derive(Debug, PartialEq)]
 struct Layout {
     grid: Vec<Vec<Node>>,
 }
 
-fn get_next_coordinate(beam: Beam) -> Coordinate<usize> {
+fn get_next_coordinate(beam: Beam) -> GridCoordinate<usize> {
     match beam {
-        ((x, y), Direction::Right) => (x, y + 1),
-        ((x, y), Direction::Down) => (x + 1, y),
-        ((x, y), Direction::Left) => (x, y - 1),
-        ((x, y), Direction::Up) => (x - 1, y),
+        (GridCoordinate { column, row }, Direction::Right) => GridCoordinate {
+            column: column + 1,
+            row,
+        },
+        (GridCoordinate { column, row }, Direction::Down) => GridCoordinate {
+            column,
+            row: row + 1,
+        },
+        (GridCoordinate { column, row }, Direction::Left) => GridCoordinate {
+            column: column - 1,
+            row,
+        },
+        (GridCoordinate { column, row }, Direction::Up) => GridCoordinate {
+            column,
+            row: row - 1,
+        },
     }
 }
 
@@ -33,7 +45,7 @@ impl Layout {
 
         // Handle the first node separately, as it can contain a mirror already
         let (start_coord, start_dir) = start;
-        let first_node = self.grid[start_coord.0][start_coord.1];
+        let first_node = start_coord.get(&self.grid)?;
         match (first_node, start_dir) {
             (Node::Empty, _) => {
                 // We just continue in the same direction
@@ -58,28 +70,28 @@ impl Layout {
             (Node::Up, dir) => {
                 match dir {
                     Direction::Right => {
-                        if start_coord.0 == 0 {
+                        if start_coord.row == 0 {
                             // We are at the top, so we go off the grid immediately
                             return Ok(1);
                         }
                         queue.push_back((start_coord, Direction::Up));
                     }
                     Direction::Left => {
-                        if start_coord.0 >= self.grid.len() - 1 {
+                        if start_coord.row >= self.grid.len() - 1 {
                             // We are at the bottom, so we go off the grid immediately
                             return Ok(1);
                         }
                         queue.push_back((start_coord, Direction::Down));
                     }
                     Direction::Down => {
-                        if start_coord.1 == 0 {
+                        if start_coord.column == 0 {
                             // We are at the left, so we go off the grid immediately
                             return Ok(1);
                         }
                         queue.push_back((start_coord, Direction::Left));
                     }
                     Direction::Up => {
-                        if start_coord.1 >= self.grid[0].len() - 1 {
+                        if start_coord.column >= self.grid[0].len() - 1 {
                             // We are at the right, so we go off the grid immediately
                             return Ok(1);
                         }
@@ -90,28 +102,28 @@ impl Layout {
             (Node::Down, dir) => {
                 match dir {
                     Direction::Right => {
-                        if start_coord.0 >= self.grid.len() - 1 {
+                        if start_coord.row >= self.grid.len() - 1 {
                             // We are at the bottom, so we go off the grid immediately
                             return Ok(1);
                         }
                         queue.push_back((start_coord, Direction::Down));
                     }
                     Direction::Left => {
-                        if start_coord.0 == 0 {
+                        if start_coord.row == 0 {
                             // We are at the top, so we go off the grid immediately
                             return Ok(1);
                         }
                         queue.push_back((start_coord, Direction::Up));
                     }
                     Direction::Down => {
-                        if start_coord.1 >= self.grid[0].len() - 1 {
+                        if start_coord.column >= self.grid[0].len() - 1 {
                             // We are at the right, so we go off the grid immediately
                             return Ok(1);
                         }
                         queue.push_back((start_coord, Direction::Right));
                     }
                     Direction::Up => {
-                        if start_coord.1 == 0 {
+                        if start_coord.column == 0 {
                             // We are at the left, so we go off the grid immediately
                             return Ok(1);
                         }
@@ -133,7 +145,7 @@ impl Layout {
 
             // Get the next node
             let coord = get_next_coordinate(beam);
-            let node = self.grid[coord.0][coord.1];
+            let node = coord.get(&self.grid)?;
             match (node, beam.1) {
                 (Node::Empty, dir) => {
                     // Beam just continues in the same direction
@@ -228,10 +240,16 @@ impl Layout {
 
     fn beam_going_off_grid(&self, beam: Beam) -> bool {
         match beam {
-            ((x, _), Direction::Down) if x >= self.grid.len() - 1 => true,
-            ((_, y), Direction::Right) if y >= self.grid[0].len() - 1 => true,
-            ((0, _), Direction::Up) => true,
-            ((_, 0), Direction::Left) => true,
+            (GridCoordinate { row, column: _ }, Direction::Down) if row >= self.grid.len() - 1 => {
+                true
+            }
+            (GridCoordinate { row: _, column }, Direction::Right)
+                if column >= self.grid[0].len() - 1 =>
+            {
+                true
+            }
+            (GridCoordinate { row: 0, column: _ }, Direction::Up) => true,
+            (GridCoordinate { row: _, column: 0 }, Direction::Left) => true,
             _ => false,
         }
     }
@@ -313,7 +331,7 @@ fn main() -> Result<()> {
 fn part1(input: &str) -> Result<usize> {
     let layout: Layout = input.parse()?;
 
-    layout.beam(((0, 0), Direction::Right))
+    layout.beam((GridCoordinate { row: 0, column: 0 }, Direction::Right))
 }
 
 fn part2(input: &str) -> Result<usize> {
@@ -323,16 +341,28 @@ fn part2(input: &str) -> Result<usize> {
     // the right edge will send the beam left, etc.
     let top = (0..layout.grid[0].len())
         .into_par_iter()
-        .map(|y| layout.beam(((0, y), Direction::Down)));
+        .map(|y| layout.beam((GridCoordinate { row: 0, column: y }, Direction::Down)));
     let left = (0..layout.grid.len())
         .into_par_iter()
-        .map(|x| layout.beam(((x, 0), Direction::Right)));
-    let bottom = (0..layout.grid[0].len())
-        .into_par_iter()
-        .map(|y| layout.beam(((layout.grid.len() - 1, y), Direction::Up)));
-    let right = (0..layout.grid.len())
-        .into_par_iter()
-        .map(|x| layout.beam(((x, layout.grid[0].len() - 1), Direction::Left)));
+        .map(|x| layout.beam((GridCoordinate { row: x, column: 0 }, Direction::Right)));
+    let bottom = (0..layout.grid[0].len()).into_par_iter().map(|y| {
+        layout.beam((
+            GridCoordinate {
+                row: layout.grid.len() - 1,
+                column: y,
+            },
+            Direction::Up,
+        ))
+    });
+    let right = (0..layout.grid.len()).into_par_iter().map(|x| {
+        layout.beam((
+            GridCoordinate {
+                row: x,
+                column: layout.grid[0].len() - 1,
+            },
+            Direction::Left,
+        ))
+    });
 
     top.chain(left)
         .chain(bottom)
@@ -376,10 +406,12 @@ mod tests {
     fn test_layout_beam_going_off_grid() {
         let layout: Layout = "...\n...\n...".parse().unwrap();
 
-        assert!(layout.beam_going_off_grid(((0, 0), Direction::Up)));
-        assert!(layout.beam_going_off_grid(((0, 0), Direction::Left)));
-        assert!(layout.beam_going_off_grid(((0, 2), Direction::Right)));
-        assert!(layout.beam_going_off_grid(((2, 0), Direction::Down)));
+        assert!(layout.beam_going_off_grid((GridCoordinate { row: 0, column: 0 }, Direction::Up)));
+        assert!(layout.beam_going_off_grid((GridCoordinate { row: 0, column: 0 }, Direction::Left)));
+        assert!(
+            layout.beam_going_off_grid((GridCoordinate { row: 0, column: 2 }, Direction::Right))
+        );
+        assert!(layout.beam_going_off_grid((GridCoordinate { row: 2, column: 0 }, Direction::Down)));
     }
 
     #[test]
@@ -387,7 +419,12 @@ mod tests {
         let layout: Layout = "...\n...\n...".parse().unwrap();
 
         // Should just pass straight through
-        assert_eq!(layout.beam(((0, 0), Direction::Right)).unwrap(), 3);
+        assert_eq!(
+            layout
+                .beam((GridCoordinate { row: 0, column: 0 }, Direction::Right))
+                .unwrap(),
+            3
+        );
     }
 
     #[test]
@@ -395,7 +432,12 @@ mod tests {
         let layout: Layout = "..\\\n...\n...".parse().unwrap();
 
         // Should redirect down in the corner
-        assert_eq!(layout.beam(((0, 0), Direction::Right)).unwrap(), 5);
+        assert_eq!(
+            layout
+                .beam((GridCoordinate { row: 0, column: 0 }, Direction::Right))
+                .unwrap(),
+            5
+        );
     }
 
     #[test]
@@ -403,7 +445,12 @@ mod tests {
         let layout: Layout = ".\\.\n.-.\n...".parse().unwrap();
 
         // Should redirect down in the middle, then split to left and right
-        assert_eq!(layout.beam(((0, 0), Direction::Right)).unwrap(), 5);
+        assert_eq!(
+            layout
+                .beam((GridCoordinate { row: 0, column: 0 }, Direction::Right))
+                .unwrap(),
+            5
+        );
     }
 
     #[test]
@@ -412,7 +459,12 @@ mod tests {
 
         // The beam will split in the middle and go around in a loop, which should be ignored and
         // all be good
-        assert_eq!(layout.beam(((0, 0), Direction::Right)).unwrap(), 7);
+        assert_eq!(
+            layout
+                .beam((GridCoordinate { row: 0, column: 0 }, Direction::Right))
+                .unwrap(),
+            7
+        );
     }
 
     #[test]
@@ -420,6 +472,11 @@ mod tests {
         let layout: Layout = "\\/.\n...\n\\..".parse().unwrap();
 
         // The beam should go down immediately, then again in the corner to the right
-        assert_eq!(layout.beam(((0, 0), Direction::Right)).unwrap(), 5);
+        assert_eq!(
+            layout
+                .beam((GridCoordinate { row: 0, column: 0 }, Direction::Right))
+                .unwrap(),
+            5
+        );
     }
 }

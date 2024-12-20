@@ -3,6 +3,9 @@ use parse::parse_input;
 
 mod parse;
 
+// Legacy..
+type Coordinate<T> = (T, T);
+
 fn main() -> Result<()> {
     let input = get_input(2024, 12)?;
 

@@ -79,7 +79,10 @@ type State = (
     Vec<GridCoordinate<i32>>, // Path taken to get here
 );
 
-fn solve_maze(map: &Map, explore_duplicate_best: bool) -> (u32, HashSet<GridCoordinate<i32>>) {
+fn solve_maze(
+    map: &Map,
+    explore_duplicate_best: bool,
+) -> Result<(u32, HashSet<GridCoordinate<i32>>)> {
     // Let's do a BFS with a queue, trying lowest scores first
     // Since BinaryHeap is a max-heap, we'll store the score as negative numbers!
     let mut queue: BinaryHeap<State> =
@@ -120,7 +123,8 @@ fn solve_maze(map: &Map, explore_duplicate_best: bool) -> (u32, HashSet<GridCoor
             || (explore_duplicate_best && seen_nodes.get(&forward) >= Some(&score))
         {
             seen_nodes.insert(forward, score);
-            if let Some(node) = forward.get(&map.nodes) {
+            if forward.within_grid(&map.nodes) {
+                let node = forward.get(&map.nodes)?;
                 if *node != Node::Wall {
                     let new_path = path.iter().cloned().chain(Some(forward)).collect();
                     queue.push((score - MOVE_COST, forward, direction, new_path));
@@ -129,21 +133,23 @@ fn solve_maze(map: &Map, explore_duplicate_best: bool) -> (u32, HashSet<GridCoor
         }
         // Let's also queue up turning left or right, if there's an opening
         let left = coord + direction.left_90().as_vector();
-        if let Some(node) = left.get(&map.nodes) {
+        if left.within_grid(&map.nodes) {
+            let node = left.get(&map.nodes)?;
             if *node != Node::Wall && !seen_nodes.contains_key(&left) {
                 queue.push((score - TURN_COST, coord, direction.left_90(), path.clone()));
             }
         }
 
         let right = coord + direction.right_90().as_vector();
-        if let Some(node) = right.get(&map.nodes) {
+        if right.within_grid(&map.nodes) {
+            let node = right.get(&map.nodes)?;
             if *node != Node::Wall && !seen_nodes.contains_key(&right) {
                 queue.push((score - TURN_COST, coord, direction.right_90(), path.clone()));
             }
         }
     }
 
-    (min_score.unwrap(), optimal_path_nodes)
+    Ok((min_score.unwrap(), optimal_path_nodes))
 }
 
 fn main() -> Result<()> {
@@ -173,7 +179,7 @@ fn main() -> Result<()> {
 fn part1(input: &str) -> Result<u32> {
     let map = parse_input(input)?;
 
-    let (result, _) = solve_maze(&map, false);
+    let (result, _) = solve_maze(&map, false)?;
 
     Ok(result)
 }
@@ -181,7 +187,7 @@ fn part1(input: &str) -> Result<u32> {
 fn part2(input: &str) -> Result<usize> {
     let map = parse_input(input)?;
 
-    let (_, optimal_path) = solve_maze(&map, true);
+    let (_, optimal_path) = solve_maze(&map, true)?;
 
     Ok(optimal_path.len())
 }

@@ -4,8 +4,6 @@ pub use crate::enums::{CompassDirection, GridDirection};
 pub use crate::error_handling::AdventError;
 pub use crate::input::get_input;
 pub use crate::timeouts::run_with_timeout;
-pub use crate::types::Coordinate;
-pub use crate::utils::manhattan_distance;
 pub use crate::{error, invalid_coordinate, parse_error};
 
 // Also include the common imports for all the days

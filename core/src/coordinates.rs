@@ -1,3 +1,4 @@
+use crate::prelude::*;
 use num_traits::{FromPrimitive, PrimInt, Zero};
 use std::cmp::PartialOrd;
 use std::ops::{Add, AddAssign};
@@ -61,16 +62,28 @@ where
         }
     }
 
-    pub fn get<'a, U>(&self, grid: &'a [Vec<U>]) -> Option<&'a U> {
+    pub fn get<'a, U>(&self, grid: &'a [Vec<U>]) -> Result<&'a U> {
         if !self.within_grid(grid) {
-            return None;
+            return Err(error!("Out of bounds"));
         }
 
         // Safe to unwrap since we already checked bounds with within_grid
         let row = self.row.to_usize().unwrap();
         let col = self.column.to_usize().unwrap();
 
-        Some(&grid[row][col])
+        Ok(&grid[row][col])
+    }
+
+    pub fn set<U>(&self, grid: &mut [Vec<U>], value: U) -> Result<()> {
+        if !self.within_grid(grid) {
+            return Err(error!("Out of bounds"));
+        }
+        // Safe to unwrap since we already checked bounds with within_grid
+        let row = self.row.to_usize().unwrap();
+        let col = self.column.to_usize().unwrap();
+        grid[row][col] = value;
+
+        Ok(())
     }
 }
 
@@ -101,18 +114,30 @@ where
         max_distance: usize,
     ) -> impl Iterator<Item = GridCoordinate<T>> + '_ {
         let max_distance: i32 = max_distance as i32;
+        let is_signed = T::min_value() < Zero::zero();
+        let current_row = self.row.to_i32().unwrap();
+        let current_col = self.column.to_i32().unwrap();
 
         (-max_distance..=max_distance).flat_map(move |x| {
             (-max_distance..=max_distance).filter_map(move |y| {
                 let distance = x.abs() + y.abs();
-                if distance > 0 && distance <= max_distance {
-                    Some(GridCoordinate::new(
-                        self.row + T::from(x).unwrap(),
-                        self.column + T::from(y).unwrap(),
-                    ))
-                } else {
-                    None
+                if distance == 0 || distance > max_distance {
+                    return None;
                 }
+
+                let new_row = current_row + x;
+                let new_col = current_col + y;
+
+                // For unsigned types, skip negative coordinates
+                if !is_signed && (new_row < 0 || new_col < 0) {
+                    return None;
+                }
+
+                // Safe to unwrap here since we've checked for negative values
+                Some(GridCoordinate::new(
+                    T::from_i32(new_row).unwrap(),
+                    T::from_i32(new_col).unwrap(),
+                ))
             })
         })
     }
@@ -122,17 +147,29 @@ where
         distance: usize,
     ) -> impl Iterator<Item = GridCoordinate<T>> + '_ {
         let distance: i32 = distance as i32;
+        let is_signed = T::min_value() < Zero::zero();
+        let current_row = self.row.to_i32().unwrap();
+        let current_col = self.column.to_i32().unwrap();
 
         (-distance..=distance).flat_map(move |x| {
             (-distance..=distance).filter_map(move |y| {
-                if distance > 0 && x.abs() + y.abs() == distance {
-                    Some(GridCoordinate::new(
-                        self.row + T::from(x).unwrap(),
-                        self.column + T::from(y).unwrap(),
-                    ))
-                } else {
-                    None
+                if distance == 0 || x.abs() + y.abs() != distance {
+                    return None;
                 }
+
+                let new_row = current_row + x;
+                let new_col = current_col + y;
+
+                // For unsigned types, skip negative coordinates
+                if !is_signed && (new_row < 0 || new_col < 0) {
+                    return None;
+                }
+
+                // Safe to unwrap here since we've checked for negative values
+                Some(GridCoordinate::new(
+                    T::from_i32(new_row).unwrap(),
+                    T::from_i32(new_col).unwrap(),
+                ))
             })
         })
     }
@@ -312,67 +349,192 @@ mod tests {
         assert_eq!(coord.get(&empty_rows), None);
     }
 
-    #[test]
-    fn test_surrounding_coordinates() {
-        let center = GridCoordinate::new(5, 5);
+    mod surrounding_coordinates {
+        use super::*;
 
-        // Test distance 1
-        let coords: Vec<_> = center.surrounding_coordinates(1).collect();
-        assert_eq!(coords.len(), 4);
-        assert!(coords.contains(&GridCoordinate::new(4, 5))); // left
-        assert!(coords.contains(&GridCoordinate::new(6, 5))); // right
-        assert!(coords.contains(&GridCoordinate::new(5, 4))); // up
-        assert!(coords.contains(&GridCoordinate::new(5, 6))); // down
+        mod signed {
+            use super::*;
 
-        // Test distance 2
-        let coords: Vec<_> = center.surrounding_coordinates(2).collect();
-        assert_eq!(coords.len(), 12);
-        // Check some key points
-        assert!(coords.contains(&GridCoordinate::new(3, 5))); // 2 left
-        assert!(coords.contains(&GridCoordinate::new(5, 3))); // 2 up
-        assert!(coords.contains(&GridCoordinate::new(4, 4))); // diagonal
+            #[test]
+            fn test_distance_one() {
+                let center = GridCoordinate::new(5i32, 5i32);
+                let coords: Vec<_> = center.surrounding_coordinates(1).collect();
+
+                assert_eq!(coords.len(), 4);
+                assert!(coords.contains(&GridCoordinate::new(4, 5))); // left
+                assert!(coords.contains(&GridCoordinate::new(6, 5))); // right
+                assert!(coords.contains(&GridCoordinate::new(5, 4))); // up
+                assert!(coords.contains(&GridCoordinate::new(5, 6))); // down
+            }
+
+            #[test]
+            fn test_distance_two() {
+                let center = GridCoordinate::new(5i32, 5i32);
+                let coords: Vec<_> = center.surrounding_coordinates(2).collect();
+
+                assert_eq!(coords.len(), 12);
+                assert!(coords.contains(&GridCoordinate::new(3, 5))); // 2 left
+                assert!(coords.contains(&GridCoordinate::new(5, 3))); // 2 up
+                assert!(coords.contains(&GridCoordinate::new(4, 4))); // diagonal
+            }
+
+            #[test]
+            fn test_zero_distance() {
+                let center = GridCoordinate::new(5i32, 5i32);
+                let coords: Vec<_> = center.surrounding_coordinates(0).collect();
+                assert_eq!(coords, vec![]);
+            }
+
+            #[test]
+            fn test_doesnt_include_self() {
+                let center = GridCoordinate::new(5i32, 5i32);
+                let coords: Vec<_> = center.surrounding_coordinates(1).collect();
+                assert!(!coords.contains(&center));
+            }
+        }
+
+        mod unsigned {
+            use super::*;
+
+            #[test]
+            fn test_near_zero() {
+                let center = GridCoordinate::new(1u32, 1u32);
+                let coords: Vec<_> = center.surrounding_coordinates(1).collect();
+
+                assert_eq!(coords.len(), 4);
+                assert!(coords.contains(&GridCoordinate::new(2, 1))); // down
+                assert!(coords.contains(&GridCoordinate::new(1, 2))); // right
+                assert!(coords.contains(&GridCoordinate::new(1, 0))); // left
+                assert!(coords.contains(&GridCoordinate::new(0, 1))); // up
+            }
+
+            #[test]
+            fn test_from_origin() {
+                let origin = GridCoordinate::new(0u32, 0u32);
+                let coords: Vec<_> = origin.surrounding_coordinates(1).collect();
+
+                assert_eq!(coords.len(), 2); // Only right and down possible
+                assert!(coords.contains(&GridCoordinate::new(1, 0))); // down
+                assert!(coords.contains(&GridCoordinate::new(0, 1))); // right
+            }
+
+            #[test]
+            fn test_distance_two_from_origin() {
+                let origin = GridCoordinate::new(0u32, 0u32);
+                let coords: Vec<_> = origin.surrounding_coordinates(2).collect();
+
+                assert_eq!(coords.len(), 5); // Only positive coordinates
+                assert!(coords.contains(&GridCoordinate::new(2, 0))); // 2 down
+                assert!(coords.contains(&GridCoordinate::new(0, 2))); // 2 right
+                assert!(coords.contains(&GridCoordinate::new(1, 1))); // diagonal
+            }
+
+            #[test]
+            fn test_away_from_zero() {
+                let center = GridCoordinate::new(5u32, 5u32);
+                let coords: Vec<_> = center.surrounding_coordinates(1).collect();
+
+                assert_eq!(coords.len(), 4); // All coordinates possible
+                assert!(coords.contains(&GridCoordinate::new(4, 5)));
+                assert!(coords.contains(&GridCoordinate::new(6, 5)));
+                assert!(coords.contains(&GridCoordinate::new(5, 4)));
+                assert!(coords.contains(&GridCoordinate::new(5, 6)));
+            }
+        }
     }
 
-    #[test]
-    fn test_edge_coordinates() {
-        let center = GridCoordinate::new(5, 5);
+    mod edge_coordinates {
+        use super::*;
 
-        // Test distance 1
-        let coords: Vec<_> = center.edge_coordinates(1).collect();
-        assert_eq!(coords.len(), 4);
-        assert!(coords.contains(&GridCoordinate::new(4, 5)));
-        assert!(coords.contains(&GridCoordinate::new(6, 5)));
-        assert!(coords.contains(&GridCoordinate::new(5, 4)));
-        assert!(coords.contains(&GridCoordinate::new(5, 6)));
+        mod signed {
+            use super::*;
 
-        // Test distance 2
-        let coords: Vec<_> = center.edge_coordinates(2).collect();
-        assert_eq!(coords.len(), 8);
-        // Check cardinal points
-        assert!(coords.contains(&GridCoordinate::new(3, 5))); // 2 left
-        assert!(coords.contains(&GridCoordinate::new(5, 3))); // 2 up
-                                                              // Check diagonals
-        assert!(coords.contains(&GridCoordinate::new(4, 4))); // up-left
-        assert!(coords.contains(&GridCoordinate::new(6, 4))); // up-right
-    }
+            #[test]
+            fn test_distance_one() {
+                let center = GridCoordinate::new(5i32, 5i32);
+                let coords: Vec<_> = center.edge_coordinates(1).collect();
 
-    #[test]
-    fn test_zero_distance() {
-        let center = GridCoordinate::new(5, 5);
-        let coords: Vec<_> = center.surrounding_coordinates(0).collect();
-        assert_eq!(coords, vec![]);
+                assert_eq!(coords.len(), 4);
+                assert!(coords.contains(&GridCoordinate::new(4, 5)));
+                assert!(coords.contains(&GridCoordinate::new(6, 5)));
+                assert!(coords.contains(&GridCoordinate::new(5, 4)));
+                assert!(coords.contains(&GridCoordinate::new(5, 6)));
+            }
 
-        let edge_coords: Vec<_> = center.edge_coordinates(0).collect();
-        assert_eq!(edge_coords, vec![]);
-    }
+            #[test]
+            fn test_distance_two() {
+                let center = GridCoordinate::new(5i32, 5i32);
+                let coords: Vec<_> = center.edge_coordinates(2).collect();
 
-    #[test]
-    fn test_coordinates_dont_include_self() {
-        let center = GridCoordinate::new(5, 5);
-        let coords: Vec<_> = center.surrounding_coordinates(1).collect();
-        assert!(!coords.contains(&center));
+                assert_eq!(coords.len(), 8);
+                assert!(coords.contains(&GridCoordinate::new(3, 5))); // 2 left
+                assert!(coords.contains(&GridCoordinate::new(5, 3))); // 2 up
+                assert!(coords.contains(&GridCoordinate::new(4, 4))); // up-left
+                assert!(coords.contains(&GridCoordinate::new(6, 4))); // up-right
+            }
 
-        let edge_coords: Vec<_> = center.edge_coordinates(1).collect();
-        assert!(!edge_coords.contains(&center));
+            #[test]
+            fn test_zero_distance() {
+                let center = GridCoordinate::new(5i32, 5i32);
+                let coords: Vec<_> = center.edge_coordinates(0).collect();
+                assert_eq!(coords, vec![]);
+            }
+
+            #[test]
+            fn test_doesnt_include_self() {
+                let center = GridCoordinate::new(5i32, 5i32);
+                let coords: Vec<_> = center.edge_coordinates(1).collect();
+                assert!(!coords.contains(&center));
+            }
+        }
+
+        mod unsigned {
+            use super::*;
+
+            #[test]
+            fn test_near_zero() {
+                let center = GridCoordinate::new(1u32, 1u32);
+                let coords: Vec<_> = center.edge_coordinates(1).collect();
+
+                assert_eq!(coords.len(), 4);
+                assert!(coords.contains(&GridCoordinate::new(2, 1))); // down
+                assert!(coords.contains(&GridCoordinate::new(1, 2))); // right
+                assert!(coords.contains(&GridCoordinate::new(1, 0))); // left
+                assert!(coords.contains(&GridCoordinate::new(0, 1))); // up
+            }
+
+            #[test]
+            fn test_from_origin() {
+                let origin = GridCoordinate::new(0u32, 0u32);
+                let coords: Vec<_> = origin.edge_coordinates(1).collect();
+
+                assert_eq!(coords.len(), 2); // Only right and down possible
+                assert!(coords.contains(&GridCoordinate::new(1, 0))); // down
+                assert!(coords.contains(&GridCoordinate::new(0, 1))); // right
+            }
+
+            #[test]
+            fn test_distance_two_from_origin() {
+                let origin = GridCoordinate::new(0u32, 0u32);
+                let coords: Vec<_> = origin.edge_coordinates(2).collect();
+
+                assert_eq!(coords.len(), 3); // Only positive coordinates on edge
+                assert!(coords.contains(&GridCoordinate::new(2, 0))); // 2 down
+                assert!(coords.contains(&GridCoordinate::new(0, 2))); // 2 right
+                assert!(coords.contains(&GridCoordinate::new(1, 1))); // diagonal
+            }
+
+            #[test]
+            fn test_away_from_zero() {
+                let center = GridCoordinate::new(5u32, 5u32);
+                let coords: Vec<_> = center.edge_coordinates(1).collect();
+
+                assert_eq!(coords.len(), 4); // All coordinates possible
+                assert!(coords.contains(&GridCoordinate::new(4, 5)));
+                assert!(coords.contains(&GridCoordinate::new(6, 5)));
+                assert!(coords.contains(&GridCoordinate::new(5, 4)));
+                assert!(coords.contains(&GridCoordinate::new(5, 6)));
+            }
+        }
     }
 }

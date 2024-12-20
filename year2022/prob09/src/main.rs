@@ -28,23 +28,24 @@ fn main() -> Result<()> {
 }
 
 fn count_spots_tail_touched(instructions: Vec<(GridDirection, usize)>) -> Result<usize> {
-    let mut touched_spots: HashSet<Coordinate<i32>> = HashSet::from([(0, 0)]);
+    let mut touched_spots: HashSet<GridCoordinate<i32>> =
+        HashSet::from([GridCoordinate { row: 0, column: 0 }]);
 
-    let mut head: Coordinate<i32> = (0, 0);
-    let mut tail: Coordinate<i32> = (0, 0);
+    let mut head: GridCoordinate<i32> = GridCoordinate { row: 0, column: 0 };
+    let mut tail: GridCoordinate<i32> = GridCoordinate { row: 0, column: 0 };
 
     for (direction, steps) in instructions {
         for _ in 0..steps {
             match direction {
-                GridDirection::Up => head.0 += 1,
-                GridDirection::Down => head.0 -= 1,
-                GridDirection::Left => head.1 -= 1,
-                GridDirection::Right => head.1 += 1,
+                GridDirection::Up => head.row += 1,
+                GridDirection::Down => head.row -= 1,
+                GridDirection::Left => head.column -= 1,
+                GridDirection::Right => head.column += 1,
                 _ => panic!("Bad direction"),
             }
             let (dx, dy) = get_movement(head, tail);
-            tail.0 += dx;
-            tail.1 += dy;
+            tail.row += dx;
+            tail.column += dy;
             touched_spots.insert(tail);
         }
     }
@@ -55,8 +56,8 @@ fn count_spots_tail_touched(instructions: Vec<(GridDirection, usize)>) -> Result
 /// Calculate movement required to bring t to h
 ///
 /// This should be called after moving h, to know what movement is required to be applied to t
-fn get_movement(h: Coordinate<i32>, t: Coordinate<i32>) -> Coordinate<i32> {
-    match (h.0 - t.0, h.1 - t.1) {
+fn get_movement(h: GridCoordinate<i32>, t: GridCoordinate<i32>) -> (i32, i32) {
+    match (h.row - t.row, h.column - t.column) {
         // Same spot, no movement required
         (0, 0) => (0, 0),
         // Next to each other, no movement required
@@ -95,24 +96,25 @@ fn get_movement(h: Coordinate<i32>, t: Coordinate<i32>) -> Coordinate<i32> {
 ///
 /// We are counting how many spots the _last_ part visits
 fn count_spots_with_long_tail_touched(instructions: Vec<(GridDirection, usize)>) -> Result<usize> {
-    let mut touched_spots: HashSet<Coordinate<i32>> = HashSet::from([(0, 0)]);
+    let mut touched_spots: HashSet<GridCoordinate<i32>> =
+        HashSet::from([GridCoordinate { row: 0, column: 0 }]);
 
-    let mut head: Coordinate<i32> = (0, 0);
-    let tail: &mut [Coordinate<i32>] = &mut [(0, 0); 9];
+    let mut head: GridCoordinate<i32> = GridCoordinate { row: 0, column: 0 };
+    let tail: &mut [GridCoordinate<i32>] = &mut [GridCoordinate { row: 0, column: 0 }; 9];
 
     for (direction, steps) in instructions {
         for _ in 0..steps {
             match direction {
-                GridDirection::Up => head.0 += 1,
-                GridDirection::Down => head.0 -= 1,
-                GridDirection::Left => head.1 -= 1,
-                GridDirection::Right => head.1 += 1,
+                GridDirection::Up => head.row += 1,
+                GridDirection::Down => head.row -= 1,
+                GridDirection::Left => head.column -= 1,
+                GridDirection::Right => head.column += 1,
                 _ => panic!("Bad direcion"),
             }
 
             let (dx, dy) = get_movement(head, tail[0]);
-            tail[0].0 += dx;
-            tail[0].1 += dy;
+            tail[0].row += dx;
+            tail[0].column += dy;
 
             for i in 1..tail.len() {
                 let (dx, dy) = get_movement(tail[i - 1], tail[i]);
@@ -120,8 +122,8 @@ fn count_spots_with_long_tail_touched(instructions: Vec<(GridDirection, usize)>)
                 if dx == 0 && dy == 0 {
                     break;
                 }
-                tail[i].0 += dx;
-                tail[i].1 += dy;
+                tail[i].row += dx;
+                tail[i].column += dy;
                 if i == (tail.len() - 1) {
                     touched_spots.insert(tail[i]);
                 }

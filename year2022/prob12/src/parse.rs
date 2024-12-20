@@ -75,6 +75,6 @@ mod tests {
                 ],
             ]
         );
-        assert_eq!(heightmap.end, (1, 2));
+        assert_eq!(heightmap.end, GridCoordinate { row: 1, column: 2 });
     }
 }

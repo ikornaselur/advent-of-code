@@ -8,7 +8,7 @@ type HeatLoss = i32;
 type StraightDistance = i32;
 type Key = (
     HeatLoss,
-    Coordinate<usize>,
+    GridCoordinate<usize>,
     CompassDirection,
     StraightDistance,
 );
@@ -33,11 +33,11 @@ impl Layout {
     /// The start node does not incurr a cost, unless the path takes us back over that node
     fn find_cheapest_path(
         &self,
-        to: Coordinate<usize>,
+        to: GridCoordinate<usize>,
         min_straight_line: i32,
         max_straight_line: i32,
     ) -> Result<i32> {
-        let mut seen: HashSet<(Coordinate<usize>, CompassDirection, StraightDistance)> =
+        let mut seen: HashSet<(GridCoordinate<usize>, CompassDirection, StraightDistance)> =
             HashSet::new();
 
         // This is a max heap, so we store the scores negative to turn it into a min heap
@@ -55,8 +55,18 @@ impl Layout {
         // we start in the upper right corner at (0, 0) we can either so South of East. Since we
         // don't count the heat from the start node, the initial heat will be the first node we
         // step on
-        heap.push((-self.node_heat((1, 0)), (1, 0), CompassDirection::South, 0));
-        heap.push((-self.node_heat((0, 1)), (0, 1), CompassDirection::East, 0));
+        heap.push((
+            -self.node_heat(GridCoordinate { row: 1, column: 0 }),
+            GridCoordinate { row: 1, column: 0 },
+            CompassDirection::South,
+            0,
+        ));
+        heap.push((
+            -self.node_heat(GridCoordinate { row: 0, column: 1 }),
+            GridCoordinate { row: 0, column: 1 },
+            CompassDirection::East,
+            0,
+        ));
 
         while !heap.is_empty() {
             let (heat_loss, coord, direction, straight_distance) =
@@ -122,44 +132,56 @@ impl Layout {
 
     fn shift_coordinate(
         &self,
-        coord: Coordinate<usize>,
+        coord: GridCoordinate<usize>,
         direction: &CompassDirection,
-    ) -> Option<Coordinate<usize>> {
+    ) -> Option<GridCoordinate<usize>> {
         match direction {
             CompassDirection::North => {
-                if coord.0 == 0 {
+                if coord.row == 0 {
                     None
                 } else {
-                    Some((coord.0 - 1, coord.1))
+                    Some(GridCoordinate {
+                        row: coord.row - 1,
+                        column: coord.column,
+                    })
                 }
             }
             CompassDirection::South => {
-                if coord.0 == self.nodes.len() - 1 {
+                if coord.row == self.nodes.len() - 1 {
                     None
                 } else {
-                    Some((coord.0 + 1, coord.1))
+                    Some(GridCoordinate {
+                        row: coord.row + 1,
+                        column: coord.column,
+                    })
                 }
             }
             CompassDirection::East => {
-                if coord.1 == self.nodes[0].len() - 1 {
+                if coord.column == self.nodes[0].len() - 1 {
                     None
                 } else {
-                    Some((coord.0, coord.1 + 1))
+                    Some(GridCoordinate {
+                        row: coord.row,
+                        column: coord.column + 1,
+                    })
                 }
             }
             CompassDirection::West => {
-                if coord.1 == 0 {
+                if coord.column == 0 {
                     None
                 } else {
-                    Some((coord.0, coord.1 - 1))
+                    Some(GridCoordinate {
+                        row: coord.row,
+                        column: coord.column - 1,
+                    })
                 }
             }
             _ => panic!("Bad direction"),
         }
     }
 
-    fn node_heat(&self, coord: Coordinate<usize>) -> i32 {
-        self.nodes[coord.0][coord.1] as i32
+    fn node_heat(&self, coord: GridCoordinate<usize>) -> i32 {
+        (*coord.get(&self.nodes).unwrap()) as i32
     }
 }
 
@@ -204,13 +226,27 @@ fn main() -> Result<()> {
 fn part1(input: &str) -> Result<i32> {
     let layout: Layout = input.parse()?;
 
-    layout.find_cheapest_path((layout.nodes.len() - 1, layout.nodes[0].len() - 1), 0, 3)
+    layout.find_cheapest_path(
+        GridCoordinate {
+            row: layout.nodes.len() - 1,
+            column: layout.nodes[0].len() - 1,
+        },
+        0,
+        3,
+    )
 }
 
 fn part2(input: &str) -> Result<i32> {
     let layout: Layout = input.parse()?;
 
-    layout.find_cheapest_path((layout.nodes.len() - 1, layout.nodes[0].len() - 1), 3, 10)
+    layout.find_cheapest_path(
+        GridCoordinate {
+            row: layout.nodes.len() - 1,
+            column: layout.nodes[0].len() - 1,
+        },
+        3,
+        10,
+    )
 }
 
 #[cfg(test)]
@@ -240,51 +276,71 @@ mod tests {
     fn test_layout_find_cheapest_path_no_min_straight_line() {
         let layout: Layout = "1456\n1416\n1816\n1111".parse().unwrap();
 
-        assert_eq!(layout.find_cheapest_path((3, 3), 0, 4).unwrap(), 6);
-        assert_eq!(layout.find_cheapest_path((3, 3), 0, 3).unwrap(), 6);
-        assert_eq!(layout.find_cheapest_path((3, 3), 0, 2).unwrap(), 9);
-        assert_eq!(layout.find_cheapest_path((3, 3), 0, 1).unwrap(), 16);
+        assert_eq!(
+            layout
+                .find_cheapest_path(GridCoordinate { row: 3, column: 3 }, 0, 4)
+                .unwrap(),
+            6
+        );
+        assert_eq!(
+            layout
+                .find_cheapest_path(GridCoordinate { row: 3, column: 3 }, 0, 3)
+                .unwrap(),
+            6
+        );
+        assert_eq!(
+            layout
+                .find_cheapest_path(GridCoordinate { row: 3, column: 3 }, 0, 2)
+                .unwrap(),
+            9
+        );
+        assert_eq!(
+            layout
+                .find_cheapest_path(GridCoordinate { row: 3, column: 3 }, 0, 1)
+                .unwrap(),
+            16
+        );
     }
 
     #[test]
     fn test_layout_node_heat() {
         let layout: Layout = "1456\n1416\n1816\n1111".parse().unwrap();
 
-        assert_eq!(layout.node_heat((0, 0)), 1);
-        assert_eq!(layout.node_heat((0, 1)), 4);
-        assert_eq!(layout.node_heat((1, 0)), 1);
-        assert_eq!(layout.node_heat((2, 1)), 8);
+        assert_eq!(layout.node_heat(GridCoordinate { row: 0, column: 0 }), 1);
+        assert_eq!(layout.node_heat(GridCoordinate { row: 0, column: 1 }), 4);
+        assert_eq!(layout.node_heat(GridCoordinate { row: 1, column: 0 }), 1);
+        assert_eq!(layout.node_heat(GridCoordinate { row: 2, column: 1 }), 8);
     }
 
     #[test]
     fn test_layout_shift_coord() {
         let layout: Layout = "1456\n1416\n1816\n1111".parse().unwrap();
 
-        let coord = (1, 1);
+        let coord = GridCoordinate { row: 1, column: 1 };
 
         assert_eq!(
             layout
                 .shift_coordinate(coord, &CompassDirection::North)
                 .unwrap(),
-            (0, 1)
+            GridCoordinate { row: 0, column: 1 }
         );
         assert_eq!(
             layout
                 .shift_coordinate(coord, &CompassDirection::South)
                 .unwrap(),
-            (2, 1)
+            GridCoordinate { row: 2, column: 1 }
         );
         assert_eq!(
             layout
                 .shift_coordinate(coord, &CompassDirection::West)
                 .unwrap(),
-            (1, 0)
+            GridCoordinate { row: 1, column: 0 }
         );
         assert_eq!(
             layout
                 .shift_coordinate(coord, &CompassDirection::East)
                 .unwrap(),
-            (1, 2)
+            GridCoordinate { row: 1, column: 2 }
         );
     }
 }

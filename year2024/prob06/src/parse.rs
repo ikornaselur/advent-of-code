@@ -30,7 +30,10 @@ pub fn parse_input(input: &str) -> Result<Grid> {
                 if let Node::Guard = node {
                     // As usual, we always use (row, column).. maybe I should start using that
                     // instead of the letters x and y
-                    Some((y as i32, x as i32))
+                    Some(GridCoordinate {
+                        row: y as i32,
+                        column: x as i32,
+                    })
                 } else {
                     None
                 }
@@ -105,7 +108,7 @@ mod tests {
                 vec![Node::Obsticle, Node::Open, Node::Guard],
             ]
         );
-        assert_eq!(grid.guard, (1, 2));
+        assert_eq!(grid.guard, GridCoordinate { row: 1, column: 2 });
         assert_eq!(grid.guard_direction, GridDirection::Up);
         assert_eq!(grid.width, 3);
         assert_eq!(grid.height, 2);

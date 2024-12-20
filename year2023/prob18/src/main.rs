@@ -64,18 +64,30 @@ impl Instruction {
     }
 }
 
-fn get_nodes(instructions: &[Instruction]) -> Vec<Coordinate<i64>> {
-    let mut current: Coordinate<i64> = (0, 0);
+fn get_nodes(instructions: &[Instruction]) -> Vec<GridCoordinate<i64>> {
+    let mut current: GridCoordinate<i64> = GridCoordinate { row: 0, column: 0 };
     let mut nodes = vec![];
 
     for instruction in instructions {
         let dist = instruction.distance;
 
         current = match instruction.direction {
-            GridDirection::Up => (current.0 - dist, current.1),
-            GridDirection::Down => (current.0 + dist, current.1),
-            GridDirection::Left => (current.0, current.1 - dist),
-            GridDirection::Right => (current.0, current.1 + dist),
+            GridDirection::Up => GridCoordinate {
+                row: current.row - dist,
+                column: current.column,
+            },
+            GridDirection::Down => GridCoordinate {
+                row: current.row + dist,
+                column: current.column,
+            },
+            GridDirection::Left => GridCoordinate {
+                row: current.row,
+                column: current.column - dist,
+            },
+            GridDirection::Right => GridCoordinate {
+                row: current.row,
+                column: current.column + dist,
+            },
             _ => panic!("Bad direction"),
         };
         nodes.push(current);
@@ -86,22 +98,23 @@ fn get_nodes(instructions: &[Instruction]) -> Vec<Coordinate<i64>> {
 /// Get the area of a polygon
 ///
 /// Using the Shoelace algorithm
-fn get_polygon_area(nodes: &[Coordinate<i64>]) -> i64 {
+fn get_polygon_area(nodes: &[GridCoordinate<i64>]) -> i64 {
     let num_of_nodes = nodes.len();
     let mut sum1: i64 = 0;
     let mut sum2: i64 = 0;
     let mut border: i64 = 0;
 
     for i in 0..(num_of_nodes - 1) {
-        sum1 += nodes[i].0 * nodes[i + 1].1;
-        sum2 += nodes[i].1 * nodes[i + 1].0;
-        border += (nodes[i].0 - nodes[i + 1].0).abs() + (nodes[i].1 - nodes[i + 1].1).abs();
+        sum1 += nodes[i].row * nodes[i + 1].column;
+        sum2 += nodes[i].column * nodes[i + 1].row;
+        border +=
+            (nodes[i].row - nodes[i + 1].row).abs() + (nodes[i].column - nodes[i + 1].column).abs();
     }
 
-    sum1 += nodes[num_of_nodes - 1].0 * nodes[0].1;
-    sum2 += nodes[num_of_nodes - 1].1 * nodes[0].0;
-    border += (nodes[num_of_nodes - 1].0 - nodes[0].0).abs()
-        + (nodes[num_of_nodes - 1].1 - nodes[0].1).abs();
+    sum1 += nodes[num_of_nodes - 1].row * nodes[0].column;
+    sum2 += nodes[num_of_nodes - 1].column * nodes[0].row;
+    border += (nodes[num_of_nodes - 1].row - nodes[0].row).abs()
+        + (nodes[num_of_nodes - 1].column - nodes[0].column).abs();
 
     let inside = (sum1 - sum2).abs() / 2;
 
@@ -201,9 +214,9 @@ mod tests {
         let nodes = get_nodes(&instructions);
 
         assert_eq!(nodes.len(), 4);
-        assert_eq!(nodes[0], (0, 8));
-        assert_eq!(nodes[1], (4, 8));
-        assert_eq!(nodes[2], (4, 0));
-        assert_eq!(nodes[3], (0, 0));
+        assert_eq!(nodes[0], GridCoordinate { row: 0, column: 8 });
+        assert_eq!(nodes[1], GridCoordinate { row: 4, column: 8 });
+        assert_eq!(nodes[2], GridCoordinate { row: 4, column: 0 });
+        assert_eq!(nodes[3], GridCoordinate { row: 0, column: 0 });
     }
 }
