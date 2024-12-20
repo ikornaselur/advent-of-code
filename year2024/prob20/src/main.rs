@@ -79,8 +79,7 @@ impl Map {
     /// There should be exactly one path through the maze, which we'll mark with the distance from
     /// the start, so that we can easily calculate savings when we start cheating
     fn solve_maze(&mut self, from: GridCoordinate<i32>, dist: usize) {
-        for vector in &[(1, 0), (-1, 0), (0, 1), (0, -1)] {
-            let next = from + *vector;
+        for next in from.edge_coordinates(1) {
             if let Some(Node::Floor) = self.get_node(next) {
                 self.nodes[next.row as usize][next.column as usize] = Node::Path(dist + 1);
                 self.solve_maze(next, dist + 1);
@@ -94,15 +93,11 @@ impl Map {
     fn find_cheats(&self, dist: i32) -> Vec<usize> {
         let mut cheats = Vec::new();
 
-        let cheating_vectors = generate_cheating_vectors(dist);
-
         for row in 0..(self.nodes.len() as i32) {
             for column in 0..(self.nodes[0].len() as i32) {
                 let current = GridCoordinate { row, column };
                 if let Some(Node::Path(current_dist)) = self.get_node(current) {
-                    let cheating_options = cheating_vectors.iter().map(|v| current + *v);
-
-                    for option in cheating_options {
+                    for option in current.surrounding_coordinates(dist as usize) {
                         let option_dist = option.manhattan_distance(&current);
                         if let Some(Node::Path(cheating_dist)) = self.get_node(option) {
                             let time_saved =
@@ -141,21 +136,6 @@ impl fmt::Display for Map {
         }
         Ok(())
     }
-}
-
-fn generate_cheating_vectors(max_distance: i32) -> Vec<(i32, i32)> {
-    let mut vectors = Vec::new();
-
-    for x in -max_distance..=max_distance {
-        for y in -max_distance..=max_distance {
-            let distance = x.abs() + y.abs();
-            if distance > 0 && distance <= max_distance {
-                vectors.push((x, y));
-            }
-        }
-    }
-
-    vectors
 }
 
 fn main() -> Result<()> {
@@ -223,26 +203,5 @@ mod tests {
     #[test]
     fn test_part2() {
         assert_eq!(part2(TEST_INPUT).unwrap(), 0);
-    }
-
-    #[test]
-    fn test_generate_cheating_vectors() {
-        assert_eq!(
-            generate_cheating_vectors(2),
-            vec![
-                (-2, 0),
-                (-1, -1),
-                (-1, 0),
-                (-1, 1),
-                (0, -2),
-                (0, -1),
-                (0, 1),
-                (0, 2),
-                (1, -1),
-                (1, 0),
-                (1, 1),
-                (2, 0)
-            ]
-        );
     }
 }

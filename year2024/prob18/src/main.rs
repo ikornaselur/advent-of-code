@@ -107,8 +107,7 @@ impl Grid {
             }
 
             // Check all the neighbours, if they're empty and we haven't been there, let's go there
-            for vector in &[(0, -1), (0, 1), (-1, 0), (1, 0)] {
-                let neighbour = coord + *vector;
+            for neighbour in coord.edge_coordinates(1) {
                 if let Some(node) = self.get_node(&neighbour) {
                     if !seen_nodes.contains(&neighbour) && node == 0 {
                         queue.push((dist - 1, neighbour));

@@ -92,6 +92,52 @@ impl<T: PrimInt> AddAssign<(T, T)> for GridCoordinate<T> {
     }
 }
 
+impl<T> GridCoordinate<T>
+where
+    T: FromPrimitive + Add<Output = T> + PrimInt,
+{
+    pub fn surrounding_coordinates(
+        &self,
+        max_distance: usize,
+    ) -> impl Iterator<Item = GridCoordinate<T>> + '_ {
+        let max_distance: i32 = max_distance as i32;
+
+        (-max_distance..=max_distance).flat_map(move |x| {
+            (-max_distance..=max_distance).filter_map(move |y| {
+                let distance = x.abs() + y.abs();
+                if distance > 0 && distance <= max_distance {
+                    Some(GridCoordinate::new(
+                        self.row + T::from(x).unwrap(),
+                        self.column + T::from(y).unwrap(),
+                    ))
+                } else {
+                    None
+                }
+            })
+        })
+    }
+
+    pub fn edge_coordinates(
+        &self,
+        distance: usize,
+    ) -> impl Iterator<Item = GridCoordinate<T>> + '_ {
+        let distance: i32 = distance as i32;
+
+        (-distance..=distance).flat_map(move |x| {
+            (-distance..=distance).filter_map(move |y| {
+                if distance > 0 && x.abs() + y.abs() == distance {
+                    Some(GridCoordinate::new(
+                        self.row + T::from(x).unwrap(),
+                        self.column + T::from(y).unwrap(),
+                    ))
+                } else {
+                    None
+                }
+            })
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -264,5 +310,69 @@ mod tests {
 
         let empty_rows: Vec<Vec<i32>> = vec![Vec::new()];
         assert_eq!(coord.get(&empty_rows), None);
+    }
+
+    #[test]
+    fn test_surrounding_coordinates() {
+        let center = GridCoordinate::new(5, 5);
+
+        // Test distance 1
+        let coords: Vec<_> = center.surrounding_coordinates(1).collect();
+        assert_eq!(coords.len(), 4);
+        assert!(coords.contains(&GridCoordinate::new(4, 5))); // left
+        assert!(coords.contains(&GridCoordinate::new(6, 5))); // right
+        assert!(coords.contains(&GridCoordinate::new(5, 4))); // up
+        assert!(coords.contains(&GridCoordinate::new(5, 6))); // down
+
+        // Test distance 2
+        let coords: Vec<_> = center.surrounding_coordinates(2).collect();
+        assert_eq!(coords.len(), 12);
+        // Check some key points
+        assert!(coords.contains(&GridCoordinate::new(3, 5))); // 2 left
+        assert!(coords.contains(&GridCoordinate::new(5, 3))); // 2 up
+        assert!(coords.contains(&GridCoordinate::new(4, 4))); // diagonal
+    }
+
+    #[test]
+    fn test_edge_coordinates() {
+        let center = GridCoordinate::new(5, 5);
+
+        // Test distance 1
+        let coords: Vec<_> = center.edge_coordinates(1).collect();
+        assert_eq!(coords.len(), 4);
+        assert!(coords.contains(&GridCoordinate::new(4, 5)));
+        assert!(coords.contains(&GridCoordinate::new(6, 5)));
+        assert!(coords.contains(&GridCoordinate::new(5, 4)));
+        assert!(coords.contains(&GridCoordinate::new(5, 6)));
+
+        // Test distance 2
+        let coords: Vec<_> = center.edge_coordinates(2).collect();
+        assert_eq!(coords.len(), 8);
+        // Check cardinal points
+        assert!(coords.contains(&GridCoordinate::new(3, 5))); // 2 left
+        assert!(coords.contains(&GridCoordinate::new(5, 3))); // 2 up
+                                                              // Check diagonals
+        assert!(coords.contains(&GridCoordinate::new(4, 4))); // up-left
+        assert!(coords.contains(&GridCoordinate::new(6, 4))); // up-right
+    }
+
+    #[test]
+    fn test_zero_distance() {
+        let center = GridCoordinate::new(5, 5);
+        let coords: Vec<_> = center.surrounding_coordinates(0).collect();
+        assert_eq!(coords, vec![]);
+
+        let edge_coords: Vec<_> = center.edge_coordinates(0).collect();
+        assert_eq!(edge_coords, vec![]);
+    }
+
+    #[test]
+    fn test_coordinates_dont_include_self() {
+        let center = GridCoordinate::new(5, 5);
+        let coords: Vec<_> = center.surrounding_coordinates(1).collect();
+        assert!(!coords.contains(&center));
+
+        let edge_coords: Vec<_> = center.edge_coordinates(1).collect();
+        assert!(!edge_coords.contains(&center));
     }
 }
