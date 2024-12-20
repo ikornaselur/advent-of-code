@@ -7,5 +7,3 @@ pub mod input;
 pub mod parsers;
 pub mod prelude;
 pub mod timeouts;
-pub mod types;
-pub mod utils;
