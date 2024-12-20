@@ -62,7 +62,7 @@ impl Grid {
         }
 
         // Check if there's an obstacle
-        if new_pos.get(&self.nodes)? == &Node::Obsticle {
+        if let Some(Node::Obsticle) = new_pos.get(&self.nodes) {
             // Rotate and continue
             self.guard_direction = rotate(self.guard_direction);
         } else {
@@ -127,7 +127,10 @@ fn part2(input: &str) -> Result<usize> {
         let forward_pos = apply_movement(grid.guard, grid.guard_direction);
         if !visited_nodes.contains(&forward_pos)
             && forward_pos.within_grid(&grid.nodes)
-            && forward_pos.get(&grid.nodes)? == &Node::Open
+            && forward_pos
+                .get(&grid.nodes)
+                .ok_or(error!("Out of bounds"))?
+                == &Node::Open
         {
             forward_pos.set(&mut grid.nodes, Node::Obsticle)?;
             let current_pos = grid.guard;

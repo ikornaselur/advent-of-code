@@ -97,7 +97,9 @@ impl PipeMap {
         current_node_coord: GridCoordinate<usize>,
         came_from_direction: CompassDirection,
     ) -> Result<(GridCoordinate<usize>, CompassDirection)> {
-        let current_node = current_node_coord.get(&self.nodes)?;
+        let current_node = current_node_coord
+            .get(&self.nodes)
+            .ok_or(error!("Out of bounds"))?;
 
         if *current_node == Pipe::None || *current_node == Pipe::Start {
             return Err(error!("Invalid node: {:?}", current_node));
@@ -139,7 +141,9 @@ impl PipeMap {
             ));
         }
 
-        let next_node = next_node_coord.get(&self.nodes)?;
+        let next_node = next_node_coord
+            .get(&self.nodes)
+            .ok_or(error!("Out of bounds"))?;
         if *next_node == Pipe::None {
             return Err(error!("Invalid next node: {:?}", next_node));
         }
@@ -261,7 +265,9 @@ impl PipeMap {
 
         for x in 0..self.height {
             for y in 0..self.width {
-                let node = GridCoordinate { row: x, column: y }.get(&self.nodes)?;
+                let node = GridCoordinate { row: x, column: y }
+                    .get(&self.nodes)
+                    .ok_or(error!("Out of bounds"))?;
 
                 match node {
                     // Note: I know that the start in my input is a vertical pipe

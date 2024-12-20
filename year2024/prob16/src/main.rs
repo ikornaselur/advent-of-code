@@ -123,8 +123,7 @@ fn solve_maze(
             || (explore_duplicate_best && seen_nodes.get(&forward) >= Some(&score))
         {
             seen_nodes.insert(forward, score);
-            if forward.within_grid(&map.nodes) {
-                let node = forward.get(&map.nodes)?;
+            if let Some(node) = forward.get(&map.nodes) {
                 if *node != Node::Wall {
                     let new_path = path.iter().cloned().chain(Some(forward)).collect();
                     queue.push((score - MOVE_COST, forward, direction, new_path));
@@ -133,16 +132,14 @@ fn solve_maze(
         }
         // Let's also queue up turning left or right, if there's an opening
         let left = coord + direction.left_90().as_vector();
-        if left.within_grid(&map.nodes) {
-            let node = left.get(&map.nodes)?;
+        if let Some(node) = left.get(&map.nodes) {
             if *node != Node::Wall && !seen_nodes.contains_key(&left) {
                 queue.push((score - TURN_COST, coord, direction.left_90(), path.clone()));
             }
         }
 
         let right = coord + direction.right_90().as_vector();
-        if right.within_grid(&map.nodes) {
-            let node = right.get(&map.nodes)?;
+        if let Some(node) = right.get(&map.nodes) {
             if *node != Node::Wall && !seen_nodes.contains_key(&right) {
                 queue.push((score - TURN_COST, coord, direction.right_90(), path.clone()));
             }

@@ -153,15 +153,15 @@ impl Grid {
         vector: (i32, i32),
         apply_move: bool,
     ) -> Result<bool> {
-        let current_node = *coordinate.get(&self.nodes)?;
+        let current_node = *coordinate.get(&self.nodes).ok_or(error!("Out of bounds"))?;
         let next_pos = coordinate + vector;
 
-        match next_pos.get(&self.nodes)? {
-            &Node::Wall => {
+        match next_pos.get(&self.nodes) {
+            Some(&Node::Wall) => {
                 // We've hit a wall, we can't move
                 Ok(false)
             }
-            &Node::Floor => {
+            Some(&Node::Floor) => {
                 // We've found a floor, we can move
                 if apply_move {
                     next_pos.set(&mut self.nodes, current_node)?;
@@ -170,7 +170,7 @@ impl Grid {
 
                 Ok(true)
             }
-            &Node::Box => {
+            Some(&Node::Box) => {
                 // We've hit a box, let's see if it would move
                 if self.move_node(next_pos, vector, apply_move)? {
                     // It moved, we can move the current node
@@ -185,7 +185,7 @@ impl Grid {
                     Ok(false)
                 }
             }
-            Node::BoxLeft | Node::BoxRight if vector.0 == 0 => {
+            Some(Node::BoxLeft | Node::BoxRight) if vector.0 == 0 => {
                 // We're moving a wide box horizontally, which is just like moving any other box
                 // really. The first part of the box hit will move the other half of the box, which
                 // will move if there's free space.. so we just continue like normal narrow boxes
@@ -201,7 +201,7 @@ impl Grid {
                     Ok(false)
                 }
             }
-            node @ (Node::BoxLeft | Node::BoxRight) if vector.1 == 0 => {
+            Some(node @ (Node::BoxLeft | Node::BoxRight)) if vector.1 == 0 => {
                 // Now we're cooking.. moving vertically, that's going to require some
                 // backtracking! We'll achieve that with this this 'apply_move' flag, so that we
                 // can see if *all* touched boxes would move, only then will we apply the move..
@@ -239,7 +239,7 @@ impl Grid {
                     Ok(false)
                 }
             }
-            Node::Robot => unreachable!(),
+            Some(Node::Robot) | None => unreachable!(),
             _ => todo!(),
         }
     }

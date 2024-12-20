@@ -62,16 +62,16 @@ where
         }
     }
 
-    pub fn get<'a, U>(&self, grid: &'a [Vec<U>]) -> Result<&'a U> {
+    pub fn get<'a, U>(&self, grid: &'a [Vec<U>]) -> Option<&'a U> {
         if !self.within_grid(grid) {
-            return Err(error!("Out of bounds"));
+            return None;
         }
 
         // Safe to unwrap since we already checked bounds with within_grid
         let row = self.row.to_usize().unwrap();
         let col = self.column.to_usize().unwrap();
 
-        Ok(&grid[row][col])
+        Some(&grid[row][col])
     }
 
     pub fn set<U>(&self, grid: &mut [Vec<U>], value: U) -> Result<()> {
@@ -98,10 +98,28 @@ impl<T: PrimInt> Add<(T, T)> for GridCoordinate<T> {
     }
 }
 
+impl<T: PrimInt> Add<GridCoordinate<T>> for GridCoordinate<T> {
+    type Output = Self;
+
+    fn add(self, other: GridCoordinate<T>) -> Self::Output {
+        Self {
+            row: self.row + other.row,
+            column: self.column + other.column,
+        }
+    }
+}
+
 impl<T: PrimInt> AddAssign<(T, T)> for GridCoordinate<T> {
     fn add_assign(&mut self, other: (T, T)) {
         self.row = self.row + other.0;
         self.column = self.column + other.1;
+    }
+}
+
+impl<T: PrimInt> AddAssign<GridCoordinate<T>> for GridCoordinate<T> {
+    fn add_assign(&mut self, other: GridCoordinate<T>) {
+        self.row = self.row + other.row;
+        self.column = self.column + other.column;
     }
 }
 
@@ -329,24 +347,24 @@ mod tests {
 
         // Test out of bounds
         let coord = GridCoordinate::new(3_usize, 1_usize);
-        assert!(coord.get(&grid).is_err());
+        assert_eq!(coord.get(&grid), None);
 
         let coord = GridCoordinate::new(1_usize, 3_usize);
-        assert!(coord.get(&grid).is_err());
+        assert_eq!(coord.get(&grid), None);
 
         // Test negative coordinates with signed integers
         let coord = GridCoordinate::new(-1_i32, 1_i32);
-        assert!(coord.get(&grid).is_err());
+        assert_eq!(coord.get(&grid), None);
     }
 
     #[test]
     fn test_get_empty_grid() {
         let empty_grid: Vec<Vec<i32>> = Vec::new();
         let coord = GridCoordinate::new(0_usize, 0_usize);
-        assert!(coord.get(&empty_grid).is_err());
+        assert_eq!(coord.get(&empty_grid), None);
 
         let empty_rows: Vec<Vec<i32>> = vec![Vec::new()];
-        assert!(coord.get(&empty_rows).is_err());
+        assert_eq!(coord.get(&empty_rows), None);
     }
 
     mod surrounding_coordinates {

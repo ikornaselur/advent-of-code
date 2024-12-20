@@ -45,7 +45,7 @@ impl Layout {
 
         // Handle the first node separately, as it can contain a mirror already
         let (start_coord, start_dir) = start;
-        let first_node = start_coord.get(&self.grid)?;
+        let first_node = start_coord.get(&self.grid).ok_or(error!("Out of bounds"))?;
         match (first_node, start_dir) {
             (Node::Empty, _) => {
                 // We just continue in the same direction
@@ -145,7 +145,7 @@ impl Layout {
 
             // Get the next node
             let coord = get_next_coordinate(beam);
-            let node = coord.get(&self.grid)?;
+            let node = coord.get(&self.grid).ok_or(error!("Out of bounds"))?;
             match (node, beam.1) {
                 (Node::Empty, dir) => {
                     // Beam just continues in the same direction

@@ -62,7 +62,10 @@ impl Heightmap {
         queue.push_back((self.end, 0));
 
         while let Some((coord, steps)) = queue.pop_front() {
-            match (only_start, coord.get(&self.map)?) {
+            match (
+                only_start,
+                coord.get(&self.map).ok_or(error!("Out of bounds"))?,
+            ) {
                 (true, &Point::Start) => return Ok(steps),
                 (false, p) if p.elevation() == 0 => return Ok(steps),
                 _ => {}
@@ -70,7 +73,7 @@ impl Heightmap {
             let current_elevation = coord.get(&self.map).unwrap().elevation();
 
             // Check if we've already been here
-            if let Some(prev_steps) = coord.get(&self.steps)? {
+            if let Some(prev_steps) = coord.get(&self.steps).ok_or(error!("Out of bounds"))? {
                 // We can just continue
                 if prev_steps <= &steps {
                     continue;
@@ -81,7 +84,7 @@ impl Heightmap {
             // Then we check if we can traverse in any of the four directions
             for next in coord.edge_coordinates(1) {
                 if next.within_grid(&self.map) {
-                    let node = next.get(&self.map)?;
+                    let node = next.get(&self.map).ok_or(error!("Out of bounds"))?;
                     let next_elevation = node.elevation();
                     if current_elevation - next_elevation <= 1 {
                         queue.push_back((next, steps + 1));
