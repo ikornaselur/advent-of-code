@@ -157,36 +157,17 @@ impl PipeMap {
         let mut directions = vec![];
 
         // Check the four nodes around to see if any of them connect back
-
-        // North node
-        if let Some(north_coord) = self.shift_coord(start_coord, CompassDirection::North) {
-            let north_node = north_coord.get(&self.nodes).unwrap();
-            if north_node.connects_to().contains(&CompassDirection::South) {
-                directions.push(CompassDirection::North);
-            }
-        }
-
-        // South node
-        if let Some(south_coord) = self.shift_coord(start_coord, CompassDirection::South) {
-            let south_node = south_coord.get(&self.nodes).unwrap();
-            if south_node.connects_to().contains(&CompassDirection::North) {
-                directions.push(CompassDirection::South);
-            }
-        }
-
-        // West node
-        if let Some(west_coord) = self.shift_coord(start_coord, CompassDirection::West) {
-            let west_node = west_coord.get(&self.nodes).unwrap();
-            if west_node.connects_to().contains(&CompassDirection::East) {
-                directions.push(CompassDirection::West);
-            }
-        }
-
-        // East node
-        if let Some(east_coord) = self.shift_coord(start_coord, CompassDirection::East) {
-            let east_node = east_coord.get(&self.nodes).unwrap();
-            if east_node.connects_to().contains(&CompassDirection::West) {
-                directions.push(CompassDirection::East);
+        for dir in &[
+            CompassDirection::North,
+            CompassDirection::South,
+            CompassDirection::West,
+            CompassDirection::East,
+        ] {
+            if let Some(coord) = start_coord.shifted(*dir) {
+                let node = coord.get(&self.nodes).unwrap();
+                if node.connects_to().contains(&dir.opposite()) {
+                    directions.push(*dir);
+                }
             }
         }
 
@@ -198,56 +179,6 @@ impl PipeMap {
         }
 
         Ok(directions)
-    }
-
-    fn shift_coord(
-        &self,
-        coord: GridCoordinate<usize>,
-        direction: CompassDirection,
-    ) -> Option<GridCoordinate<usize>> {
-        match direction {
-            CompassDirection::North => {
-                if coord.row == 0 {
-                    None
-                } else {
-                    Some(GridCoordinate {
-                        row: coord.row - 1,
-                        column: coord.column,
-                    })
-                }
-            }
-            CompassDirection::South => {
-                if coord.row == self.height - 1 {
-                    None
-                } else {
-                    Some(GridCoordinate {
-                        row: coord.row + 1,
-                        column: coord.column,
-                    })
-                }
-            }
-            CompassDirection::West => {
-                if coord.column == 0 {
-                    None
-                } else {
-                    Some(GridCoordinate {
-                        row: coord.row,
-                        column: coord.column - 1,
-                    })
-                }
-            }
-            CompassDirection::East => {
-                if coord.column == self.width - 1 {
-                    None
-                } else {
-                    Some(GridCoordinate {
-                        row: coord.row,
-                        column: coord.column + 1,
-                    })
-                }
-            }
-            _ => panic!("Bad direction"),
-        }
     }
 
     /// Count how many tiles are closed inside the pipemap loop
@@ -333,13 +264,13 @@ fn part1(input: &str) -> Result<u32> {
     let start_directions = map.get_start_directions()?;
     let mut steps = 1;
 
-    let mut a_coord = map
-        .shift_coord(start_coord, start_directions[0])
+    let mut a_coord = start_coord
+        .shifted(start_directions[0])
         .ok_or(error!("Invalid start coordinate: {:?}", start_coord))?;
     let mut a_from_direction = start_directions[0].opposite();
 
-    let mut b_coord = map
-        .shift_coord(start_coord, start_directions[1])
+    let mut b_coord = start_coord
+        .shifted(start_directions[1])
         .ok_or(error!("Invalid start coordinate: {:?}", start_coord))?;
     let mut b_from_direction = start_directions[1].opposite();
 
@@ -370,8 +301,8 @@ fn part2(input: &str) -> Result<usize> {
     let start_directions = map.get_start_directions()?;
     let direction = start_directions[0]; // We'll just pick one direction
 
-    let mut current_coord = map
-        .shift_coord(start_coord, direction)
+    let mut current_coord = start_coord
+        .shifted(direction)
         .ok_or(error!("Invalid start coordinate: {:?}", start_coord))?;
     let mut from_direction = direction.opposite();
 

@@ -22,6 +22,31 @@ pub enum GridDirection {
     Right,
 }
 
+pub trait DirectionShift {
+    fn to_grid_direction(&self) -> GridDirection;
+}
+
+impl DirectionShift for GridDirection {
+    fn to_grid_direction(&self) -> GridDirection {
+        *self
+    }
+}
+
+impl DirectionShift for CompassDirection {
+    fn to_grid_direction(&self) -> GridDirection {
+        match self {
+            CompassDirection::North => GridDirection::Up,
+            CompassDirection::South => GridDirection::Down,
+            CompassDirection::East => GridDirection::Right,
+            CompassDirection::West => GridDirection::Left,
+            CompassDirection::NorthEast => GridDirection::UpRight,
+            CompassDirection::NorthWest => GridDirection::UpLeft,
+            CompassDirection::SouthEast => GridDirection::DownRight,
+            CompassDirection::SouthWest => GridDirection::DownLeft,
+        }
+    }
+}
+
 impl CompassDirection {
     pub fn opposite(&self) -> Self {
         match self {

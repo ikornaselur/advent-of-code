@@ -102,82 +102,36 @@ impl Layout {
                 // If forwards, we can only continue if we don't exceed max distance
                 if next_direction == &direction {
                     if straight_distance < (max_straight_line - 1) {
-                        if let Some(next_coord) = self.shift_coordinate(coord, &direction) {
-                            let next_node_heat = self.node_heat(next_coord);
-                            heap.push((
-                                -(heat_loss + next_node_heat),
-                                next_coord,
-                                direction,
-                                straight_distance + 1,
-                            ));
+                        if let Some(next_coord) = coord.shifted(direction) {
+                            if next_coord.within_grid(&self.nodes) {
+                                let next_node_heat = self.node_heat(next_coord);
+                                heap.push((
+                                    -(heat_loss + next_node_heat),
+                                    next_coord,
+                                    direction,
+                                    straight_distance + 1,
+                                ));
+                            }
                         }
                     }
                     continue;
                 }
                 if straight_distance >= min_straight_line {
                     // Try to turn
-                    if let Some(next_coord) = self.shift_coordinate(coord, next_direction) {
-                        heap.push((
-                            -(heat_loss + self.node_heat(next_coord)),
-                            next_coord,
-                            *next_direction,
-                            0,
-                        ));
+                    if let Some(next_coord) = coord.shifted(*next_direction) {
+                        if next_coord.within_grid(&self.nodes) {
+                            heap.push((
+                                -(heat_loss + self.node_heat(next_coord)),
+                                next_coord,
+                                *next_direction,
+                                0,
+                            ));
+                        }
                     }
                 }
             }
         }
         Err(error!("No path found"))
-    }
-
-    fn shift_coordinate(
-        &self,
-        coord: GridCoordinate<usize>,
-        direction: &CompassDirection,
-    ) -> Option<GridCoordinate<usize>> {
-        match direction {
-            CompassDirection::North => {
-                if coord.row == 0 {
-                    None
-                } else {
-                    Some(GridCoordinate {
-                        row: coord.row - 1,
-                        column: coord.column,
-                    })
-                }
-            }
-            CompassDirection::South => {
-                if coord.row == self.nodes.len() - 1 {
-                    None
-                } else {
-                    Some(GridCoordinate {
-                        row: coord.row + 1,
-                        column: coord.column,
-                    })
-                }
-            }
-            CompassDirection::East => {
-                if coord.column == self.nodes[0].len() - 1 {
-                    None
-                } else {
-                    Some(GridCoordinate {
-                        row: coord.row,
-                        column: coord.column + 1,
-                    })
-                }
-            }
-            CompassDirection::West => {
-                if coord.column == 0 {
-                    None
-                } else {
-                    Some(GridCoordinate {
-                        row: coord.row,
-                        column: coord.column - 1,
-                    })
-                }
-            }
-            _ => panic!("Bad direction"),
-        }
     }
 
     fn node_heat(&self, coord: GridCoordinate<usize>) -> i32 {
@@ -310,37 +264,5 @@ mod tests {
         assert_eq!(layout.node_heat(GridCoordinate { row: 0, column: 1 }), 4);
         assert_eq!(layout.node_heat(GridCoordinate { row: 1, column: 0 }), 1);
         assert_eq!(layout.node_heat(GridCoordinate { row: 2, column: 1 }), 8);
-    }
-
-    #[test]
-    fn test_layout_shift_coord() {
-        let layout: Layout = "1456\n1416\n1816\n1111".parse().unwrap();
-
-        let coord = GridCoordinate { row: 1, column: 1 };
-
-        assert_eq!(
-            layout
-                .shift_coordinate(coord, &CompassDirection::North)
-                .unwrap(),
-            GridCoordinate { row: 0, column: 1 }
-        );
-        assert_eq!(
-            layout
-                .shift_coordinate(coord, &CompassDirection::South)
-                .unwrap(),
-            GridCoordinate { row: 2, column: 1 }
-        );
-        assert_eq!(
-            layout
-                .shift_coordinate(coord, &CompassDirection::West)
-                .unwrap(),
-            GridCoordinate { row: 1, column: 0 }
-        );
-        assert_eq!(
-            layout
-                .shift_coordinate(coord, &CompassDirection::East)
-                .unwrap(),
-            GridCoordinate { row: 1, column: 2 }
-        );
     }
 }

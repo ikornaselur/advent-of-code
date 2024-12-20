@@ -1,3 +1,4 @@
+use crate::enums::DirectionShift;
 use crate::prelude::*;
 use num_traits::{FromPrimitive, PrimInt, Zero};
 use std::cmp::PartialOrd;
@@ -84,6 +85,41 @@ where
         grid[row][col] = value;
 
         Ok(())
+    }
+
+    pub fn shifted<D: DirectionShift>(&self, direction: D) -> Option<Self> {
+        let direction = direction.to_grid_direction();
+        let is_signed = T::min_value() < Zero::zero();
+
+        match direction {
+            GridDirection::Up if is_signed || self.row > T::zero() => {
+                Some(GridCoordinate::new(self.row - T::one(), self.column))
+            }
+            GridDirection::Down => Some(GridCoordinate::new(self.row + T::one(), self.column)),
+            GridDirection::Left if is_signed || self.column > T::zero() => {
+                Some(GridCoordinate::new(self.row, self.column - T::one()))
+            }
+            GridDirection::Right => Some(GridCoordinate::new(self.row, self.column + T::one())),
+            GridDirection::UpLeft
+                if is_signed || (self.column > T::zero() && self.row > T::zero()) =>
+            {
+                Some(GridCoordinate::new(
+                    self.row - T::one(),
+                    self.column - T::one(),
+                ))
+            }
+            GridDirection::UpRight if is_signed || self.row > T::zero() => Some(
+                GridCoordinate::new(self.row - T::one(), self.column + T::one()),
+            ),
+            GridDirection::DownLeft if is_signed || self.column > T::zero() => Some(
+                GridCoordinate::new(self.row + T::one(), self.column - T::one()),
+            ),
+            GridDirection::DownRight => Some(GridCoordinate::new(
+                self.row + T::one(),
+                self.column + T::one(),
+            )),
+            _ => None,
+        }
     }
 }
 
@@ -365,6 +401,253 @@ mod tests {
 
         let empty_rows: Vec<Vec<i32>> = vec![Vec::new()];
         assert_eq!(coord.get(&empty_rows), None);
+    }
+
+    mod shifted {
+        use super::*;
+
+        mod signed {
+            use super::*;
+
+            #[test]
+            fn test_shifted_up() {
+                let coord: GridCoordinate<i32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Up),
+                    Some(GridCoordinate { row: 0, column: 1 })
+                );
+
+                let coord: GridCoordinate<i32> = GridCoordinate { row: 0, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Up),
+                    Some(GridCoordinate { row: -1, column: 1 })
+                );
+            }
+
+            #[test]
+            fn test_shifted_down() {
+                let coord: GridCoordinate<i32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Down),
+                    Some(GridCoordinate { row: 2, column: 1 })
+                );
+
+                let coord: GridCoordinate<i32> = GridCoordinate { row: -1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Down),
+                    Some(GridCoordinate { row: 0, column: 1 })
+                );
+            }
+
+            #[test]
+            fn test_shifted_left() {
+                let coord: GridCoordinate<i32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Left),
+                    Some(GridCoordinate { row: 1, column: 0 })
+                );
+
+                let coord: GridCoordinate<i32> = GridCoordinate { row: 1, column: 0 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Left),
+                    Some(GridCoordinate { row: 1, column: -1 })
+                );
+            }
+
+            #[test]
+            fn test_shifted_right() {
+                let coord: GridCoordinate<i32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Right),
+                    Some(GridCoordinate { row: 1, column: 2 })
+                );
+
+                let coord: GridCoordinate<i32> = GridCoordinate { row: 1, column: -1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Right),
+                    Some(GridCoordinate { row: 1, column: 0 })
+                );
+            }
+
+            #[test]
+            fn test_shifted_up_left() {
+                let coord: GridCoordinate<i32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::UpLeft),
+                    Some(GridCoordinate { row: 0, column: 0 })
+                );
+
+                let coord: GridCoordinate<i32> = GridCoordinate { row: 0, column: 0 };
+                assert_eq!(
+                    coord.shifted(GridDirection::UpLeft),
+                    Some(GridCoordinate {
+                        row: -1,
+                        column: -1
+                    })
+                );
+            }
+
+            #[test]
+            fn test_shifted_up_right() {
+                let coord: GridCoordinate<i32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::UpRight),
+                    Some(GridCoordinate { row: 0, column: 2 })
+                );
+
+                let coord: GridCoordinate<i32> = GridCoordinate { row: 0, column: -1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::UpRight),
+                    Some(GridCoordinate { row: -1, column: 0 })
+                );
+            }
+
+            #[test]
+            fn test_shifted_down_left() {
+                let coord: GridCoordinate<i32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::DownLeft),
+                    Some(GridCoordinate { row: 2, column: 0 })
+                );
+
+                let coord: GridCoordinate<i32> = GridCoordinate { row: -1, column: 0 };
+                assert_eq!(
+                    coord.shifted(GridDirection::DownLeft),
+                    Some(GridCoordinate { row: 0, column: -1 })
+                );
+            }
+
+            #[test]
+            fn test_shifted_down_right() {
+                let coord: GridCoordinate<i32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::DownRight),
+                    Some(GridCoordinate { row: 2, column: 2 })
+                );
+
+                let coord: GridCoordinate<i32> = GridCoordinate {
+                    row: -1,
+                    column: -1,
+                };
+                assert_eq!(
+                    coord.shifted(GridDirection::DownRight),
+                    Some(GridCoordinate { row: 0, column: 0 })
+                );
+            }
+        }
+
+        mod unsigned {
+            use super::*;
+
+            #[test]
+            fn test_shifted_up() {
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Up),
+                    Some(GridCoordinate { row: 0, column: 1 })
+                );
+
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 0, column: 1 };
+                assert_eq!(coord.shifted(GridDirection::Up), None);
+            }
+
+            #[test]
+            fn test_shifted_down() {
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Down),
+                    Some(GridCoordinate { row: 2, column: 1 })
+                );
+
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 0, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Down),
+                    Some(GridCoordinate { row: 1, column: 1 })
+                );
+            }
+
+            #[test]
+            fn test_shifted_left() {
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Left),
+                    Some(GridCoordinate { row: 1, column: 0 })
+                );
+
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 1, column: 0 };
+                assert_eq!(coord.shifted(GridDirection::Left), None);
+            }
+
+            #[test]
+            fn test_shifted_right() {
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Right),
+                    Some(GridCoordinate { row: 1, column: 2 })
+                );
+
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 1, column: 0 };
+                assert_eq!(
+                    coord.shifted(GridDirection::Right),
+                    Some(GridCoordinate { row: 1, column: 1 })
+                );
+            }
+
+            #[test]
+            fn test_shifted_up_left() {
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::UpLeft),
+                    Some(GridCoordinate { row: 0, column: 0 })
+                );
+
+                // Test boundary cases
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 0, column: 1 };
+                assert_eq!(coord.shifted(GridDirection::UpLeft), None);
+
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 1, column: 0 };
+                assert_eq!(coord.shifted(GridDirection::UpLeft), None);
+            }
+
+            #[test]
+            fn test_shifted_up_right() {
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::UpRight),
+                    Some(GridCoordinate { row: 0, column: 2 })
+                );
+
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 0, column: 1 };
+                assert_eq!(coord.shifted(GridDirection::UpRight), None);
+            }
+
+            #[test]
+            fn test_shifted_down_left() {
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::DownLeft),
+                    Some(GridCoordinate { row: 2, column: 0 })
+                );
+
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 1, column: 0 };
+                assert_eq!(coord.shifted(GridDirection::DownLeft), None);
+            }
+
+            #[test]
+            fn test_shifted_down_right() {
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 1, column: 1 };
+                assert_eq!(
+                    coord.shifted(GridDirection::DownRight),
+                    Some(GridCoordinate { row: 2, column: 2 })
+                );
+
+                let coord: GridCoordinate<u32> = GridCoordinate { row: 0, column: 0 };
+                assert_eq!(
+                    coord.shifted(GridDirection::DownRight),
+                    Some(GridCoordinate { row: 1, column: 1 })
+                );
+            }
+        }
     }
 
     mod surrounding_coordinates {
