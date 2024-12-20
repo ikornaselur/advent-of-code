@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         base-dir:
+          - "core"
           - "year2019"
           - "year2020"
           - "year2021"
@@ -54,6 +55,7 @@ jobs:
     strategy:
       matrix:
         base-dir:
+          - "core"
           - "year2019"
           - "year2020"
           - "year2021"
@@ -91,6 +93,7 @@ jobs:
     strategy:
       matrix:
         base-dir:
+          - "core"
           - "year2019"
           - "year2020"
           - "year2021"
@@ -128,6 +131,7 @@ jobs:
     strategy:
       matrix:
         base-dir:
+          - "core"
           - "year2019"
           - "year2020"
           - "year2021"

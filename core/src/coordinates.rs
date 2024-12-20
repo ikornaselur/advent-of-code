@@ -314,13 +314,13 @@ mod tests {
         let grid = vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]];
 
         let coord = GridCoordinate::new(1_usize, 1_usize);
-        assert_eq!(coord.get(&grid), Some(&5));
+        assert_eq!(coord.get(&grid).unwrap(), &5);
 
         let coord = GridCoordinate::new(0_usize, 2_usize);
-        assert_eq!(coord.get(&grid), Some(&3));
+        assert_eq!(coord.get(&grid).unwrap(), &3);
 
         let coord = GridCoordinate::new(2_usize, 0_usize);
-        assert_eq!(coord.get(&grid), Some(&7));
+        assert_eq!(coord.get(&grid).unwrap(), &7);
     }
 
     #[test]
@@ -329,24 +329,24 @@ mod tests {
 
         // Test out of bounds
         let coord = GridCoordinate::new(3_usize, 1_usize);
-        assert_eq!(coord.get(&grid), None);
+        assert!(coord.get(&grid).is_err());
 
         let coord = GridCoordinate::new(1_usize, 3_usize);
-        assert_eq!(coord.get(&grid), None);
+        assert!(coord.get(&grid).is_err());
 
         // Test negative coordinates with signed integers
         let coord = GridCoordinate::new(-1_i32, 1_i32);
-        assert_eq!(coord.get(&grid), None);
+        assert!(coord.get(&grid).is_err());
     }
 
     #[test]
     fn test_get_empty_grid() {
         let empty_grid: Vec<Vec<i32>> = Vec::new();
         let coord = GridCoordinate::new(0_usize, 0_usize);
-        assert_eq!(coord.get(&empty_grid), None);
+        assert!(coord.get(&empty_grid).is_err());
 
         let empty_rows: Vec<Vec<i32>> = vec![Vec::new()];
-        assert_eq!(coord.get(&empty_rows), None);
+        assert!(coord.get(&empty_rows).is_err());
     }
 
     mod surrounding_coordinates {
