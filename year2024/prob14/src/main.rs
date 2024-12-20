@@ -31,22 +31,22 @@ fn get_pos_after_iterations(
     width: i32,
     height: i32,
     iterations: i32,
-    pos: Coordinate<i32>,
-    vector: Coordinate<i32>,
-) -> Coordinate<i32> {
-    (
-        (pos.0 + (vector.0 * iterations)).rem_euclid(width),
-        (pos.1 + (vector.1 * iterations)).rem_euclid(height),
-    )
+    pos: GridCoordinate<i32>,
+    vector: GridCoordinate<i32>,
+) -> GridCoordinate<i32> {
+    GridCoordinate {
+        row: (pos.row + (vector.row * iterations)).rem_euclid(width),
+        column: (pos.column + (vector.column * iterations)).rem_euclid(height),
+    }
 }
 
 fn get_safety_rating(
     width: i32,
     height: i32,
     iterations: i32,
-    states: &[(Coordinate<i32>, Coordinate<i32>)],
+    states: &[(GridCoordinate<i32>, GridCoordinate<i32>)],
 ) -> usize {
-    let positions: Vec<Coordinate<i32>> = states
+    let positions: Vec<GridCoordinate<i32>> = states
         .iter()
         .map(|(pos, vector)| get_pos_after_iterations(width, height, iterations, *pos, *vector))
         .collect();
@@ -59,19 +59,19 @@ fn get_safety_rating(
     // not that many entries
     let upper_left_quadrant = positions
         .iter()
-        .filter(|(x, y)| x < &width_mid && y < &height_mid)
+        .filter(|GridCoordinate { row, column }| column < &width_mid && row < &height_mid)
         .count();
     let upper_right_quadrant = positions
         .iter()
-        .filter(|(x, y)| x > &width_mid && y < &height_mid)
+        .filter(|GridCoordinate { row, column }| column > &width_mid && row < &height_mid)
         .count();
     let lower_left_quadrant = positions
         .iter()
-        .filter(|(x, y)| x < &width_mid && y > &height_mid)
+        .filter(|GridCoordinate { row, column }| column < &width_mid && row > &height_mid)
         .count();
     let lower_right_quadrant = positions
         .iter()
-        .filter(|(x, y)| x > &width_mid && y > &height_mid)
+        .filter(|GridCoordinate { row, column }| column > &width_mid && row > &height_mid)
         .count();
 
     upper_left_quadrant * upper_right_quadrant * lower_left_quadrant * lower_right_quadrant
@@ -80,7 +80,7 @@ fn get_safety_rating(
 fn get_iterations_for_unique_pos(
     width: i32,
     height: i32,
-    states: &[(Coordinate<i32>, Coordinate<i32>)],
+    states: &[(GridCoordinate<i32>, GridCoordinate<i32>)],
 ) -> usize {
     let mut iterations = 0;
     let mut states = states.to_vec();
@@ -98,7 +98,7 @@ fn get_iterations_for_unique_pos(
             .collect();
         // Check if all positions are unique?
         let unique =
-            HashSet::<Coordinate<i32>>::from_iter(states.iter().map(|(pos, _)| *pos)).len();
+            HashSet::<GridCoordinate<i32>>::from_iter(states.iter().map(|(pos, _)| *pos)).len();
         if unique == states.len() {
             break;
         }
