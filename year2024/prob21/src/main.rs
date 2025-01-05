@@ -171,7 +171,17 @@ impl Pad {
     }
 }
 
-fn get_move_len(from: &Button, to: &Button, depth: usize, levels: usize) -> usize {
+fn get_move_len(
+    cache: &mut HashMap<(Button, Button, usize), usize>,
+    from: &Button,
+    to: &Button,
+    depth: usize,
+    levels: usize,
+) -> usize {
+    if let Some(length) = cache.get(&(*from, *to, depth)) {
+        return *length;
+    }
+
     let pad = if depth == 0 {
         Pad::new_number_pad()
     } else {
@@ -187,16 +197,19 @@ fn get_move_len(from: &Button, to: &Button, depth: usize, levels: usize) -> usiz
     // Else we need to figure out which of the paths has the shortest distance from a higher level
     let mut best_path = usize::MAX;
     for path in paths {
-        let mut path_len = get_move_len(&Button::A, &path[0], depth + 1, levels);
+        let mut path_len = get_move_len(cache, &Button::A, &path[0], depth + 1, levels);
         for idx in 0..path.len() - 1 {
             let from = path[idx];
             let to = path[idx + 1];
-            path_len += get_move_len(&from, &to, depth + 1, levels);
+            path_len += get_move_len(cache, &from, &to, depth + 1, levels);
         }
         if path_len < best_path {
             best_path = path_len;
         }
     }
+
+    cache.insert((*from, *to, depth), best_path);
+
     best_path
 }
 
@@ -283,11 +296,12 @@ fn main() -> Result<()> {
 }
 
 fn get_code_complexity(code: &[Button], levels: usize) -> usize {
-    let mut shortest_path = get_move_len(&Button::A, &code[0], 0, levels);
+    let mut cache = HashMap::new();
+    let mut shortest_path = get_move_len(&mut cache, &Button::A, &code[0], 0, levels);
     for idx in 0..code.len() - 1 {
         let from = code[idx];
         let to = code[idx + 1];
-        shortest_path += get_move_len(&from, &to, 0, levels);
+        shortest_path += get_move_len(&mut cache, &from, &to, 0, levels);
     }
 
     // Convert the code to a String
@@ -311,9 +325,13 @@ fn part1(input: &str) -> Result<usize> {
         .sum::<usize>())
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let codes = parse_input(input)?;
+
+    Ok(codes
+        .iter()
+        .map(|code| get_code_complexity(code, 25))
+        .sum::<usize>())
 }
 
 #[cfg(test)]
@@ -329,7 +347,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 154_115_708_116_294);
     }
 
     #[test]
@@ -349,10 +367,10 @@ mod tests {
 
     #[test]
     fn test_get_move_len() {
-        let len = get_move_len(&Button::Two, &Button::Nine, 0, 0);
+        let len = get_move_len(&mut HashMap::new(), &Button::Two, &Button::Nine, 0, 0);
         assert_eq!(len, 4);
 
-        let len = get_move_len(&Button::Two, &Button::Nine, 0, 1);
+        let len = get_move_len(&mut HashMap::new(), &Button::Two, &Button::Nine, 0, 1);
         assert_eq!(len, 8);
     }
 }
