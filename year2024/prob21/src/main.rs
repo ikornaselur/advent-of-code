@@ -171,58 +171,36 @@ impl Pad {
     }
 }
 
-/// Check how many moves are required to move between two buttons
-///
-/// The two buttons given are going to be numpad buttons, which are the buttons we move between on
-/// level 0. All moves on any other level is going to be on a directional pad
-///
-/// We'll start without any caching, as that's going to be fine for part 1.. but part 2 might be a
-/// different story and we might need to figure out how we can cache moves on higher levels, which
-/// should in theory be trivial?
-///
-/// We'll be returning a list of all paths that can be taken, though we can rule out immediately
-/// some paths (such as >v>, which will always be worse than >>v or v>>
-fn check_moves(code: &[Button], level: usize) -> Vec<Vec<Button>> {
-    let pad = if level == 0 {
+fn get_move_len(from: &Button, to: &Button, depth: usize, levels: usize) -> usize {
+    let pad = if depth == 0 {
         Pad::new_number_pad()
     } else {
         Pad::new_direction_pad()
     };
+    let paths = get_paths_from_to(&pad, from, to);
 
-    // We start from 'A', as that's the default start position
-    let from = Button::A;
-    let to = code[0];
-    let mut paths = get_paths_from_to(&pad, from, to);
-
-    if paths.is_empty() {
-        panic!();
+    if depth == levels {
+        // We're at the lowest level, so we can just return the length of the shortest path ASAP
+        return paths.iter().map(|p| p.len()).min().unwrap();
     }
 
-    for idx in 0..code.len() - 1 {
-        let from = code[idx];
-        let to = code[idx + 1];
-        let next_paths = get_paths_from_to(&pad, from, to);
-
-        if next_paths.is_empty() {
-            panic!();
+    // Else we need to figure out which of the paths has the shortest distance from a higher level
+    let mut best_path = usize::MAX;
+    for path in paths {
+        let mut path_len = get_move_len(&Button::A, &path[0], depth + 1, levels);
+        for idx in 0..path.len() - 1 {
+            let from = path[idx];
+            let to = path[idx + 1];
+            path_len += get_move_len(&from, &to, depth + 1, levels);
         }
-
-        paths = paths
-            .into_iter()
-            .flat_map(|p| {
-                next_paths.iter().map(move |next_path| {
-                    let mut new_path = p.clone();
-                    new_path.extend(next_path.iter());
-                    new_path
-                })
-            })
-            .collect();
+        if path_len < best_path {
+            best_path = path_len;
+        }
     }
-
-    paths
+    best_path
 }
 
-fn get_paths_from_to(pad: &Pad, from: Button, to: Button) -> Vec<Vec<Button>> {
+fn get_paths_from_to(pad: &Pad, from: &Button, to: &Button) -> Vec<Vec<Button>> {
     let mut paths = vec![];
 
     // Score (negative) and path so far.
@@ -249,7 +227,7 @@ fn get_paths_from_to(pad: &Pad, from: Button, to: Button) -> Vec<Vec<Button>> {
             continue;
         }
 
-        for (next, direction) in pad.buttons[&current].iter() {
+        for (next, direction) in pad.buttons[current].iter() {
             // Turning around is never good.. so lets skip that completely
             if let Some(prev) = last_direction {
                 if *direction == opposite_direction(&prev) {
@@ -266,7 +244,7 @@ fn get_paths_from_to(pad: &Pad, from: Button, to: Button) -> Vec<Vec<Button>> {
             };
             let new_score = score - 1 - dir_change_cost;
 
-            queue.push((new_score, *next, Some(*direction), new_path));
+            queue.push((new_score, next, Some(*direction), new_path));
         }
     }
 
@@ -304,38 +282,33 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+fn get_code_complexity(code: &[Button], levels: usize) -> usize {
+    let mut shortest_path = get_move_len(&Button::A, &code[0], 0, levels);
+    for idx in 0..code.len() - 1 {
+        let from = code[idx];
+        let to = code[idx + 1];
+        shortest_path += get_move_len(&from, &to, 0, levels);
+    }
+
+    // Convert the code to a String
+    let code_num: usize = code
+        .iter()
+        .take(code.len() - 1)
+        .map(|b| b.to_string())
+        .collect::<String>()
+        .parse::<usize>()
+        .unwrap();
+
+    code_num * shortest_path
+}
+
 fn part1(input: &str) -> Result<usize> {
     let codes = parse_input(input)?;
 
-    let mut complexities = 0;
-    let levels = 2;
-
-    for code in codes {
-        let mut paths = check_moves(&code, 0);
-
-        for _ in 0..levels {
-            let mut next_paths = vec![];
-            for path in &paths {
-                next_paths.extend(check_moves(path, 1));
-            }
-            paths = next_paths;
-        }
-
-        let shortest_path = paths.iter().map(|p| p.len()).min().unwrap();
-
-        // Convert the code to a String
-        let code_num: usize = code
-            .iter()
-            .take(code.len() - 1)
-            .map(|b| b.to_string())
-            .collect::<String>()
-            .parse::<usize>()
-            .unwrap();
-
-        complexities += code_num * shortest_path;
-    }
-
-    Ok(complexities)
+    Ok(codes
+        .iter()
+        .map(|code| get_code_complexity(code, 2))
+        .sum::<usize>())
 }
 
 fn part2(_input: &str) -> Result<usize> {
@@ -357,5 +330,29 @@ mod tests {
     #[test]
     fn test_part2() {
         assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+    }
+
+    #[test]
+    fn test_get_paths_from_to() {
+        let paths = get_paths_from_to(&Pad::new_number_pad(), &Button::Two, &Button::Nine);
+
+        assert_eq!(paths.len(), 2);
+        assert_eq!(
+            paths[0],
+            vec![Button::Right, Button::Up, Button::Up, Button::A]
+        );
+        assert_eq!(
+            paths[1],
+            vec![Button::Up, Button::Up, Button::Right, Button::A]
+        );
+    }
+
+    #[test]
+    fn test_get_move_len() {
+        let len = get_move_len(&Button::Two, &Button::Nine, 0, 0);
+        assert_eq!(len, 4);
+
+        let len = get_move_len(&Button::Two, &Button::Nine, 0, 1);
+        assert_eq!(len, 8);
     }
 }
