@@ -52,13 +52,13 @@ fn apply_movement(position: GridCoordinate<i32>, direction: GridDirection) -> Gr
 }
 
 impl Grid {
-    fn walk_step(&mut self) -> Result<bool> {
+    fn walk_step(&mut self) -> bool {
         // Move the guard in the direction it's facing
         let new_pos = apply_movement(self.guard, self.guard_direction);
 
         // Check if we are out of bounds
         if !new_pos.within_grid(&self.nodes) {
-            return Ok(false);
+            return false;
         }
 
         // Check if there's an obstacle
@@ -68,7 +68,7 @@ impl Grid {
         } else {
             self.guard = new_pos;
         }
-        Ok(true)
+        true
     }
 }
 
@@ -77,11 +77,11 @@ fn main() -> Result<()> {
 
     println!("## Part 1");
     let result = run_with_timeout("Part 1", part1, &input)?;
-    println!(" > {}", result);
+    println!(" > {result}");
 
     println!("## Part 2");
     let result = run_with_timeout("Part 2", part2, &input)?;
-    println!(" > {}", result);
+    println!(" > {result}");
 
     benchmark_parts(
         |input| {
@@ -106,7 +106,7 @@ fn part1(input: &str) -> Result<usize> {
     // * ... hmm, that's about it for now
     let mut visited_nodes: HashSet<GridCoordinate<i32>> = HashSet::from_iter(vec![grid.guard]);
 
-    while grid.walk_step()? {
+    while grid.walk_step() {
         visited_nodes.insert(grid.guard);
     }
 
@@ -116,10 +116,11 @@ fn part1(input: &str) -> Result<usize> {
 fn part2(input: &str) -> Result<usize> {
     let mut grid = parse_input(input)?;
 
-    let mut visited_nodes = HashSet::new();
+    let mut visited_nodes =
+        HashSet::with_capacity(usize::try_from(grid.width)? * usize::try_from(grid.height)?);
     let mut count = 0;
 
-    while grid.walk_step()? {
+    while grid.walk_step() {
         visited_nodes.insert(grid.guard);
 
         // Let's check if there's an open space in front, if so, fill it with an obsticle and
@@ -138,7 +139,7 @@ fn part2(input: &str) -> Result<usize> {
 
             let mut visited_nodes: HashSet<(GridCoordinate<i32>, GridDirection)> =
                 HashSet::from_iter(vec![(grid.guard, grid.guard_direction)]);
-            while grid.walk_step()? {
+            while grid.walk_step() {
                 if visited_nodes.contains(&(grid.guard, grid.guard_direction)) {
                     count += 1;
                     break;

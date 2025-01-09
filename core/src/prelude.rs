@@ -7,7 +7,8 @@ pub use crate::timeouts::run_with_timeout;
 pub use crate::{error, invalid_coordinate, parse_error};
 
 // Also include the common imports for all the days
-pub use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
+pub use hashbrown::{HashMap, HashSet};
+pub use std::collections::{BinaryHeap, VecDeque};
 pub use std::str::FromStr;
 pub type Result<T> = std::result::Result<T, AdventError>;
 

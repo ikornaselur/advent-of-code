@@ -1,3 +1,5 @@
+use nom::error::Error as NomError;
+use nom::Err as NomErr;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -16,8 +18,22 @@ pub enum AdventError {
     ParseError(String),
     #[error("Unable to parse: {0}")]
     ParseIntError(#[from] std::num::ParseIntError),
+    #[error("Unable to parse: {0}")]
+    TryFromIntError(#[from] std::num::TryFromIntError),
     #[error("Invalid coordinate: ({row}, {col})")]
     InvalidCoordinate { row: usize, col: usize },
+    #[error("Parsing error: {0}")]
+    NomError(String),
+}
+
+impl<I: std::fmt::Debug> From<NomErr<NomError<I>>> for AdventError {
+    fn from(err: NomErr<NomError<I>>) -> Self {
+        match err {
+            NomErr::Incomplete(_) => AdventError::NomError("Incomplete input".to_string()),
+            NomErr::Error(e) => AdventError::NomError(format!("{:?}", e)),
+            NomErr::Failure(e) => AdventError::NomError(format!("{:?}", e)),
+        }
+    }
 }
 
 #[macro_export]

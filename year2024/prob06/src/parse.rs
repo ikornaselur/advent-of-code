@@ -19,8 +19,7 @@ fn nom_grid(input: &str) -> IResult<&str, Vec<Vec<Node>>> {
 }
 
 pub fn parse_input(input: &str) -> Result<Grid> {
-    let (_, nodes) = nom_grid(input)
-        .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
+    let (_, nodes) = nom_grid(input)?;
 
     let guard = nodes
         .iter()
@@ -31,8 +30,8 @@ pub fn parse_input(input: &str) -> Result<Grid> {
                     // As usual, we always use (row, column).. maybe I should start using that
                     // instead of the letters x and y
                     Some(GridCoordinate {
-                        row: y as i32,
-                        column: x as i32,
+                        row: i32::try_from(y).ok()?,
+                        column: i32::try_from(x).ok()?,
                     })
                 } else {
                     None
@@ -41,8 +40,8 @@ pub fn parse_input(input: &str) -> Result<Grid> {
         })
         .ok_or(error!("No guard found in input"))?;
 
-    let height = nodes.len() as i32;
-    let width = nodes[0].len() as i32;
+    let height = i32::try_from(nodes.len())?;
+    let width = i32::try_from(nodes[0].len())?;
 
     Ok(Grid {
         nodes,
@@ -93,7 +92,7 @@ mod tests {
                     vec![Node::Obsticle, Node::Guard, Node::Open],
                 ]
             ))
-        )
+        );
     }
 
     #[test]
