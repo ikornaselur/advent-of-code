@@ -8,11 +8,11 @@ fn main() -> Result<()> {
 
     println!("## Part 1");
     let result = run_with_timeout("Part 1", part1, &input)?;
-    println!(" > {}", result);
+    println!(" > {result}");
 
     println!("## Part 2");
     let result = run_with_timeout("Part 2", part2, &input)?;
-    println!(" > {}", result);
+    println!(" > {result}");
 
     benchmark_parts(
         |input| {
@@ -42,20 +42,20 @@ fn part1(input: &str) -> Result<i32> {
     Ok(sum_of_diffs)
 }
 
-fn part2(input: &str) -> Result<usize> {
+fn part2(input: &str) -> Result<i32> {
     let pairs = parse_input(input)?;
 
     let (left, right): (Vec<i32>, Vec<i32>) = pairs.into_iter().unzip();
 
-    // Count occurances of each number in the right list
-    let count: HashMap<i32, usize> = right.iter().fold(HashMap::new(), |mut acc, &n| {
-        *acc.entry(n).or_insert(0) += 1;
-        acc
-    });
+    // With the input being as it is, we can actually just pre-allocate an array of 90k values.
+    // The inputs are all 5 digit numbers from 10_000 to 99_000.
+    // This is slightly faster than having as HashMap
+    let mut count = vec![0; 99_999];
+    for &num in &right {
+        count[num as usize] += 1;
+    }
 
-    let similarity_score = left.into_iter().fold(0, |acc, num| {
-        acc + (num as usize * count.get(&num).unwrap_or(&0))
-    });
+    let similarity_score = left.iter().map(|&num| num * count[num as usize]).sum();
 
     Ok(similarity_score)
 }

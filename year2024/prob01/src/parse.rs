@@ -11,7 +11,7 @@ fn nom_line(input: &str) -> IResult<&str, (i32, i32)> {
 
 pub fn parse_input(input: &str) -> Result<Vec<(i32, i32)>> {
     let (_, pairs) = separated_list1(newline, nom_line)(input)
-        .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
+        .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {e:?}")))?;
 
     Ok(pairs)
 }
