@@ -104,7 +104,9 @@ fn part1(input: &str) -> Result<usize> {
     // * Store obsticles in a x/y and y/x map so that we can quickly see obstacles in rows and
     // columns
     // * ... hmm, that's about it for now
-    let mut visited_nodes: HashSet<GridCoordinate<i32>> = HashSet::from_iter(vec![grid.guard]);
+    let mut visited_nodes: HashSet<GridCoordinate<i32>> =
+        HashSet::with_capacity(usize::try_from(grid.width)? * usize::try_from(grid.height)?);
+    visited_nodes.insert(grid.guard);
 
     while grid.walk_step() {
         visited_nodes.insert(grid.guard);
