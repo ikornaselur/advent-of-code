@@ -77,11 +77,11 @@ fn part1(input: &str) -> Result<usize> {
     // C: next
     for (from, to) in &connections {
         for next in groups.get(to).unwrap() {
+            // Skip if none of the nodes start with 't'
+            if from.id.0 != 't' && to.id.0 != 't' && next.id.0 != 't' {
+                continue;
+            }
             if groups.get(next).unwrap().contains(from) {
-                // Skip if none of the nodes start with 't'
-                if from.id.0 != 't' && to.id.0 != 't' && next.id.0 != 't' {
-                    continue;
-                }
                 let mut triple = vec![from, to, next];
                 triple.sort();
                 triples.insert(triple);
@@ -92,9 +92,52 @@ fn part1(input: &str) -> Result<usize> {
     Ok(triples.len())
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<String> {
+    let connections = parse_input(input)?;
+
+    // This time we're searching for the largest clique (just learned that term) in this graph
+    //
+    // Based on the Wiki article about the 'clique problem', a simple greedy algo should be fine to
+    // find a single maximal clique.. so let's try that
+
+    let mut adjacency = HashMap::new();
+    for (from, to) in &connections {
+        adjacency
+            .entry(from)
+            .or_insert_with(HashSet::new)
+            .insert(to);
+        adjacency
+            .entry(to)
+            .or_insert_with(HashSet::new)
+            .insert(from);
+    }
+
+    let mut largest_clique: Vec<&Computer> = Vec::new();
+
+    for (&node, neighbours) in adjacency.iter() {
+        let mut candidate_clique: Vec<&Computer> = vec![node];
+
+        for &neighbour in neighbours {
+            if candidate_clique
+                .iter()
+                .all(|&n| adjacency[n].contains(neighbour))
+            {
+                candidate_clique.push(neighbour);
+            }
+        }
+
+        if candidate_clique.len() > largest_clique.len() {
+            largest_clique = candidate_clique.clone();
+        }
+    }
+
+    largest_clique.sort_unstable();
+
+    Ok(largest_clique
+        .iter()
+        .map(|c| c.to_string())
+        .collect::<Vec<String>>()
+        .join(","))
 }
 
 #[cfg(test)]
@@ -110,6 +153,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), String::from("co,de,ka,ta"));
     }
 }

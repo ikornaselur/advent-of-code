@@ -32,3 +32,4 @@ Day | Original part 1 | Original part 2 | Optimised part 1 | Optimised part 2
 20 | 977µs | **50ms** | |
 21 | 145µs | **1.5ms** | |
 22 | 30µs | **160ms** | |
+23 | 605µs | 550µs | |
