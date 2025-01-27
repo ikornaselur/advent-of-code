@@ -63,7 +63,7 @@ fn part1(input: &str) -> Result<usize> {
 
         // We reached the end without any issues
         // Now get the middle value of the page_list
-        return_val += page_list.get(page_list.len() / 2).unwrap();
+        return_val += page_list[page_list.len() / 2];
     }
     Ok(return_val)
 }
@@ -109,7 +109,7 @@ fn part2(input: &str) -> Result<usize> {
                 Ordering::Equal
             });
             // Then we return the middle value
-            *sorted.get(sorted.len() / 2).unwrap()
+            sorted[sorted.len() / 2]
         })
         .sum();
     Ok(sum)
