@@ -70,11 +70,11 @@ pub fn condition(input: &str) -> IResult<&str, (Option<ConditionTuple>, &str)> {
     Ok((input, (condition, final_string)))
 }
 
-pub fn conditions(input: &str) -> IResult<&str, ConditionsVec> {
+pub fn conditions(input: &str) -> IResult<&str, ConditionsVec<'_>> {
     separated_list1(char(','), condition)(input)
 }
 
-pub fn workflow(input: &str) -> IResult<&str, (&str, ConditionsVec)> {
+pub fn workflow(input: &str) -> IResult<&str, (&str, ConditionsVec<'_>)> {
     tuple((alpha1, delimited(char('{'), conditions, char('}'))))(input)
 }
 

@@ -67,12 +67,12 @@ fn part1(input: &str) -> Result<u32> {
 fn chunk_score(chunk: &[&str]) -> u32 {
     let intersection = chunk
         .iter()
-        .fold(None, |acc, line| {
-            if acc.is_none() {
-                Some(line.chars().collect::<HashSet<_>>())
-            } else {
+        .fold(None, |acc: Option<HashSet<char>>, line| {
+            if let Some(acc) = acc {
                 let chars: HashSet<_> = line.chars().collect();
-                Some(acc.unwrap().intersection(&chars).cloned().collect())
+                Some(acc.intersection(&chars).cloned().collect())
+            } else {
+                Some(line.chars().collect::<HashSet<_>>())
             }
         })
         .unwrap();

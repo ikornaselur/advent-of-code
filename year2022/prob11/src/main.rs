@@ -39,7 +39,7 @@ impl Monkey {
 
     /// Get the next monkey to throw to, based on the current Monkey test
     fn get_next_monkey(&self, value: usize) -> MonkeyNum {
-        if value % self.test == 0 {
+        if value.is_multiple_of(self.test) {
             self.if_true
         } else {
             self.if_false

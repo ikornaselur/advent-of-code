@@ -35,7 +35,7 @@ fn search_for_sum(sum: usize, digits: &[usize], with_concat: bool) -> bool {
     let last_digit = digits.last().unwrap();
 
     // Check if we can divide (for the multiply case)
-    if sum % last_digit == 0 {
+    if sum.is_multiple_of(*last_digit) {
         let new_sum = sum / last_digit;
         if search_for_sum(new_sum, &digits[..digits.len() - 1], with_concat) {
             return true;
@@ -51,7 +51,7 @@ fn search_for_sum(sum: usize, digits: &[usize], with_concat: bool) -> bool {
 
         if with_concat {
             let last_digit_size = 10_usize.pow(last_digit.checked_ilog10().unwrap_or(0) + 1);
-            if (sum - last_digit) % last_digit_size == 0 {
+            if (sum - last_digit).is_multiple_of(last_digit_size) {
                 let new_sum = (sum - last_digit) / last_digit_size;
                 if search_for_sum(new_sum, &digits[..digits.len() - 1], with_concat) {
                     return true;

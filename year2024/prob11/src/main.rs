@@ -32,7 +32,7 @@ fn stone_tick(stone: usize) -> Result<(usize, Option<usize>)> {
     if stone == 0 {
         // Rule 1: 0 just turns into 1
         Ok((1, None))
-    } else if dig_count % 2 == 0 {
+    } else if dig_count.is_multiple_of(2) {
         // Rule 2: If the stone has even number of digits, we replace it with two stones. Left half
         // of the digits on the left stone and right half of the digits to the right stone.
         // Note that leading zeros are ignored.

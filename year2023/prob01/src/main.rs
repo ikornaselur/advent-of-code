@@ -60,7 +60,7 @@ fn part1(input: &str) -> Result<u32> {
 fn part2(input: &str) -> Result<u32> {
     input.lines().try_fold(0, |acc, line| {
         let mut numbers: Vec<u32> = Vec::new();
-        for (idx, char) in line.chars().enumerate() {
+        for (idx, char) in line.char_indices() {
             if char.is_ascii_digit() {
                 numbers.push(char.to_digit(10).ok_or(AdventError::ConversionError)?);
                 continue;

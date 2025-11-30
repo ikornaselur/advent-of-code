@@ -52,7 +52,7 @@ fn main() -> Result<()> {
 ///
 /// 1. If both values are integers, if left is lower, then return true
 /// 2. If both values are lists, compare the first values, then second and so on.
-///     a. If left list runs out of items first, then return true
+///    a. If left list runs out of items first, then return true
 /// 3. If only one value is a list, convert the other value into a list of that single value and
 ///    continue as normal
 ///

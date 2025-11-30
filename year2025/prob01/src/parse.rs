@@ -1,6 +1,7 @@
 use advent::prelude::*;
 
-pub fn parse_input(input: &str) -> Result<()> {
+#[allow(dead_code)]
+pub fn parse_input(_input: &str) -> Result<()> {
     // let (_, digit) = digit1(input)?;
 
     Ok(())
