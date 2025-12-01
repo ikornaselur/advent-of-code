@@ -1,5 +1,5 @@
 use advent::prelude::*;
-// use parse::parse_input;
+use parse::parse_input;
 use std::env;
 use std::fs;
 
@@ -36,14 +36,37 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn part1(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part1(input: &str) -> Result<usize> {
+    let instructions = parse_input(input)?;
+
+    let (_, pass) = instructions.iter().fold((50, 0), |(pos, pass), value| {
+        let next_pos = (pos + value) % 100;
+        (next_pos, pass + if next_pos == 0 { 1 } else { 0 })
+    });
+
+    Ok(pass)
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<i32> {
+    let instructions = parse_input(input)?;
+
+    let (_, clicks) = instructions
+        .iter()
+        .fold((50i32, 0i32), |(pos, clicks), &v| {
+            let next = pos + v;
+
+            let add = if v > 0 {
+                next.div_euclid(100) - pos.div_euclid(100)
+            } else if v < 0 {
+                (pos - 1).div_euclid(100) - (next - 1).div_euclid(100)
+            } else {
+                0
+            };
+
+            (next, clicks + add)
+        });
+
+    Ok(clicks)
 }
 
 #[cfg(test)]
@@ -54,11 +77,11 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part1(TEST_INPUT).unwrap(), 3);
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 6);
     }
 }
