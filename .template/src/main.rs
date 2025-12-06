@@ -9,9 +9,10 @@ fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
     let input = if args.len() > 1 {
         let file_name = &args[1];
-        fs::read_to_string(file_name).map_err(|e| error!("Failed to read file {}: {}", file_name, e))?
+        fs::read_to_string(file_name)
+            .map_err(|e| error!("Failed to read file {}: {}", file_name, e))?
     } else {
-        get_input(2024, 1)?
+        get_input(2025, 1)?
     };
 
     println!("## Part 1");
