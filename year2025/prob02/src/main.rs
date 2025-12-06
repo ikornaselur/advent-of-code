@@ -1,5 +1,6 @@
 use advent::prelude::*;
 use parse::{IDRange, parse_input};
+use std::collections::HashSet;
 use std::env;
 use std::fs;
 
@@ -50,15 +51,21 @@ fn get_left_half_of_digit(digit: u64) -> u64 {
 /// 12 -> 1212
 /// 543 -> 543543
 fn repeated(digit: u64) -> u64 {
-    let digit_count = digit.ilog10() + 1;
-    digit + digit * 10u64.pow(digit_count)
+    join_digits(digit, digit)
 }
 
-/// Find invalid ids in an id range
+/// Join digits
+///
+/// join_digits(123, 456) -> 123456
+fn join_digits(digit_a: u64, digit_b: u64) -> u64 {
+    digit_a * 10u64.pow(digit_b.ilog10() + 1) + digit_b
+}
+
+/// Find invalid ids in an id range - part 1
 ///
 /// Take in a range, like 11-22 or 998-1012, and return any values in that range that have
 /// sequences of digits repeated twice (like 1010 or 123123)
-fn get_invalid_ids(id_range: IDRange) -> Vec<u64> {
+fn get_invalid_ids_part1(id_range: IDRange) -> Vec<u64> {
     // Take the first half, then increment it until it repeated would be above upper range?
     let start = id_range.start();
     let end = id_range.end();
@@ -86,18 +93,60 @@ fn get_invalid_ids(id_range: IDRange) -> Vec<u64> {
     invalids
 }
 
+/// Find invalid ids in an id range - part 2
+///
+/// A invalid id in part 2 is any number that has at least two repeated sections, this means that
+/// both 123123 and 123123123 are invalid
+fn get_invalid_ids_part2(id_range: IDRange) -> HashSet<u64> {
+    let start = id_range.start();
+    let end = id_range.end();
+
+    // Can't repeat digits to get values less than 10
+    if *end < 10 {
+        return HashSet::new();
+    }
+
+    let mut invalids = HashSet::new();
+
+    // Let's start naive.. just with 1 and we repeat until its > end and then continue?
+    let mut digit: u64 = 1;
+    loop {
+        let mut r = repeated(digit);
+        if r > *end {
+            break;
+        }
+
+        // If we're less than start, we just keep adding repeats
+        while r < *start {
+            r = join_digits(r, digit);
+        }
+        // And if we are less than end, we'll keep pushing invalids until over
+        while r <= *end {
+            invalids.insert(r);
+            r = join_digits(r, digit);
+        }
+        digit += 1;
+    }
+
+    invalids
+}
+
 fn part1(input: &str) -> Result<u64> {
     let ranges: Vec<IDRange> = parse_input(input)?;
     let mut sum = 0;
     for range in ranges {
-        sum += get_invalid_ids(range).iter().sum::<u64>();
+        sum += get_invalid_ids_part1(range).iter().sum::<u64>();
     }
     Ok(sum)
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<u64> {
+    let ranges: Vec<IDRange> = parse_input(input)?;
+    let mut sum = 0;
+    for range in ranges {
+        sum += get_invalid_ids_part2(range).iter().sum::<u64>();
+    }
+    Ok(sum)
 }
 
 #[cfg(test)]
@@ -113,7 +162,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 4_174_379_265);
     }
 
     #[test]
@@ -132,10 +181,38 @@ mod tests {
 
     #[test]
     fn test_get_invalid_ids() {
-        assert_eq!(get_invalid_ids(11..=22), vec![11, 22]);
+        assert_eq!(get_invalid_ids_part1(11..=22), vec![11, 22]);
         assert_eq!(
-            get_invalid_ids(1_188_511_880..=1_188_511_890),
+            get_invalid_ids_part1(1_188_511_880..=1_188_511_890),
             vec![1_188_511_885]
+        );
+    }
+
+    #[test]
+    fn test_join_digits() {
+        assert_eq!(join_digits(1, 2), 12);
+        assert_eq!(join_digits(12, 3), 123);
+        assert_eq!(join_digits(1, 23), 123);
+    }
+
+    #[test]
+    fn test_get_invalid_ids_part2() {
+        assert_eq!(get_invalid_ids_part2(11..=22), HashSet::from_iter([11, 22]));
+        assert_eq!(
+            get_invalid_ids_part2(95..=115),
+            HashSet::from_iter([111, 99])
+        );
+        assert_eq!(
+            get_invalid_ids_part2(998..=1012),
+            HashSet::from_iter([999, 1010])
+        );
+        assert_eq!(
+            get_invalid_ids_part2(1_188_511_880..=1_188_511_890),
+            HashSet::from_iter([1_188_511_885])
+        );
+        assert_eq!(
+            get_invalid_ids_part2(222_220..=222_224),
+            HashSet::from_iter([222_222])
         );
     }
 }
