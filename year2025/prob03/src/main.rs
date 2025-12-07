@@ -36,7 +36,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn get_max_joltage(batteries: &[u32]) -> u32 {
+fn get_max_joltage_part1(batteries: &[u32]) -> u32 {
     // Let's get counts of digits to get theoretical max
     // We'll skip counting the last value, for reasons that might become clear later
     let counts =
@@ -73,19 +73,66 @@ fn get_max_joltage(batteries: &[u32]) -> u32 {
     max_joltage
 }
 
+/// Get max joltage - recurise (maybe?)
+///
+/// Hypothesis 1: If we have ANY nines, and we can get a `count` digit number, then the highest
+/// joltage will start with nine. We might have to compare multiple numbers that each start with
+/// a nine.. if that works, then we can figure out how to optimise later
+///
+/// Hypothesis 2: If we have two nines, then the left nine should always give you the highest
+/// joltage, because the left nine can always create the number that the right nine would
+/// create. This means that we only ever have to recurse down with the highest value, once?
+///
+/// Hypothesis 3: We just store earliest occurance of digits, instead of counts, if Hypothesis 2 is
+/// correct
+fn get_max_joltage_recursive(batteries: &[u32], count: usize) -> u64 {
+    if count == 0 {
+        panic!("Shouldn't call with 0");
+    }
+
+    // We're skipping `count - 1` digits at the end, because if we were to use those, there
+    // wouldn't be any digits left to recurse with
+    let earliest_occurrance = batteries[..batteries.len().saturating_sub(count - 1)]
+        .iter()
+        .enumerate()
+        .fold(HashMap::new(), |mut acc, (idx, x)| {
+            if !acc.contains_key(x) {
+                acc.insert(x, idx);
+            }
+            acc
+        });
+    // Then it's time to test with the highest values.
+    for digit in [9, 8, 7, 6, 5, 4, 3, 2, 1] {
+        if let Some(digit_idx) = earliest_occurrance.get(&digit) {
+            if count == 1 {
+                return digit as u64;
+            }
+            let rest = get_max_joltage_recursive(&batteries[*digit_idx + 1..], count - 1);
+            return digit as u64 * (10u64.pow((count - 1) as u32)) + rest;
+        }
+    }
+
+    panic!("Shouldn't be reachable!");
+}
+
 fn part1(input: &str) -> Result<u32> {
     let digit_rows = parse_input(input)?;
     let total_joltage = digit_rows
         .iter()
-        .map(|row| get_max_joltage(row))
+        .map(|row| get_max_joltage_part1(row))
         .sum::<u32>();
 
     Ok(total_joltage)
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<u64> {
+    let digit_rows = parse_input(input)?;
+    let total_joltage = digit_rows
+        .iter()
+        .map(|row| get_max_joltage_recursive(row, 12))
+        .sum::<u64>();
+
+    Ok(total_joltage)
 }
 
 #[cfg(test)]
@@ -101,14 +148,54 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 3_121_910_778_619);
     }
 
     #[test]
     fn test_get_max_joltage() {
-        assert_eq!(get_max_joltage(&[1, 5, 4, 2, 5, 9, 4, 3, 4, 5, 9]), 99);
-        assert_eq!(get_max_joltage(&[1, 5, 4, 2, 5, 9, 4, 3, 4, 5, 8]), 98);
-        assert_eq!(get_max_joltage(&[1, 5, 4, 2, 5, 8, 4, 3, 4, 5, 9]), 89);
-        assert_eq!(get_max_joltage(&[1, 5, 4, 2, 5, 8, 4, 3, 4, 5, 8]), 88);
+        assert_eq!(
+            get_max_joltage_part1(&[1, 5, 4, 2, 5, 9, 4, 3, 4, 5, 9]),
+            99
+        );
+        assert_eq!(
+            get_max_joltage_part1(&[1, 5, 4, 2, 5, 9, 4, 3, 4, 5, 8]),
+            98
+        );
+        assert_eq!(
+            get_max_joltage_part1(&[1, 5, 4, 2, 5, 8, 4, 3, 4, 5, 9]),
+            89
+        );
+        assert_eq!(
+            get_max_joltage_part1(&[1, 5, 4, 2, 5, 8, 4, 3, 4, 5, 8]),
+            88
+        );
+    }
+
+    #[test]
+    fn test_get_max_joltage_recursive() {
+        assert_eq!(
+            get_max_joltage_recursive(&[1, 5, 4, 2, 5, 9, 4, 3, 4, 5, 9], 2),
+            99
+        );
+        assert_eq!(
+            get_max_joltage_recursive(&[1, 5, 4, 2, 5, 9, 4, 3, 4, 5, 8], 2),
+            98
+        );
+        assert_eq!(
+            get_max_joltage_recursive(&[1, 5, 4, 2, 5, 8, 4, 3, 4, 5, 9], 2),
+            89
+        );
+        assert_eq!(
+            get_max_joltage_recursive(&[1, 5, 4, 2, 5, 8, 4, 3, 4, 5, 8], 2),
+            88
+        );
+        assert_eq!(
+            get_max_joltage_recursive(&[9, 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1], 12),
+            987_654_321_111
+        );
+        assert_eq!(
+            get_max_joltage_recursive(&[2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 7, 8], 12),
+            434_234_234_278
+        );
     }
 }
