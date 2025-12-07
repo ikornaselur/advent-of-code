@@ -17,15 +17,16 @@ fn nom_valid_mul(input: &str) -> IResult<&str, Instruction> {
             ),
         ),
         |(a, b)| Instruction::Mul(a, b),
-    )(input)
+    )
+    .parse(input)
 }
 
 fn nom_do(input: &str) -> IResult<&str, Instruction> {
-    value(Instruction::Do, tag("do()"))(input)
+    value(Instruction::Do, tag("do()")).parse(input)
 }
 
 fn nom_dont(input: &str) -> IResult<&str, Instruction> {
-    value(Instruction::Dont, tag("don't()"))(input)
+    value(Instruction::Dont, tag("don't()")).parse(input)
 }
 
 fn nom_instruction(input: &str) -> IResult<&str, Instruction> {
@@ -34,12 +35,14 @@ fn nom_instruction(input: &str) -> IResult<&str, Instruction> {
         nom_dont, // Check for don't before do, as do is a prefix of don't!
         nom_do,
         preceded(take(1usize), nom_instruction),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<Instruction>> {
     let mut parser = many1(nom_instruction);
-    let (_, instructions) = parser(input)
+    let (_, instructions) = parser
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(instructions)

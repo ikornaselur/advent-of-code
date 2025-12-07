@@ -7,15 +7,16 @@ fn nom_node(input: &str) -> IResult<&str, Node> {
         value(Node::Obsticle, char('#')),
         // We know the guard starts facin up
         value(Node::Guard, char('^')),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn nom_row(input: &str) -> IResult<&str, Vec<Node>> {
-    many1(nom_node)(input)
+    many1(nom_node).parse(input)
 }
 
 fn nom_grid(input: &str) -> IResult<&str, Vec<Vec<Node>>> {
-    separated_list1(newline, nom_row)(input)
+    separated_list1(newline, nom_row).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Grid> {

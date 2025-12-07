@@ -6,11 +6,12 @@ fn nom_line(input: &str) -> IResult<&str, (i32, i32)> {
         nom_signed_digit::<i32>,
         multispace1,
         nom_signed_digit::<i32>,
-    )(input)
+    )
+    .parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<(i32, i32)>> {
-    let (_, pairs) = separated_list1(newline, nom_line)(input)?;
+    let (_, pairs) = separated_list1(newline, nom_line).parse(input)?;
 
     Ok(pairs)
 }

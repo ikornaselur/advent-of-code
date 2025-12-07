@@ -8,13 +8,14 @@ fn nom_range(input: &str) -> IResult<&str, Range> {
         nom_unsigned_digit::<u32>,
         char('-'),
         nom_unsigned_digit::<u32>,
-    )(input)?;
+    )
+    .parse(input)?;
 
     Ok((input, Range { start, end }))
 }
 
 fn nom_range_pair(input: &str) -> IResult<&str, (Range, Range)> {
-    let (input, (range1, range2)) = separated_pair(nom_range, char(','), nom_range)(input)?;
+    let (input, (range1, range2)) = separated_pair(nom_range, char(','), nom_range).parse(input)?;
     Ok((input, (range1, range2)))
 }
 

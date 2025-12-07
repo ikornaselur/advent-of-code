@@ -9,15 +9,17 @@ fn nom_coordinate(input: &str) -> IResult<&str, GridCoordinate<usize>> {
             nom_unsigned_digit::<usize>,
         ),
         |(column, row)| GridCoordinate { row, column },
-    )(input)
+    )
+    .parse(input)
 }
 
 fn nom_coordinate_list(input: &str) -> IResult<&str, Vec<GridCoordinate<usize>>> {
-    separated_list1(tag(" -> "), nom_coordinate)(input)
+    separated_list1(tag(" -> "), nom_coordinate).parse(input)
 }
 
 pub fn parse_coordinate_lists(input: &str) -> Result<Vec<Vec<GridCoordinate<usize>>>> {
-    let (_, coordinates) = separated_list1(newline, nom_coordinate_list)(input)
+    let (_, coordinates) = separated_list1(newline, nom_coordinate_list)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse heightmap: {:?}", e)))?;
 
     Ok(coordinates)

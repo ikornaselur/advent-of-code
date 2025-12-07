@@ -5,16 +5,17 @@ fn nom_node(input: &str) -> IResult<&str, Node> {
     alt((
         value(Node::Empty, char('.')),
         map(satisfy(|c: char| c.is_alphanumeric()), Node::Antenna),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn nom_row(input: &str) -> IResult<&str, Vec<Node>> {
-    many1(nom_node)(input)
+    many1(nom_node).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<Vec<Node>>> {
-    let mut parser = separated_list1(newline, nom_row);
-    let (_, antenna_map) = parser(input)
+    let (_, antenna_map) = separated_list1(newline, nom_row)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(antenna_map)

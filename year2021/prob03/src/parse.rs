@@ -1,11 +1,12 @@
 use advent::prelude::*;
 
 fn nom_bits(input: &str) -> IResult<&str, Vec<bool>> {
-    many1(alt((value(false, char('0')), value(true, char('1')))))(input)
+    many1(alt((value(false, char('0')), value(true, char('1'))))).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<Vec<bool>>> {
-    let (_, bit_list) = separated_list1(newline, nom_bits)(input)
+    let (_, bit_list) = separated_list1(newline, nom_bits)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(bit_list)

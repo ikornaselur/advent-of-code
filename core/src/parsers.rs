@@ -2,7 +2,7 @@ use nom::{
     character::complete::{char, digit1},
     combinator::{map_res, opt, recognize},
     sequence::preceded,
-    IResult,
+    IResult, Parser,
 };
 use num_traits::{Signed, Unsigned};
 use std::str::FromStr;
@@ -11,7 +11,7 @@ pub fn nom_unsigned_digit<T>(input: &str) -> IResult<&str, T>
 where
     T: FromStr + Unsigned,
 {
-    map_res(digit1, |s: &str| s.parse::<T>())(input)
+    map_res(digit1, |s: &str| s.parse::<T>()).parse(input)
 }
 
 pub fn nom_signed_digit<T>(input: &str) -> IResult<&str, T>
@@ -20,7 +20,8 @@ where
 {
     map_res(recognize(preceded(opt(char('-')), digit1)), |s: &str| {
         s.parse::<T>()
-    })(input)
+    })
+    .parse(input)
 }
 
 #[cfg(test)]

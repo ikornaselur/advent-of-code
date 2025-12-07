@@ -8,19 +8,21 @@ fn nom_stripes(input: &str) -> IResult<&str, Pattern> {
         value(Colour::Green, char('g')),
         value(Colour::Red, char('r')),
         value(Colour::Blue, char('u')),
-    )))(input)
+    )))
+    .parse(input)
 }
 
 fn nom_towels(input: &str) -> IResult<&str, Vec<Pattern>> {
-    separated_list1(tag(", "), nom_stripes)(input)
+    separated_list1(tag(", "), nom_stripes).parse(input)
 }
 
 fn nom_patterns(input: &str) -> IResult<&str, Vec<Pattern>> {
-    separated_list1(newline, nom_stripes)(input)
+    separated_list1(newline, nom_stripes).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<(Vec<Pattern>, Vec<Pattern>)> {
-    let (_, (towels, patterns)) = separated_pair(nom_towels, tag("\n\n"), nom_patterns)(input)
+    let (_, (towels, patterns)) = separated_pair(nom_towels, tag("\n\n"), nom_patterns)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok((towels, patterns))

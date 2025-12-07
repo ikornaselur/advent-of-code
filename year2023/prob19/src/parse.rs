@@ -1,14 +1,5 @@
 use crate::Category;
 use advent::prelude::*;
-use nom::{
-    branch::alt,
-    bytes::complete::tag,
-    character::complete::{alpha1, char, digit1, one_of},
-    combinator::{map, map_res, opt},
-    multi::separated_list1,
-    sequence::{delimited, terminated, tuple},
-    IResult,
-};
 use std::cmp::Ordering;
 
 /// XMAS Part
@@ -17,15 +8,15 @@ use std::cmp::Ordering;
 ///
 /// {x=787,m=2655,a=1222,s=2876}
 pub fn xmas(input: &str) -> IResult<&str, (u32, u32, u32, u32)> {
-    let (input, _) = tag("{x=")(input)?;
-    let (input, x) = map_res(digit1, str::parse)(input)?;
-    let (input, _) = tag(",m=")(input)?;
-    let (input, m) = map_res(digit1, str::parse)(input)?;
-    let (input, _) = tag(",a=")(input)?;
-    let (input, a) = map_res(digit1, str::parse)(input)?;
-    let (input, _) = tag(",s=")(input)?;
-    let (input, s) = map_res(digit1, str::parse)(input)?;
-    let (input, _) = tag("}")(input)?;
+    let (input, _) = tag("{x=").parse(input)?;
+    let (input, x) = map_res(digit1, str::parse).parse(input)?;
+    let (input, _) = tag(",m=").parse(input)?;
+    let (input, m) = map_res(digit1, str::parse).parse(input)?;
+    let (input, _) = tag(",a=").parse(input)?;
+    let (input, a) = map_res(digit1, str::parse).parse(input)?;
+    let (input, _) = tag(",s=").parse(input)?;
+    let (input, s) = map_res(digit1, str::parse).parse(input)?;
+    let (input, _) = tag("}").parse(input)?;
     Ok((input, (x, m, a, s)))
 }
 
@@ -54,28 +45,29 @@ fn parse_condition_part(input: &str) -> IResult<&str, (Category, Ordering, u32)>
         map(tag("<"), |_| Ordering::Less),
     ));
 
-    let (input, (cond_char, ordering, number)) = tuple((
+    let (input, (cond_char, ordering, number)) = (
         map_res(one_of("xmas"), category_from_char),
         parse_ordering,
         map_res(digit1, str::parse),
-    ))(input)?;
+    )
+        .parse(input)?;
 
     Ok((input, (cond_char, ordering, number)))
 }
 
 pub fn condition(input: &str) -> IResult<&str, (Option<ConditionTuple>, &str)> {
-    let (input, condition) = opt(terminated(parse_condition_part, char(':')))(input)?;
+    let (input, condition) = opt(terminated(parse_condition_part, char(':'))).parse(input)?;
     let (input, final_string) = alpha1(input)?;
 
     Ok((input, (condition, final_string)))
 }
 
 pub fn conditions(input: &str) -> IResult<&str, ConditionsVec<'_>> {
-    separated_list1(char(','), condition)(input)
+    separated_list1(char(','), condition).parse(input)
 }
 
 pub fn workflow(input: &str) -> IResult<&str, (&str, ConditionsVec<'_>)> {
-    tuple((alpha1, delimited(char('{'), conditions, char('}'))))(input)
+    (alpha1, delimited(char('{'), conditions, char('}'))).parse(input)
 }
 
 #[cfg(test)]

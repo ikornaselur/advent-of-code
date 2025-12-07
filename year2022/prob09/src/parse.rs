@@ -3,7 +3,7 @@ use advent::prelude::*;
 
 fn nom_instruction(input: &str) -> IResult<&str, (GridDirection, usize)> {
     let (input, (direction, steps)) =
-        separated_pair(alpha1, space1, nom_unsigned_digit::<usize>)(input)?;
+        separated_pair(alpha1, space1, nom_unsigned_digit::<usize>).parse(input)?;
 
     let direction = GridDirection::from_udlr(direction).unwrap();
 
@@ -13,7 +13,9 @@ fn nom_instruction(input: &str) -> IResult<&str, (GridDirection, usize)> {
 pub fn parse_instructions(input: &str) -> Result<Vec<(GridDirection, usize)>> {
     let mut parser = separated_list1(newline, nom_instruction);
 
-    let (_, instructions) = parser(input).map_err(|e| error!("Unable to parse: {}", e))?;
+    let (_, instructions) = parser
+        .parse(input)
+        .map_err(|e| error!("Unable to parse: {}", e))?;
 
     Ok(instructions)
 }

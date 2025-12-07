@@ -12,7 +12,7 @@ fn nom_range(input: &str) -> IResult<&str, IDRange> {
 }
 
 fn nom_ranges(input: &str) -> IResult<&str, Vec<IDRange>> {
-    separated_list1(char(','), nom_range)(input)
+    separated_list1(char(','), nom_range).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<IDRange>> {

@@ -8,7 +8,7 @@ type Line = ((char, char), usize, Vec<(char, char)>);
 fn nom_valve(input: &str) -> IResult<&str, (char, char)> {
     let is_uppercase = |c: char| c.is_ascii_uppercase();
 
-    tuple((satisfy(is_uppercase), satisfy(is_uppercase)))(input)
+    (satisfy(is_uppercase), satisfy(is_uppercase)).parse(input)
 }
 
 fn nom_tunnels(input: &str) -> IResult<&str, Vec<(char, char)>> {
@@ -18,13 +18,14 @@ fn nom_tunnels(input: &str) -> IResult<&str, Vec<(char, char)>> {
             tag("tunnel leads to valve "),
         )),
         separated_list1(tag(", "), nom_valve),
-    )(input)
+    )
+    .parse(input)
 }
 
 fn nom_full_line(input: &str) -> IResult<&str, Line> {
-    let (input, valve) = preceded(tag("Valve "), nom_valve)(input)?;
-    let (input, _) = tag(" has flow rate=")(input)?;
-    let (input, flow) = terminated(nom_unsigned_digit::<usize>, tag(";"))(input)?;
+    let (input, valve) = preceded(tag("Valve "), nom_valve).parse(input)?;
+    let (input, _) = tag(" has flow rate=").parse(input)?;
+    let (input, flow) = terminated(nom_unsigned_digit::<usize>, tag(";")).parse(input)?;
     let (input, _) = multispace1(input)?;
     let (input, tunnels) = nom_tunnels(input)?;
 
@@ -32,7 +33,8 @@ fn nom_full_line(input: &str) -> IResult<&str, Line> {
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<Valve>> {
-    let (_, valves) = separated_list1(newline, nom_full_line)(input)
+    let (_, valves) = separated_list1(newline, nom_full_line)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(valves

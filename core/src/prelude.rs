@@ -23,6 +23,6 @@ pub use nom::{
     character::streaming::anychar,
     combinator::{map, map_res, opt, recognize, success, value, verify},
     multi::{many0, many1, separated_list0, separated_list1},
-    sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
-    IResult,
+    sequence::{delimited, pair, preceded, separated_pair, terminated},
+    IResult, Parser,
 };

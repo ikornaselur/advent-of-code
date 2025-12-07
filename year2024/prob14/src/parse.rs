@@ -5,17 +5,19 @@ fn nom_comma_sep(input: &str) -> IResult<&str, GridCoordinate<i32>> {
     map(
         separated_pair(nom_signed_digit, tag(","), nom_signed_digit),
         |(row, column)| GridCoordinate { row, column },
-    )(input)
+    )
+    .parse(input)
 }
 
 fn nom_state(input: &str) -> IResult<&str, (GridCoordinate<i32>, GridCoordinate<i32>)> {
-    let (input, pos) = preceded(tag("p="), nom_comma_sep)(input)?;
-    let (input, vector) = preceded(tag(" v="), nom_comma_sep)(input)?;
+    let (input, pos) = preceded(tag("p="), nom_comma_sep).parse(input)?;
+    let (input, vector) = preceded(tag(" v="), nom_comma_sep).parse(input)?;
     Ok((input, (pos, vector)))
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<(GridCoordinate<i32>, GridCoordinate<i32>)>> {
-    let (_, states) = separated_list1(newline, nom_state)(input)
+    let (_, states) = separated_list1(newline, nom_state)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(states)

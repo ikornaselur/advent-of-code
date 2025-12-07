@@ -9,11 +9,11 @@ fn nom_line(input: &str) -> IResult<&str, i32> {
 }
 
 fn nom_direction(input: &str) -> IResult<&str, i32> {
-    alt((value(1, tag("R")), value(-1, tag("L"))))(input)
+    alt((value(1, tag("R")), value(-1, tag("L")))).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<i32>> {
-    let (_, instructions) = separated_list1(newline, nom_line)(input)?;
+    let (_, instructions) = separated_list1(newline, nom_line).parse(input)?;
 
     Ok(instructions)
 }

@@ -9,13 +9,15 @@ fn nom_instruction(input: &str) -> IResult<&str, Instruction> {
     );
     let noop_parser = value(Instruction::Noop, tag("noop"));
 
-    alt((addx_parser, noop_parser))(input)
+    alt((addx_parser, noop_parser)).parse(input)
 }
 
 pub fn parse_instructions(input: &str) -> Result<Vec<Instruction>> {
     let mut parser = separated_list1(newline, nom_instruction);
 
-    let (_, instructions) = parser(input).map_err(|e| error!("Unable to parse: {}", e))?;
+    let (_, instructions) = parser
+        .parse(input)
+        .map_err(|e| error!("Unable to parse: {}", e))?;
 
     Ok(instructions)
 }

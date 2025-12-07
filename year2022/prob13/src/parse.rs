@@ -23,19 +23,22 @@ fn nom_packets(input: &str) -> IResult<&str, Packet> {
             ),
             Packet::Group,
         ),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn nom_packets_pair(input: &str) -> IResult<&str, (Packet, Packet)> {
     terminated(
         separated_pair(nom_packets, newline, nom_packets),
         opt(newline),
-    )(input)
+    )
+    .parse(input)
 }
 
 pub fn parse_packets(input: &str) -> Result<Vec<(Packet, Packet)>> {
     let mut parser = separated_list1(newline, nom_packets_pair);
-    let (_, packets) = parser(input)
+    let (_, packets) = parser
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse heightmap: {:?}", e)))?;
 
     Ok(packets)

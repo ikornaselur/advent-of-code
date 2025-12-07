@@ -4,40 +4,41 @@ use advent::prelude::*;
 use crate::ParsedLine;
 
 fn nom_cd(input: &str) -> IResult<&str, ParsedLine<'_>> {
-    let (input, _) = tag("$ cd ")(input)?;
+    let (input, _) = tag("$ cd ").parse(input)?;
     let (input, path) = not_line_ending(input)?;
 
     Ok((input, ParsedLine::Cd(path)))
 }
 
 fn nom_ls(input: &str) -> IResult<&str, ParsedLine<'_>> {
-    let (input, _) = tag("$ ls")(input)?;
+    let (input, _) = tag("$ ls").parse(input)?;
     Ok((input, ParsedLine::Ls))
 }
 
 fn nom_directory(input: &str) -> IResult<&str, ParsedLine<'_>> {
-    let (input, _) = tag("dir ")(input)?;
+    let (input, _) = tag("dir ").parse(input)?;
     let (input, name) = not_line_ending(input)?;
     Ok((input, ParsedLine::Directory { name }))
 }
 
 fn nom_file(input: &str) -> IResult<&str, ParsedLine<'_>> {
     let (input, (size, name)) =
-        separated_pair(nom_unsigned_digit::<usize>, space1, not_line_ending)(input)?;
+        separated_pair(nom_unsigned_digit::<usize>, space1, not_line_ending).parse(input)?;
 
     Ok((input, ParsedLine::File { size, name }))
 }
 
 fn nom_output(input: &str) -> IResult<&str, ParsedLine<'_>> {
-    alt((nom_directory, nom_file))(input)
+    alt((nom_directory, nom_file)).parse(input)
 }
 
 fn nom_line(input: &str) -> IResult<&str, ParsedLine<'_>> {
-    alt((nom_cd, nom_ls, nom_output))(input)
+    alt((nom_cd, nom_ls, nom_output)).parse(input)
 }
 
 pub fn parse_lines(input: &str) -> Result<Vec<ParsedLine<'_>>> {
-    let (_, parsed_lines) = separated_list0(line_ending, nom_line)(input)
+    let (_, parsed_lines) = separated_list0(line_ending, nom_line)
+        .parse(input)
         .map_err(|e| error!("Unable to parse: {}", e))?;
 
     Ok(parsed_lines)

@@ -10,28 +10,32 @@ fn nom_coordinate(input: &str) -> IResult<&str, GridCoordinate<i32>> {
             preceded(tag("y="), nom_signed_digit::<i32>),
         ),
         |(x, y)| GridCoordinate { column: x, row: y },
-    )(input)
+    )
+    .parse(input)
 }
 
 fn nom_sensor(input: &str) -> IResult<&str, Sensor> {
-    map(preceded(tag("Sensor at "), nom_coordinate), Sensor)(input)
+    map(preceded(tag("Sensor at "), nom_coordinate), Sensor).parse(input)
 }
 
 fn nom_beacon(input: &str) -> IResult<&str, Beacon> {
     map(
         preceded(tag(": closest beacon is at "), nom_coordinate),
         Beacon,
-    )(input)
+    )
+    .parse(input)
 }
 
 fn nom_sensor_beacon_pair(input: &str) -> IResult<&str, (Sensor, Beacon)> {
     map(pair(nom_sensor, nom_beacon), |(sensor, beacon)| {
         (sensor, beacon)
-    })(input)
+    })
+    .parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<(Sensor, Beacon)>> {
-    let (_, result) = separated_list1(line_ending, nom_sensor_beacon_pair)(input.trim())
+    let (_, result) = separated_list1(line_ending, nom_sensor_beacon_pair)
+        .parse(input.trim())
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(result)

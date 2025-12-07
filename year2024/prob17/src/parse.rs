@@ -7,14 +7,16 @@ fn nom_register(input: &str) -> IResult<&str, (char, u64)> {
         preceded(tag("Register "), one_of("ABC")),
         tag(": "),
         nom_unsigned_digit,
-    )(input)
+    )
+    .parse(input)
 }
 
 fn nom_program(input: &str) -> IResult<&str, Vec<u64>> {
     preceded(
         tag("Program: "),
         separated_list1(char(','), nom_unsigned_digit),
-    )(input)
+    )
+    .parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<CPU> {
@@ -22,7 +24,8 @@ pub fn parse_input(input: &str) -> Result<CPU> {
         separated_list1(newline, nom_register),
         many1(newline),
         nom_program,
-    )(input)
+    )
+    .parse(input)
     .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     let regs: HashMap<char, u64> = registers.iter().cloned().collect();

@@ -6,15 +6,17 @@ fn nom_direction(input: &str) -> IResult<&str, GridDirection> {
         value(GridDirection::Up, tag("up")),
         value(GridDirection::Down, tag("down")),
         value(GridDirection::Right, tag("forward")),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn nom_instruction(input: &str) -> IResult<&str, (GridDirection, usize)> {
-    separated_pair(nom_direction, tag(" "), nom_unsigned_digit)(input)
+    separated_pair(nom_direction, tag(" "), nom_unsigned_digit).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<(GridDirection, usize)>> {
-    let (_, instructions) = separated_list1(newline, nom_instruction)(input)
+    let (_, instructions) = separated_list1(newline, nom_instruction)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(instructions)

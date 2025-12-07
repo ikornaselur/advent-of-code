@@ -6,4 +6,3 @@ edition = "2021"
 [dependencies]
 advent = { path = "../../core" }
 itertools = "0.13.0"
-nom = "7.1.3"

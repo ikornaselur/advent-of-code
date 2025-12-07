@@ -5,18 +5,19 @@ pub type PageOrder = (usize, usize);
 pub type PageList = Vec<usize>;
 
 fn nom_page_order(input: &str) -> IResult<&str, PageOrder> {
-    separated_pair(nom_unsigned_digit, char('|'), nom_unsigned_digit)(input)
+    separated_pair(nom_unsigned_digit, char('|'), nom_unsigned_digit).parse(input)
 }
 
 fn nom_page_list(input: &str) -> IResult<&str, PageList> {
-    separated_list1(char(','), nom_unsigned_digit)(input)
+    separated_list1(char(','), nom_unsigned_digit).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<(Vec<PageOrder>, Vec<PageList>)> {
     let page_orders_parser = separated_list1(newline, nom_page_order);
     let page_lists_parser = separated_list1(newline, nom_page_list);
     let mut parser = separated_pair(page_orders_parser, tag("\n\n"), page_lists_parser);
-    let (_, (page_orders, page_lists)) = parser(input)
+    let (_, (page_orders, page_lists)) = parser
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok((page_orders, page_lists))

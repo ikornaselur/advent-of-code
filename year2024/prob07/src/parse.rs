@@ -6,11 +6,13 @@ fn nom_line(input: &str) -> IResult<&str, (usize, Vec<usize>)> {
         nom_unsigned_digit,
         tag(": "),
         separated_list1(space1, nom_unsigned_digit),
-    )(input)
+    )
+    .parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<(usize, Vec<usize>)>> {
-    let (_, inputs) = separated_list1(newline, nom_line)(input)
+    let (_, inputs) = separated_list1(newline, nom_line)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(inputs)

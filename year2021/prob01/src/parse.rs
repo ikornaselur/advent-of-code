@@ -1,11 +1,12 @@
 use advent::prelude::*;
 
 fn nom_line(input: &str) -> IResult<&str, usize> {
-    map_res(digit1, |s: &str| s.parse::<usize>())(input)
+    map_res(digit1, |s: &str| s.parse::<usize>()).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<usize>> {
-    let (_, pairs) = separated_list1(newline, nom_line)(input)
+    let (_, pairs) = separated_list1(newline, nom_line)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(pairs)

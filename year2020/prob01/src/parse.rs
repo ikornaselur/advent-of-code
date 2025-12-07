@@ -2,7 +2,8 @@ use advent::parsers::nom_unsigned_digit;
 use advent::prelude::*;
 
 pub fn parse_input(input: &str) -> Result<Vec<usize>> {
-    let (_, pairs) = separated_list1(newline, nom_unsigned_digit::<usize>)(input)
+    let (_, pairs) = separated_list1(newline, nom_unsigned_digit::<usize>)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(pairs)

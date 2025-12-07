@@ -2,15 +2,16 @@ use crate::Computer;
 use advent::prelude::*;
 
 fn nom_computer(input: &str) -> IResult<&str, Computer> {
-    map(tuple((anychar, anychar)), |(a, b)| Computer { id: (a, b) })(input)
+    map((anychar, anychar), |(a, b)| Computer { id: (a, b) }).parse(input)
 }
 
 fn nom_connection(input: &str) -> IResult<&str, (Computer, Computer)> {
-    separated_pair(nom_computer, char('-'), nom_computer)(input)
+    separated_pair(nom_computer, char('-'), nom_computer).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<(Computer, Computer)>> {
-    let (_, connections) = separated_list1(newline, nom_connection)(input.trim_end())
+    let (_, connections) = separated_list1(newline, nom_connection)
+        .parse(input.trim_end())
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(connections)

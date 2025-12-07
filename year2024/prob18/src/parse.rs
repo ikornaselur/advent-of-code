@@ -7,11 +7,13 @@ fn nom_coordinate(input: &str) -> IResult<&str, GridCoordinate<i32>> {
     map(
         separated_pair(nom_signed_digit, char(','), nom_signed_digit),
         |(column, row)| GridCoordinate { row, column },
-    )(input)
+    )
+    .parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<GridCoordinate<i32>>> {
-    let (_, coordinates) = separated_list1(newline, nom_coordinate)(input)
+    let (_, coordinates) = separated_list1(newline, nom_coordinate)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(coordinates)

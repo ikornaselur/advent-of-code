@@ -7,11 +7,12 @@ fn nom_node(input: &str) -> IResult<&str, Node> {
         value(Node::Box, char('O')),
         value(Node::Floor, char('.')),
         value(Node::Robot, char('@')),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn nom_map(input: &str) -> IResult<&str, Vec<Vec<Node>>> {
-    separated_list1(newline, many1(nom_node))(input)
+    separated_list1(newline, many1(nom_node)).parse(input)
 }
 
 fn nom_instruction(input: &str) -> IResult<&str, GridDirection> {
@@ -20,18 +21,20 @@ fn nom_instruction(input: &str) -> IResult<&str, GridDirection> {
         value(GridDirection::Down, char('v')),
         value(GridDirection::Left, char('<')),
         value(GridDirection::Right, char('>')),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn nom_instructions(input: &str) -> IResult<&str, Instructions> {
-    many1(preceded(opt(newline), nom_instruction))(input)
+    many1(preceded(opt(newline), nom_instruction)).parse(input)
 }
 
 fn nom_input(input: &str) -> IResult<&str, Grid> {
     map(
         separated_pair(nom_map, newline, nom_instructions),
         |(nodes, instructions)| Grid::new(nodes, instructions),
-    )(input)
+    )
+    .parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Grid> {

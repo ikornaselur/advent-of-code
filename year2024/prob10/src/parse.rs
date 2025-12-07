@@ -1,11 +1,12 @@
 use advent::prelude::*;
 
 fn nom_row(input: &str) -> IResult<&str, Vec<char>> {
-    many1(one_of("0123456789"))(input)
+    many1(one_of("0123456789")).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<Vec<char>>> {
-    let (_, map) = separated_list1(newline, nom_row)(input)
+    let (_, map) = separated_list1(newline, nom_row)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(map)

@@ -1,11 +1,12 @@
 use advent::prelude::*;
 
 fn nom_xmas(input: &str) -> IResult<&str, char> {
-    alt((char('X'), char('M'), char('A'), char('S')))(input)
+    alt((char('X'), char('M'), char('A'), char('S'))).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<Vec<char>>> {
-    let (_, grid) = separated_list1(newline, many1(nom_xmas))(input)
+    let (_, grid) = separated_list1(newline, many1(nom_xmas))
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(grid)

@@ -2,11 +2,12 @@ use advent::parsers::nom_signed_digit;
 use advent::prelude::*;
 
 fn nom_line(input: &str) -> IResult<&str, Vec<i32>> {
-    separated_list1(space1, nom_signed_digit::<i32>)(input)
+    separated_list1(space1, nom_signed_digit::<i32>).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<Vec<i32>>> {
-    let (_, pairs) = separated_list1(newline, nom_line)(input)
+    let (_, pairs) = separated_list1(newline, nom_line)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(pairs)

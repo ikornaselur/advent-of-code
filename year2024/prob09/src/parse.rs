@@ -2,11 +2,12 @@ use crate::CompressedNode;
 use advent::prelude::*;
 
 fn nom_digit(input: &str) -> IResult<&str, u32> {
-    map(one_of("0123456789"), |d: char| d.to_digit(10).unwrap())(input)
+    map(one_of("0123456789"), |d: char| d.to_digit(10).unwrap()).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<CompressedNode>> {
-    let (_, digits) = many1(nom_digit)(input)
+    let (_, digits) = many1(nom_digit)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     // We alternate between a file node and a free node

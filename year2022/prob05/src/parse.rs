@@ -10,7 +10,7 @@ fn nom_crate(input: &str) -> IResult<&str, Option<&str>> {
     let empty_parser = tag("   ");
     let crate_parser = delimited(char('['), take(1u8), char(']'));
 
-    let (input, raw_crate) = alt((empty_parser, crate_parser))(input)?;
+    let (input, raw_crate) = alt((empty_parser, crate_parser)).parse(input)?;
 
     match raw_crate {
         "   " => Ok((input, None)),
@@ -30,7 +30,7 @@ fn nom_crate(input: &str) -> IResult<&str, Option<&str>> {
 fn nom_crate_row(input: &str) -> IResult<&str, Vec<Option<&str>>> {
     let mut crates_parser = separated_list1(char(' '), nom_crate);
 
-    let (input, crates) = crates_parser(input)?;
+    let (input, crates) = crates_parser.parse(input)?;
 
     Ok((input, crates))
 }
@@ -38,8 +38,8 @@ fn nom_crate_row(input: &str) -> IResult<&str, Vec<Option<&str>>> {
 fn nom_all_crate_rows(input: &str) -> IResult<&str, Vec<Vec<Option<&str>>>> {
     let mut line_parser = separated_list1(line_ending, nom_crate_row);
 
-    let (input, crates) = line_parser(input)?;
-    let (input, _) = preceded(space0, line_ending)(input)?; // Get rid of that final line
+    let (input, crates) = line_parser.parse(input)?;
+    let (input, _) = preceded(space0, line_ending).parse(input)?; // Get rid of that final line
 
     Ok((input, crates))
 }
@@ -50,19 +50,19 @@ fn nom_column_count(input: &str) -> IResult<&str, usize> {
         separated_list1(multispace0, nom_unsigned_digit::<usize>),
     );
 
-    let (input, counts) = count_parser(input)?;
-    let (input, _) = preceded(space0, line_ending)(input)?; // Get rid of that final line
+    let (input, counts) = count_parser.parse(input)?;
+    let (input, _) = preceded(space0, line_ending).parse(input)?; // Get rid of that final line
 
     // Get the last element of counts
     Ok((input, *counts.last().unwrap()))
 }
 
 fn nom_instruction(input: &str) -> IResult<&str, (usize, usize, usize)> {
-    let (input, _) = tag("move ")(input)?;
+    let (input, _) = tag("move ").parse(input)?;
     let (input, crate_count) = nom_unsigned_digit::<usize>(input)?;
-    let (input, _) = tag(" from ")(input)?;
+    let (input, _) = tag(" from ").parse(input)?;
     let (input, from_stack) = nom_unsigned_digit::<usize>(input)?;
-    let (input, _) = tag(" to ")(input)?;
+    let (input, _) = tag(" to ").parse(input)?;
     let (input, to_stack) = nom_unsigned_digit::<usize>(input)?;
 
     Ok((input, (crate_count, from_stack, to_stack)))
@@ -70,8 +70,8 @@ fn nom_instruction(input: &str) -> IResult<&str, (usize, usize, usize)> {
 
 fn nom_instructions(input: &str) -> IResult<&str, Vec<(usize, usize, usize)>> {
     let mut instruction_parser = separated_list1(line_ending, nom_instruction);
-    let (input, instructions) = instruction_parser(input)?;
-    let (input, _) = preceded(space0, line_ending)(input)?; // Get rid of that final line
+    let (input, instructions) = instruction_parser.parse(input)?;
+    let (input, _) = preceded(space0, line_ending).parse(input)?; // Get rid of that final line
     Ok((input, instructions))
 }
 
@@ -87,7 +87,8 @@ pub fn parse_input(input: &str) -> Result<(Vec<Stack>, Vec<Instruction>)> {
     let (input, column_count) =
         nom_column_count(input).map_err(|e| error!("Unable to parse: {}", e))?;
     // There's an empty line before instructions
-    let (input, _) = preceded::<_, _, _, nom::error::Error<_>, _, _>(space0, line_ending)(input)
+    let (input, _) = preceded::<_, _, nom::error::Error<_>, _, _>(space0, line_ending)
+        .parse(input)
         .map_err(|e| error!("Unable to parse {}", e))?;
     // And finally all the instructions
     let (_, instructions) =

@@ -1,15 +1,16 @@
 use advent::prelude::*;
 
 fn nom_char(input: &str) -> IResult<&str, char> {
-    one_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ")(input)
+    one_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ").parse(input)
 }
 
 fn nom_char_row(input: &str) -> IResult<&str, Vec<char>> {
-    many1(nom_char)(input)
+    many1(nom_char).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<Vec<char>>> {
-    let (_, plot_map) = separated_list1(newline, nom_char_row)(input)
+    let (_, plot_map) = separated_list1(newline, nom_char_row)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(plot_map)

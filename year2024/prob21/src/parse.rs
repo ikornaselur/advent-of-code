@@ -15,15 +15,17 @@ fn nom_button(input: &str) -> IResult<&str, Button> {
         '0' => Button::Zero,
         'A' => Button::A,
         _ => unreachable!(),
-    })(input)
+    })
+    .parse(input)
 }
 
 fn nom_code(input: &str) -> IResult<&str, Vec<Button>> {
-    many1(nom_button)(input)
+    many1(nom_button).parse(input)
 }
 
 pub fn parse_input(input: &str) -> Result<Vec<Vec<Button>>> {
-    let (_, codes) = separated_list1(newline, nom_code)(input)
+    let (_, codes) = separated_list1(newline, nom_code)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse input: {:?}", e)))?;
 
     Ok(codes)

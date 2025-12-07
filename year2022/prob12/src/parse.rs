@@ -10,7 +10,8 @@ fn nom_point(input: &str) -> IResult<&str, Point> {
         char_parser,
         value(Point::Start, char('S')),
         value(Point::End, char('E')),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 /// Parse a heightmap row, which is made out of characters from a to z (lowercase).
@@ -19,12 +20,13 @@ fn nom_point(input: &str) -> IResult<&str, Point> {
 /// Note that there are two special characters, upper case 'S' for start and upper case 'E' for
 /// end.
 fn nom_heighmap_row(input: &str) -> IResult<&str, Vec<Point>> {
-    many1(nom_point)(input)
+    many1(nom_point).parse(input)
 }
 
 /// Parse a full heighmap from a string into a matrix
 pub fn parse_heightmap(input: &str) -> Result<Heightmap> {
-    let (_, points) = separated_list1(newline, nom_heighmap_row)(input)
+    let (_, points) = separated_list1(newline, nom_heighmap_row)
+        .parse(input)
         .map_err(|e| AdventError::ParseError(format!("Failed to parse heightmap: {:?}", e)))?;
 
     Ok(Heightmap::new(points))

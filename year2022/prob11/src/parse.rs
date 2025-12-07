@@ -5,7 +5,7 @@ use advent::prelude::*;
 /// Parse the input header in the form:
 /// `Monkey <usize>`
 fn nom_monkey_header(input: &str) -> IResult<&str, usize> {
-    delimited(tag("Monkey "), nom_unsigned_digit::<usize>, tag(":"))(input)
+    delimited(tag("Monkey "), nom_unsigned_digit::<usize>, tag(":")).parse(input)
 }
 
 /// Parse the starting items in the form:
@@ -16,7 +16,8 @@ fn nom_starting_items(input: &str) -> IResult<&str, Vec<usize>> {
     preceded(
         tag("Starting items: "),
         separated_list1(tag(", "), nom_unsigned_digit::<usize>),
-    )(input)
+    )
+    .parse(input)
 }
 
 /// Helper parser for `nom_operation` below
@@ -24,7 +25,8 @@ fn nom_op_value(input: &str) -> IResult<&str, OperationValue> {
     alt((
         map(nom_unsigned_digit::<usize>, OperationValue::Number),
         value(OperationValue::Old, tag("old")),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 /// Parse the operation in the form:
@@ -40,13 +42,14 @@ fn nom_operation(input: &str) -> IResult<&str, Operation> {
             map(preceded(tag("+ "), nom_op_value), Operation::Add),
             map(preceded(tag("* "), nom_op_value), Operation::Multiply),
         )),
-    )(input)
+    )
+    .parse(input)
 }
 
 /// Parse the test in the form:
 /// `Test: divisible by <usize>`
 fn nom_test(input: &str) -> IResult<&str, usize> {
-    preceded(tag("Test: divisible by "), nom_unsigned_digit::<usize>)(input)
+    preceded(tag("Test: divisible by "), nom_unsigned_digit::<usize>).parse(input)
 }
 
 /// Parse the 'if true' branch in the form:
@@ -55,7 +58,8 @@ fn nom_if_true(input: &str) -> IResult<&str, usize> {
     preceded(
         tag("If true: throw to monkey "),
         nom_unsigned_digit::<usize>,
-    )(input)
+    )
+    .parse(input)
 }
 
 /// Parse the 'if false' branch in the form:
@@ -64,7 +68,8 @@ fn nom_if_false(input: &str) -> IResult<&str, usize> {
     preceded(
         tag("If false: throw to monkey "),
         nom_unsigned_digit::<usize>,
-    )(input)
+    )
+    .parse(input)
 }
 
 /// Parse a full input of an individual monkey in the form:
@@ -79,12 +84,12 @@ fn nom_if_false(input: &str) -> IResult<&str, usize> {
 /// utilising the parsers defined above. Make note of the spaces before all lines, except the
 /// header
 fn nom_monkey(input: &str) -> IResult<&str, Monkey> {
-    let (input, monkey_num) = delimited(space0, nom_monkey_header, newline)(input)?;
-    let (input, starting_items) = delimited(space0, nom_starting_items, newline)(input)?;
-    let (input, operation) = delimited(space0, nom_operation, newline)(input)?;
-    let (input, test) = delimited(space0, nom_test, newline)(input)?;
-    let (input, if_true) = delimited(space0, nom_if_true, newline)(input)?;
-    let (input, if_false) = preceded(space0, nom_if_false)(input)?;
+    let (input, monkey_num) = delimited(space0, nom_monkey_header, newline).parse(input)?;
+    let (input, starting_items) = delimited(space0, nom_starting_items, newline).parse(input)?;
+    let (input, operation) = delimited(space0, nom_operation, newline).parse(input)?;
+    let (input, test) = delimited(space0, nom_test, newline).parse(input)?;
+    let (input, if_true) = delimited(space0, nom_if_true, newline).parse(input)?;
+    let (input, if_false) = preceded(space0, nom_if_false).parse(input)?;
 
     let monkey = Monkey {
         num: monkey_num,
@@ -104,7 +109,9 @@ fn nom_monkey(input: &str) -> IResult<&str, Monkey> {
 /// Note that each 'monkey' input is separated by an empty line
 pub fn parse_monkeys(input: &str) -> Result<Vec<Monkey>> {
     let mut parser = separated_list1(tag("\n\n"), nom_monkey);
-    let (_, monkeys) = parser(input).map_err(|e| error!("Unable to parse: {}", e))?;
+    let (_, monkeys) = parser
+        .parse(input)
+        .map_err(|e| error!("Unable to parse: {}", e))?;
 
     Ok(monkeys)
 }
