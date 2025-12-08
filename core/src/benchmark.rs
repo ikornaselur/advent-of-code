@@ -26,7 +26,7 @@ where
         {
             let test_start = Instant::now();
             f(input);
-            let single_run = test_start.elapsed();
+            let single_run = test_start.elapsed().max(Duration::from_nanos(1));
 
             let target_time = Duration::from_secs(1);
             let iterations =

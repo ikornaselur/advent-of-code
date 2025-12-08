@@ -1,0 +1,9 @@
+[package]
+name = "prob04"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+advent = { path = "../../core" }
+itertools = "0.14.0"
+nom = "8.0.0"
