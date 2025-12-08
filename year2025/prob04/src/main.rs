@@ -45,6 +45,12 @@ impl Grid {
                 }
             })
     }
+
+    pub fn remove_paper(&mut self, row: usize, col: usize) {
+        // We're just going to cowboy this and do no checks, for the sake of SPEEED
+        // Don't do this at home kids
+        self.grid[row][col] = Cell::Empty;
+    }
 }
 
 fn main() -> Result<()> {
@@ -92,9 +98,51 @@ fn part1(input: &str) -> Result<usize> {
     Ok(count)
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<usize> {
+    let mut grid = parse_input(input)?;
+
+    let mut removed = 0;
+    // We're going naive brute force - it feels like that shouldn't work, but .. this problem
+    // _seems_ trivial, ish? I'm scared to assume that but it's day 4
+    loop {
+        let removables = (0..grid.grid.len())
+            .cartesian_product(0..grid.grid[0].len())
+            .fold(Vec::new(), |mut acc, (row, col)| {
+                match grid.get_cell(row as i32, col as i32) {
+                    Some(Cell::Paper) if grid.surround_paper_count(row as i32, col as i32) < 4 => {
+                        acc.push((row, col))
+                    }
+                    _ => {}
+                };
+                acc
+            });
+
+        // We don't need some flood-fill algo or something similar to optimise here, right? We can
+        // remove paper that is in the middle, as long as it's not surrounded?
+        // What if we need to make a graph and basically just remove all nodes with < 4 edges each
+        // round, that feels like it might make sense.
+        //
+        // But guess what? We're brute forcing this today
+
+        if removables.is_empty() {
+            break;
+        }
+
+        removables
+            .iter()
+            .for_each(|(row, col)| grid.remove_paper(*row, *col));
+        removed += removables.len();
+
+        // There's some good news and some bad news.
+        // The good news is that it worked! Naive brute force got us there no prob.
+        // Bad news? It's slow. We're talking about four thousand and three hundred microseconds.
+        // you read that right! 4.3ms, that's AGES.
+        // We should be able to get this down to hundreds of microseconds.
+        //
+        // But that's for a later day..
+    }
+
+    Ok(removed)
 }
 
 #[cfg(test)]
@@ -110,7 +158,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 43);
     }
 
     #[test]
