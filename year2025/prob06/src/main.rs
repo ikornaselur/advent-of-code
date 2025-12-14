@@ -1,7 +1,9 @@
 use advent::prelude::*;
-use parse::parse_input;
+use parse::parse_input_part1;
 use std::env;
 use std::fs;
+
+use crate::parse::parse_input_part2;
 
 mod parse;
 
@@ -69,7 +71,7 @@ fn rotate(number_rows: Vec<Vec<u64>>, symbols_row: Vec<Symbol>) -> Vec<Problem> 
 }
 
 fn part1(input: &str) -> Result<u64> {
-    let (number_rows, symbols_row) = parse_input(input)?;
+    let (number_rows, symbols_row) = parse_input_part1(input)?;
     let out = rotate(number_rows, symbols_row)
         .iter()
         .map(|problem| problem.do_math())
@@ -77,9 +79,54 @@ fn part1(input: &str) -> Result<u64> {
     Ok(out)
 }
 
-fn part2(_input: &str) -> Result<usize> {
-    // let thing = parse_input(input)?;
-    Ok(0)
+fn part2(input: &str) -> Result<u64> {
+    let chars = parse_input_part2(input)?;
+    let rows = chars.len();
+    let cols = chars[0].len();
+
+    let transposed = (0..cols)
+        .map(|c| (0..rows).map(|r| chars[r][c]).collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+
+    let mut output = 0;
+
+    let mut symbol: Option<Symbol> = None;
+    let mut current_value = 0;
+
+    for row in transposed.into_iter() {
+        if row.iter().all(|r| r == &' ') {
+            // Reset if whitespace line
+            symbol = None;
+            output += current_value;
+        } else {
+            if symbol.is_none() {
+                // Starting new math
+                match row[row.len() - 1] {
+                    '+' => {
+                        symbol = Some(Symbol::Plus);
+                        current_value = 0;
+                    }
+                    '*' => {
+                        symbol = Some(Symbol::Multiply);
+                        current_value = 1;
+                    }
+                    _ => panic!("Uh oh"),
+                }
+            }
+            let row_value = row
+                .iter()
+                .filter(|c| c.is_ascii_digit())
+                .collect::<String>()
+                .parse::<u64>()?;
+            match symbol {
+                Some(Symbol::Plus) => current_value += row_value,
+                Some(Symbol::Multiply) => current_value *= row_value,
+                None => panic!("Uh oh 2"),
+            }
+        }
+    }
+
+    Ok(output + current_value)
 }
 
 #[cfg(test)]
@@ -95,7 +142,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(part2(TEST_INPUT).unwrap(), 0);
+        assert_eq!(part2(TEST_INPUT).unwrap(), 3_263_827);
     }
 
     #[test]

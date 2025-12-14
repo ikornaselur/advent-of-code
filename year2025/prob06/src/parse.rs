@@ -17,7 +17,7 @@ fn nom_symbols_row(input: &str) -> IResult<&str, Vec<Symbol>> {
     separated_list1(multispace1, nom_symbol).parse(input)
 }
 
-pub fn parse_input(input: &str) -> Result<(Vec<Vec<u64>>, Vec<Symbol>)> {
+pub fn parse_input_part1(input: &str) -> Result<(Vec<Vec<u64>>, Vec<Symbol>)> {
     let (_, (number_rows, symbols_row)) = separated_pair(
         separated_list1(newline, nom_number_row),
         newline,
@@ -26,6 +26,15 @@ pub fn parse_input(input: &str) -> Result<(Vec<Vec<u64>>, Vec<Symbol>)> {
     .parse(input)?;
 
     Ok((number_rows, symbols_row))
+}
+
+pub fn parse_input_part2(input: &str) -> Result<Vec<Vec<char>>> {
+    // For part 2 we're moving a lot of the actual parsing to the main function.. we need to rotate
+    // the character matrix by 90 degrees counter clockwise, then parse at that point. Whitespaces
+    // matter here!
+    let (_, out) = separated_list1(newline, many1(one_of(" 0123456789+*"))).parse(input)?;
+
+    Ok(out)
 }
 
 #[cfg(test)]
@@ -64,14 +73,29 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_input() {
+    fn test_parse_input_part1() {
         let input = "1 2  3\n 4   5 6 \n* +   *";
-        let (number_rows, symbols_row) = parse_input(input).unwrap();
+        let (number_rows, symbols_row) = parse_input_part1(input).unwrap();
 
         assert_eq!(number_rows, vec![vec![1, 2, 3], vec![4, 5, 6]]);
         assert_eq!(
             symbols_row,
             vec![Symbol::Multiply, Symbol::Plus, Symbol::Multiply]
+        );
+    }
+
+    #[test]
+    fn test_parse_input_part2() {
+        let input = "  1 2 \n123 34\n*   + ";
+        let out = parse_input_part2(input).unwrap();
+
+        assert_eq!(
+            out,
+            vec![
+                vec![' ', ' ', '1', ' ', '2', ' '],
+                vec!['1', '2', '3', ' ', '3', '4'],
+                vec!['*', ' ', ' ', ' ', '+', ' '],
+            ]
         );
     }
 }
