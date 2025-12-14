@@ -13,7 +13,7 @@ fn main() -> Result<()> {
         fs::read_to_string(file_name)
             .map_err(|e| error!("Failed to read file {}: {}", file_name, e))?
     } else {
-        get_input(2025, 1)?
+        get_input(2025, 5)?
     };
 
     println!("## Part 1");
