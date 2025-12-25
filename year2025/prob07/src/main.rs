@@ -29,6 +29,7 @@ type Col = usize;
 type Row = usize;
 type Coord = (Row, Col);
 
+#[derive(PartialEq)]
 struct Quantum(bool);
 
 #[allow(dead_code)]
@@ -51,39 +52,43 @@ impl Grid {
     }
 
     #[inline]
+    #[allow(dead_code)]
     fn contains_key(&self, row: usize, col: usize) -> bool {
-        self.memo_grid[row + col * self.width].is_some()
+        self.memo_grid[row + col * self.height].is_some()
     }
 
     #[inline]
     fn set(&mut self, row: usize, col: usize, value: usize) {
-        self.memo_grid[row + col * self.width] = Some(value);
+        self.memo_grid[row + col * self.height] = Some(value);
     }
 
     #[inline]
-    #[allow(dead_code)]
     fn get(&self, row: usize, col: usize) -> Option<usize> {
-        self.memo_grid[row + col * self.width]
+        self.memo_grid[row + col * self.height]
     }
 
     fn get_beam_splits(&mut self, (row, col): Coord, quantum: &Quantum) -> Result<usize> {
-        match quantum {
-            Quantum(false) => {
-                if self.contains_key(row, col) {
-                    // We return no more splits, we've been here already
-                    return Ok(0);
-                }
+        match (quantum, self.get(row, col)) {
+            (Quantum(false), Some(_)) => {
+                // We return no more splits, we've been here already
+                return Ok(0);
             }
-            Quantum(true) => {
-                unimplemented!("Quantum stuff")
+            (Quantum(true), Some(splits)) => {
+                // We return the splits that have been observed from here, since we're in a
+                // different universe but just reached it from a different path
+                // TODO: Do I need to .. store the paths?
+                return Ok(splits);
             }
+            (_, None) => {} // We continue
         }
 
         let coord_below = (row + 1, col);
 
         let new_splits = match self.get_node_at_coord(&coord_below) {
             Some(Node::Empty) => {
-                self.set_node_at_coord(&coord_below, Node::Beam)?;
+                if *quantum == Quantum(false) {
+                    self.set_node_at_coord(&coord_below, Node::Beam)?;
+                }
                 self.get_beam_splits(coord_below, quantum)?
             }
             Some(Node::Splitter) => {
@@ -91,19 +96,29 @@ impl Grid {
                 // NOTE: beam_col - 1 if beam_col is 0 is bad due to usize
                 let left_splits = if col > 0 {
                     let coord_left = (row + 1, col - 1);
-                    self.set_node_at_coord(&coord_left, Node::Beam)?;
+                    if *quantum == Quantum(false) {
+                        self.set_node_at_coord(&coord_left, Node::Beam)?;
+                    }
                     self.get_beam_splits(coord_left, quantum)?
                 } else {
                     0
                 };
                 let right_splits = if col < self.width() - 1 {
                     let coord_right = (row + 1, col + 1);
-                    self.set_node_at_coord(&coord_right, Node::Beam)?;
+                    if *quantum == Quantum(false) {
+                        self.set_node_at_coord(&coord_right, Node::Beam)?;
+                    }
                     self.get_beam_splits(coord_right, quantum)?
                 } else {
                     0
                 };
-                left_splits + right_splits + 1
+                match quantum {
+                    Quantum(false) => left_splits + right_splits + 1, // Count number of splits
+                    // plus the current one
+                    Quantum(true) => left_splits + right_splits, // We're counting worlds, so we
+                                                                 // don't count the split that
+                                                                 // happened here
+                }
             }
             Some(Node::Beam) => {
                 match quantum {
@@ -111,12 +126,11 @@ impl Grid {
                     Quantum(true) => unimplemented!("Quantum"),
                 }
             }
-            None => {
-                match quantum {
-                    Quantum(false) => 0,                        // Ignore beam already there
-                    Quantum(true) => unimplemented!("Quantum"), // Not sure?
-                }
-            } // Ignore out of bounds?
+            None => match quantum {
+                Quantum(false) => 0, // No more splits
+                Quantum(true) => 1,  // When we go out of bounds in the quantum world, we count 1
+                                      // for the number of world at this point
+            },
             _ => unimplemented!(),
         };
 
@@ -223,8 +237,9 @@ fn part2(input: &str) -> Result<usize> {
     let node_rows = parse_input(input)?;
     let mut grid = Grid::try_from(node_rows)?;
 
-    let beam_splits = grid.get_beam_splits(grid.start, &Quantum(false))?;
+    let beam_splits = grid.get_beam_splits(grid.start, &Quantum(true))?;
 
+    // Since each split creates a new world, and we start in one, then we +1?
     Ok(beam_splits)
 }
 
@@ -242,5 +257,43 @@ mod tests {
     #[test]
     fn test_part2() {
         assert_eq!(part2(TEST_INPUT).unwrap(), 40);
+    }
+
+    const ONE_SPLIT_INPUT: &str = "...S...\n.......\n...^...\n.......";
+
+    #[test]
+    fn test_part1_one_split() {
+        assert_eq!(part1(ONE_SPLIT_INPUT).unwrap(), 1);
+    }
+
+    #[test]
+    fn test_part2_one_split() {
+        // One split splits the timeline into *two* timelines
+        assert_eq!(part2(ONE_SPLIT_INPUT).unwrap(), 2);
+    }
+
+    const THREE_SPLIT_INPUT: &str = "..S..\n.....\n..^..\n.....\n.^.^.\n.....";
+
+    #[test]
+    fn test_part1_three_split() {
+        assert_eq!(part1(THREE_SPLIT_INPUT).unwrap(), 3);
+    }
+
+    #[test]
+    fn test_part2_three_split() {
+        assert_eq!(part2(THREE_SPLIT_INPUT).unwrap(), 4);
+    }
+
+    const SIX_SPLIT_INPUT: &str =
+        "...S...\n.......\n...^...\n.......\n..^.^..\n.......\n.^.^.^.\n.......\n";
+
+    #[test]
+    fn test_part1_six_split() {
+        assert_eq!(part1(SIX_SPLIT_INPUT).unwrap(), 6);
+    }
+
+    #[test]
+    fn test_part2_six_split() {
+        assert_eq!(part2(SIX_SPLIT_INPUT).unwrap(), 8);
     }
 }
